@@ -1,0 +1,64 @@
+{
+    // Utilisez IntelliSense pour en savoir plus sur les attributs possibles.
+    // Pointez pour afficher la description des attributs existants.
+    // Pour plus d'informations, visitez : https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "[Windows][CLANG][Release] Launch",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/windows/clang/release/magic.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "logging": { "engineLogging": false, "exceptions": false, "moduleLoad": false, "programOutput": true },
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "build release with clang"
+        },
+        {
+            "name": "[Windows][CLANG][Debug] Launch",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/windows/clang/debug/magic_d.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "logging": { "engineLogging": false, "exceptions": false, "moduleLoad": false, "programOutput": true },
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "build debug with clang"
+        },
+        {
+            "name": "[Windows][MSVC][Release] Launch",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/windows/msvc/release/magic.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "logging": { "engineLogging": false, "exceptions": false, "moduleLoad": false, "programOutput": true },
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "build release with msvc"
+        },
+        {
+            "name": "[Windows][MSVC][Debug] Launch",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/windows/msvc/debug/magic_d.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "logging": { "engineLogging": false, "exceptions": false, "moduleLoad": false, "programOutput": true },
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "build debug with msvc"
+        }
+    ]
+}

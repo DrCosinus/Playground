@@ -1,0 +1,43 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build release with msvc",
+            "type": "shell",
+            "command": "make\\build_with_msvc.cmd",
+            "args": [ "/DDEBUG=0", "/Febin/windows/msvc/release/magic.exe" ],
+            "group": { "kind": "build", "isDefault": true },
+            "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build debug with msvc",
+            "type": "shell",
+            "command": "make\\build_with_msvc.cmd",
+            "args": [ "/DDEBUG=1", "/Zi", "/Febin/windows/msvc/debug/magic_d.exe" ],
+            "group": "build",
+            "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build release with clang",
+            "type": "shell",
+            "command": "make\\build_with_clang.cmd",
+            "args": [ "-DDEBUG=0", "-o", "bin/windows/clang/release/magic.exe" ],
+            "problemMatcher": [ "$gcc" ],
+            "group": "build",
+            "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+        },
+        {
+            "label": "build debug with clang",
+            "type": "shell",
+            "command": "make\\build_with_clang.cmd",
+            "args": [ "-DDEBUG=1", "-o", "bin/windows/clang/debug/magic_d.exe" ],
+            "problemMatcher": [ "$gcc" ],
+            "group": "build",
+            "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+        }
+    ]
+}
