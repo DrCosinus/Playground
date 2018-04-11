@@ -4,46 +4,76 @@
 template<typename... Ts>
 struct RecursiveHelper
 {
-  using type = std::function<RecursiveHelper(Ts...)>;
-  /*explicit*/ RecursiveHelper(type f) : func(f) {}
-  operator type() const { return func; }
+    using CALLBACK_TYPE = std::function<RecursiveHelper(Ts...)>;
+    RecursiveHelper(CALLBACK_TYPE _f) : func_(_f) {}
+    operator CALLBACK_TYPE() const { return func_; }
 
 private:
-  const type func;
+    const CALLBACK_TYPE func_;
 };
 
-using F = RecursiveHelper<int&, int&>::type;
-F B(int& first, int& second);
-
-F A(int& first, int& second)
+struct Params
 {
-    ++first;
+    struct Counter
+    {
+        auto Touch()             { hit_count_++;      }
+        auto GetHitCount() const { return hit_count_; }
+    private:
+        size_t hit_count_ = 0;
+    };
+    Counter A;
+    Counter B;
+};
+
+using F = RecursiveHelper<Params&>::CALLBACK_TYPE;
+
+F B(Params& _params);
+
+F A(Params& _params)
+{
+    _params.A.Touch();
     return B;
 }
 
-F B(int& first, int& second)
+F B(Params& _params)
 {
-    second+=3;
+    _params.B.Touch();
     return A;
 }
 
+struct State
+{
 
-// A renvoie une méthode (ici A lui-même) qui renvoie un F
+};
+
+template<char... CHARS>
+constexpr int operator"" _state()
+{
+    return sizeof...(CHARS);
+}
+
+// A renvoie une méthode qui renvoie un F
 // qui implicitement castable en RecursiveHelper
 // qui prend aucun argument et qui renvoie un RecursiveHelper
 // et qui est castable implicitement en RecursiveHelper
 
 int main()
 {
-    int plop = 0;
-    int plip = 0;
+    //auto i = "init"_state;
+    /* = []
+    {
 
-    F a = A;
-    a = a(plop, plip);
-    a = a(plop, plip);
-    a = a(plop, plip);
-    a = a(plop, plip);
-    a = a(plop, plip);
+    };*/
+
+    Params params;
+
+    F state = A;
+    state = state(params);
+    state = state(params);
+    state = state(params);
+    state = state(params);
+    state = state(params);
     // ...
-    std::cout << plop << " " << plip << std::endl;
+    std::cout << "Hit count of A:" << params.A.GetHitCount() << std::endl;
+    std::cout << "Hit count of B:" << params.B.GetHitCount() << std::endl;
 }
