@@ -40,30 +40,52 @@ F B(Params& _params)
     _params.B.Touch();
     return A;
 }
-
+/*
+template<char... chars>
 struct State
 {
 
-};
-
-template<char... CHARS>
-constexpr int operator"" _state()
+};*/
+/*
+template<typename CHAR_TYPE, CHAR_TYPE... CHARS>
+constexpr State<CHARS...> operator "" _state ()
 {
-    return sizeof...(CHARS);
-}
+    return {};
+}*/
+//template<const char* STR> struct plop { static constexpr auto value = 1; };
+//constexpr int operator"" _etat(const char* S, size_t N) { return plop<S>::value; }
 
 // A renvoie une méthode qui renvoie un F
 // qui implicitement castable en RecursiveHelper
 // qui prend aucun argument et qui renvoie un RecursiveHelper
 // et qui est castable implicitement en RecursiveHelper
+template<typename OBJECT_TYPE, typename RETURN_TYPE, typename... ARG_TYPES>
+auto mystify(OBJECT_TYPE* _object, RETURN_TYPE (OBJECT_TYPE::*_method)(ARG_TYPES...)const)
+{
+    return ((static_cast<const OBJECT_TYPE*>(_object))->*(_method))();
+}
+
+struct choupi
+{
+    const int& get() const { return value_; }
+    //int& get() { return value_; }
+    //int& get() { return const_cast<int&>(static_cast<const choupi*>(this)->get()); }
+    auto get() { return mystify(this, &choupi::get()); }
+private:
+    int value_ = 42;
+};
 
 int main()
 {
+    //std::cout << "-> " << "plop"_state << std::endl;
     //auto i = "init"_state;
     /* = []
     {
 
     };*/
+    choupi c;
+    c.get() = 78;
+    std::cout << "Choupi " << c.get() << std::endl;
 
     Params params;
 
