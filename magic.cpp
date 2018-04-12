@@ -1,5 +1,7 @@
 #include <functional>
 #include <iostream>
+#include <type_traits>
+#include <utility>
 
 template<typename... Ts>
 struct RecursiveHelper
@@ -60,17 +62,22 @@ constexpr State<CHARS...> operator "" _state ()
 // qui prend aucun argument et qui renvoie un RecursiveHelper
 // et qui est castable implicitement en RecursiveHelper
 template<typename OBJECT_TYPE, typename RETURN_TYPE, typename... ARG_TYPES>
-auto mystify(OBJECT_TYPE* _object, RETURN_TYPE (OBJECT_TYPE::*_method)(ARG_TYPES...)const)
+RETURN_TYPE& deconstify(OBJECT_TYPE* _object, const RETURN_TYPE& (OBJECT_TYPE::*_method)(ARG_TYPES...)const, ARG_TYPES&&... _args)
 {
-    return ((static_cast<const OBJECT_TYPE*>(_object))->*(_method))();
+    return const_cast<RETURN_TYPE&>(((static_cast<const OBJECT_TYPE*>(_object))->*(_method))(std::forward<ARG_TYPES>(_args)...));
+}
+template<typename OBJECT_TYPE, typename RETURN_TYPE, typename... ARG_TYPES>
+RETURN_TYPE* deconstify(OBJECT_TYPE* _object, const RETURN_TYPE* (OBJECT_TYPE::*_method)(ARG_TYPES...)const, ARG_TYPES&&... _args)
+{
+    return const_cast<RETURN_TYPE*>(((static_cast<const OBJECT_TYPE*>(_object))->*(_method))(std::forward<ARG_TYPES>(_args)...));
 }
 
 struct choupi
 {
     const int& get() const { return value_; }
-    //int& get() { return value_; }
-    //int& get() { return const_cast<int&>(static_cast<const choupi*>(this)->get()); }
-    auto get() { return mystify(this, &choupi::get()); }
+          int& get()       { return deconstify(this, &choupi::get); }
+    const int* get_ptr() const { return &value_; }
+          int* get_ptr()       { return deconstify(this, &choupi::get_ptr); }
 private:
     int value_ = 42;
 };
@@ -84,8 +91,11 @@ int main()
 
     };*/
     choupi c;
+    const choupi& ccr = c;
     c.get() = 78;
-    std::cout << "Choupi " << c.get() << std::endl;
+    std::cout << "Choupi A :" << ccr.get() << std::endl;
+    *c.get_ptr() = 509;
+    std::cout << "Choupi B :" << *ccr.get_ptr() << std::endl;
 
     Params params;
 
