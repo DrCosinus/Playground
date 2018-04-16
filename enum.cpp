@@ -10,15 +10,15 @@ auto A()
     return A<N-1>;
 }
 
-auto B()
-{
-    return A<64>;
-}
-
 template<>
 auto A<0>()
 {
     return B;
+}
+
+auto B()
+{
+    return A<64>;
 }
 
 template<typename T>

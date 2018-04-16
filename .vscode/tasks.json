@@ -26,18 +26,18 @@
             "type": "shell",
             "command": "make\\build_with_clang.cmd",
             "args": [ "-DDEBUG=0", "-o", "bin/windows/clang/release/magic.exe" ],
-            "problemMatcher": [ "$gcc" ],
             "group": "build",
             "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+            "problemMatcher": "$gcc"
         },
         {
             "label": "build debug with clang",
             "type": "shell",
             "command": "make\\build_with_clang.cmd",
             "args": [ "-DDEBUG=1", "-o", "bin/windows/clang/debug/magic_d.exe" ],
-            "problemMatcher": [ "$gcc" ],
             "group": "build",
             "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+            "problemMatcher": "$gcc"
         }
     ]
 }
