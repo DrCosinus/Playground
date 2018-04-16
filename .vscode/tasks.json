@@ -7,8 +7,8 @@
             "label": "build release with msvc",
             "type": "shell",
             "command": "make\\build_with_msvc.cmd",
-            "args": [ "/DDEBUG=0", "/Febin/windows/msvc/release/magic.exe" ],
-            "group": { "kind": "build", "isDefault": true },
+            "args": [ "${relativeFile}", "/DDEBUG=0", "/Febin/windows/msvc/release/${fileBasenameNoExtension}.exe" ],
+            "group": "build",
             "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
             "problemMatcher": "$msCompile"
         },
@@ -16,7 +16,7 @@
             "label": "build debug with msvc",
             "type": "shell",
             "command": "make\\build_with_msvc.cmd",
-            "args": [ "/DDEBUG=1", "/Zi", "/Febin/windows/msvc/debug/magic_d.exe" ],
+            "args": [ "${relativeFile}", "/DDEBUG=1", "/Zi", "/Febin/windows/msvc/debug/${fileBasenameNoExtension}_d.exe" ],
             "group": "build",
             "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
             "problemMatcher": "$msCompile"
@@ -25,8 +25,8 @@
             "label": "build release with clang",
             "type": "shell",
             "command": "make\\build_with_clang.cmd",
-            "args": [ "-DDEBUG=0", "-o", "bin/windows/clang/release/magic.exe" ],
-            "group": "build",
+            "args": [ "${relativeFile}", "-DDEBUG=0", "-o", "bin/windows/clang/release/${fileBasenameNoExtension}.exe" ],
+            "group": { "kind": "build", "isDefault": true },
             "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
             "problemMatcher": "$gcc"
         },
@@ -34,7 +34,7 @@
             "label": "build debug with clang",
             "type": "shell",
             "command": "make\\build_with_clang.cmd",
-            "args": [ "-DDEBUG=1", "-o", "bin/windows/clang/debug/magic_d.exe" ],
+            "args": [ "${relativeFile}", "-DDEBUG=1", "-o", "bin/windows/clang/debug/${fileBasenameNoExtension}_d.exe" ],
             "group": "build",
             "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
             "problemMatcher": "$gcc"

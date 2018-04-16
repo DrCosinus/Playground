@@ -5,4 +5,4 @@ IF EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Au
     call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Auxiliary\Build\vcvars64.bat" )
 mkdir bin\windows\msvc\release 2> nul
 mkdir bin\windows\msvc\debug 2> nul
-cl magic.cpp /EHsc /std:c++17 /W4 /WX %*
+cl /EHsc /std:c++17 /W4 /WX %*
