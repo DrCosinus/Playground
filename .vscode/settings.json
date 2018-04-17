@@ -46,5 +46,18 @@
         "ratio": "cpp",
         "string": "cpp",
         "thread": "cpp"
-    }
+    },
+    "markdownlint.config": {
+        "MD013": false,
+        "MD003": false,
+        "MD009": false
+    },
+    "[markdown]": {
+        "editor.wordWrap": "on",
+        "editor.quickSuggestions": false,
+        "editor.renderWhitespace": "boundary",
+        "editor.tabSize": 2,
+    },
+    "editor.detectIndentation": false,
+    "editor.tabSize": 4
 }

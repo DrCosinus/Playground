@@ -13,12 +13,21 @@ struct Foo
     Foo(Foo&&) { cout << "move constructor" << endl; }
 };
 
+constexpr int get_size() { return 42; }
+//int tableau_statique[get_size() + 17];
+template<int I> struct Bar {};
+Bar<get_size()> bar;
+
 int main()
 {
+    #pragma region toto
+  __pragma(region toto);
   {
     auto plip = std::make_unique<Foo>();
     // output:  default constructor
   }
+  __pragma(endregion);
+  #pragma endregion
   cout << endl;
   {
     auto plop = std::make_unique<Foo>(Foo::Create());
