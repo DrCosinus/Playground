@@ -198,6 +198,7 @@ Integral foo(Integral x, Integral y)
 ### Template aliases
 
 ### Thread-local storage
+
 C++11 introduit le mot-clef `thread_local` pour déclarer qu'une variable doit être stockée dans un zone mémoire appartenant au thread qui utilise la variable. Chaque thread embarque ainsi sa propre copie d'une telle variable.
 
 ### Unrestricted unions
@@ -272,80 +273,160 @@ Il est également possible d'utiliser d'autres attributs dans l'initialisation, 
 
 #### Wrapper de référence
 
-C++14:
-- Tweaked wording for contextual conversions
-- Binary literals
-- decltype(auto), Return type deduction for normal functions
-- Initialized/Generalized lambda captures (init-capture)
-- Generic (polymorphic) lambda expressions
-- Variable templates
-- Extended constexpr
-- Member initializers and aggregates (NSDMI)
-- Clarifying memory allocation (avoiding/fusing allocations)
-- Deprecated attribute
-- Sized deallocation
-- Single quote as digit separator
-- std::result_of and SFINAE
-- constexpr for <complex>
-- constexpr for <chrono>
-- constexpr for <array>
-- constexpr for <initializer_list>, <utility> and <tuple>
-- Improved std::integral_constant
-- User-defined literals for <chrono> and <string>
-- Null forward iterators
-- std::quoted
-- Heterogeneous associative lookup
-- std::integer_sequence
-- std::shared_timed_mutex	
-- std::exchange
-- fixing constexpr member functions without const
-- std::get<T>()
-- Dual-Range std::equal, std::is_permutation, std::mismatch
+#### std::begin, std::end
 
-C++17:
-- New auto rules for direct-list-initialization
-- static_assert with no message
-- typename in a template template parameter
-- Removing trigraphs
-- Nested namespace definition
-- Attributes for namespaces and enumerators
-- u8 character literals
-- Allow constant evaluation for all non-type template arguments
-- Fold Expressions
-- Remove Deprecated Use of the register Keyword
-- Remove Deprecated operator++(bool)
-- Removing Deprecated Exception Specifications from C++17
-- Make exception specifications part of the type system
-- Aggregate initialization of classes with base classes
-- Lambda capture of *this
-- Using attribute namespaces without repetition
-- Dynamic memory allocation for over-aligned data
-- Unary fold expressions and empty parameter packs
-- __has_include in preprocessor conditionals
-- Template argument deduction for class templates
-- Non-type template parameters with auto type
-- Guaranteed copy elision
-- New specification for inheriting constructors
-- Direct-list-initialization of enumerations
-- Stricter expression evaluation order
-- constexpr lambda expressions
-- Differing begin and end types in range-based for
-- [[fallthrough]] attribute
-- [[nodiscard]] attribute
-- Pack expansions in using-declarations
-- [[maybe_unused]] attribute
-- Structured Bindings
-- Hexadecimal floating-point literals
-- Ignore unknown attributes
-- constexpr if statements
-- init-statements for if and switch
-- Inline variables
-- DR: Matching of template template-arguments excludes compatible templates
-- /*No*/ Standardization of Parallelism TS
-- std::uncaught_exceptions()
-- /*No*/ Splicing Maps and Sets
-- Improving std::pair and std::tuple
-- std::shared_mutex (untimed)
-- /*No*/ Elementary string conversions
-- std::string_view
-/*No*/ std::filesystem
+---
+
+## C++14
+
+### Tweaked wording for contextual conversions
+
+### Binary literals
+
+### decltype(auto), Return type deduction for normal functions
+
+### Initialized/Generalized lambda captures (init-capture)
+
+### Generic (polymorphic) lambda expressions
+
+### Variable templates
+
+### Extended constexpr
+
+### Member initializers and aggregates (NSDMI)
+
+### Clarifying memory allocation (avoiding/fusing allocations)
+
+### Deprecated attribute
+
+### Sized deallocation
+
+### Single quote as digit separator
+
+### std::result_of and SFINAE
+
+### constexpr for `<complex>`
+
+### constexpr for `<chrono>`
+
+### constexpr for `<array>`
+
+### constexpr for `<initializer_list>`, `<utility>` and `<tuple>`
+
+### Improved std::integral_constant
+
+### User-defined literals for `<chrono>` and `<string>`
+
+### Null forward iterators
+
+### std::quoted
+
+### Heterogeneous associative lookup
+
+### std::integer_sequence
+
+### std::shared_timed_mutex
+
+### std::exchange
+
+### fixing constexpr member functions without const
+
+### std::get\<T>()
+
+### Dual-Range std::equal, std::is_permutation, std::mismatch
+
+---
+
+## C++17
+
+### New auto rules for direct-list-initialization
+
+### static_assert with no message
+
+### typename in a template template parameter
+
+### Removing trigraphs
+
+### Nested namespace definition
+
+### Attributes for namespaces and enumerators
+
+### u8 character literals
+
+### Allow constant evaluation for all non-type template arguments
+
+### Fold Expressions
+
+### Remove Deprecated Use of the register Keyword
+
+### Remove Deprecated operator++(bool)
+
+### Removing Deprecated Exception Specifications from C++17
+
+### Make exception specifications part of the type system
+
+### Aggregate initialization of classes with base classes
+
+### Lambda capture of *this
+
+### Using attribute namespaces without repetition
+
+### Dynamic memory allocation for over-aligned data
+
+### Unary fold expressions and empty parameter packs
+
+### __has_include in preprocessor conditionals
+
+### Template argument deduction for class templates
+
+### Non-type template parameters with auto type
+
+### Guaranteed copy elision
+
+### New specification for inheriting constructors
+
+### Direct-list-initialization of enumerations
+
+### Stricter expression evaluation order
+
+### constexpr lambda expressions
+
+### Differing begin and end types in range-based for
+
+### [[fallthrough]] attribute
+
+### [[nodiscard]] attribute
+
+### Pack expansions in using-declarations
+
+### [[maybe_unused]] attribute
+
+### Structured Bindings
+
+### Hexadecimal floating-point literals
+
+### Ignore unknown attributes
+
+### constexpr if statements
+
+### init-statements for if and switch
+
+### Inline variables
+
+### DR: Matching of template template-arguments excludes compatible templates
+
+### /*No*/ Standardization of Parallelism TS
+
+### std::uncaught_exceptions()
+
+### /*No*/ Splicing Maps and Sets
+
+### Improving std::pair and std::tuple
+
+### std::shared_mutex (untimed)
+
+### /*No*/ Elementary string conversions
+
+### std::string_view
+
+### /*No*/ std::filesystem
