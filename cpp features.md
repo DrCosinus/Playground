@@ -1,5 +1,7 @@
 # C++ Features
 
+La gsl
+
 ## C++11
 
 ### alignas & alignof
@@ -12,7 +14,21 @@ Le C++11 permet d'interroger et de controller l'alignement des variables grace a
 
 ### atomic operations
 
+> **Utilisation Actuelle** : Peu Utilisé  
+> **Directive Actuelle** : Quasiment jamais conseillé en revue  
+> **Future Directive** : A utiliser dès que nécessaire
+
+Le C++11 introduit la bibliothèque des opérations atomiques nécéssaire à un programmation concurrentielle sans verrou. Chaque opération atomiques est insécable au regard de toute autre opération atomique impliquant le même objet. Les objets atomiques sont exempts de "data races".
+
+Les opérations atomiques sont définies dans le fichier d'entêtes `<atomic>`.
+
 ### auto
+
+> **Utilisation Actuelle** : Très Utilisé  
+> **Directive Actuelle** : Conseillé en revue  
+> **Future Directive** : A utiliser dès que possible
+
+Le C++11 introduit l'inférence de type avec l'introduction du mot-clef `auto`.
 
 ### C99 preprocessor
 
@@ -159,6 +175,12 @@ int main()
 
 ### nullptr
 
+> **Utilisation Actuelle** : Très utilisé  
+> **Directive Actuelle** : Toujours conseillé en revue  
+> **Future Directive** : A utiliser dès que nécessaire
+
+Le C++11 introduit un nouveau mot-clef permettant de distinguer la constante du pointeur _null_ : `nullptr`. Elle est de type `nullptr_t`, qui est implicitement convertible et comparable à n'importequel type de pointeur ou type pointeur-sur-membre. Elle n'est pas implicitement convertible ou comparable aux types integraux, sauf au type `bool`.
+
 ### Unicode string literals
 
 ### Raw string literals
@@ -195,7 +217,40 @@ Integral foo(Integral x, Integral y)
 
 ### Strongly-typed enum
 
+> **Utilisation Actuelle** : Utilisé, c'est la norme si il n'y a pas de besoin de sérialisation  
+> **Directive Actuelle** : Souvent conseillé en revue  
+> **Future Directive** : A utiliser dès que possible
+
+C++11 permet:
+
+- un typage fort des énumerations
+  - impossibilité d'utiliser une énumération à la place d'une autre
+  - impossibilité de comparer deux valeurs d'énumérations différentes,
+  - l'absence de convertion implicite en entier.
+- l'absence de risque de collision de noms grace à la nécessité d'utiliser l'opérateur de résolution de portée pour accéder aux valeurs de l'enumération.
+- le choix du type sous-jacent à l'énumération (int par défaut) même pour les énumerations **faiblement typées**
+
+En C++11, l'utilisation de l'opérateur de résolution de portée pour les énumerations **faiblement typées** est permis (mais optionnel).
+
 ### Template aliases
+
+> **Utilisation Actuelle** : Utilisé, c'est la norme. `typedef` **est déprécié**.  
+> **Directive Actuelle** : Souvent conseillé en revue  
+> **Future Directive** : A utiliser dès que possible
+
+C++11 ajoute la possibilité de définir un synonyme templaté d'un autre type templaté. Les paramètres template du synonyme peuvent être différents du type d'origine. La syntaxe est généralisée au type non templaté et elle remplace le mot-clef `typedef` car elle est plus "naturelle".
+
+```cpp
+template <typename First, typename Second, int Third>
+class SomeType;
+
+template <typename Second>
+using TypedefName = SomeType<OtherType, Second, 5>;
+
+typedef void (*OldStyleFunctionType)(double); 
+
+using NewStyleFunctionType = void (*)(double);
+```
 
 ### Thread-local storage
 
@@ -203,9 +258,39 @@ C++11 introduit le mot-clef `thread_local` pour déclarer qu'une variable doit �
 
 ### Unrestricted unions
 
+> **Utilisation Actuelle** : Non  
+> **Directive Actuelle** : Aucune  
+> **Future Directive** : ?
+
+Le C++11 supprime les restrictions sur les types pouvant être membre d'une union. Par exemple, les unions peuvent maintenant contenir des objets qui ont un constructeur ou un destructeur non trivial mais c'est à l'utilisateur de définir manuellement les fonctions membres spéciales correspondantes pour l'union.
+
+```cpp
+#include <new> // Needed for placement 'new'.
+
+struct Point
+{
+    Point() {}
+    Point(int _x, int _y): x_(_x), y_(_y) {}
+    int x_, y_;
+};
+
+union U
+{
+    int z;
+    double w;
+    Point p;
+
+    U() {} // Due to the Point member, a constructor definition is needed.
+    U(const Point& pt) : p(pt) {} // Construct Point object using initializer list.
+    U& operator=(const Point& pt) { new(&p) Point(pt); return *this; } // Assign Point object using placement 'new'.
+};
+```
+
 ### Type traits
 
 ### Variadic templates
+
+En C++11, les templates peuvent prendre un nombre variable de paramètres template. This also allows the definition of type-safe variadic functions.
 
 ### Range-for loop
 
