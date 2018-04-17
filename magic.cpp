@@ -1,28 +1,33 @@
 #include <iostream>
+#include <memory>
 
-struct PasDEntier
-{
-    PasDEntier(double) {}
-    PasDEntier(int) = delete;
-};
+using namespace std;
 
-struct SeumentDesDoubles
+struct Foo
 {
-    SeumentDesDoubles(double) {}
-    template<typename T>
-    SeumentDesDoubles(T) = delete;
+    static Foo Create() { return {}; }
+    static unique_ptr<Foo> CreatePtr() { return make_unique<Foo>(); }
+
+    Foo() { cout << "default constructor" << endl; }
+    Foo(const Foo&) { cout << "copy constructor" << endl; }
+    Foo(Foo&&) { cout << "move constructor" << endl; }
 };
 
 int main()
 {
-    {
-        //PasDEntier p = 5; // error: conversion function from 'int' to 'PasDEntier' invokes a deleted function
-        [[maybe_unused]]PasDEntier q = 5.3;
-        [[maybe_unused]]PasDEntier r = 1.9f;
-    }
-    {
-        //SeumentDesDoubles p = 5; // error: conversion function from 'int' to 'PasDEntier' invokes a deleted function
-        [[maybe_unused]]SeumentDesDoubles q = 5.3;
-        //SeumentDesDoubles r = 1.9f; // error: conversion function from 'float' to 'SeumentDesDoubles' invokes a deleted function
-    }
+  {
+    auto plip = std::make_unique<Foo>();
+    // output:  default constructor
+  }
+  cout << endl;
+  {
+    auto plop = std::make_unique<Foo>(Foo::Create());
+    // output:  default constructor
+    //          move constructor
+  }
+  cout << endl;
+  {
+    auto plup = Foo::CreatePtr();
+    // output:  default constructor
+  }
 }
