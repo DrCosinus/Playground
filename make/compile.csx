@@ -1,156 +1,166 @@
-// C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\Roslyn cssscrpt.csx
-
 // -clang -msvc
 // -debug -ndebug
 // -output <output_filepath>
 // -force
 // -warnings_are_errors
 
-enum Compiler { Clang6_0, MSVC19 };
-enum WarningLevel { None, Low, MediumLow, MediumHigh, High, Max }
-enum LanguageVersion { Cpp11, Cpp14, Cpp17, Cpp20 }
-enum DebugLevel { Debug, NonDebug }
+enum ECompiler { Clang6_0, MSVC19 };
+enum EWarningLevel { None, Low, MediumLow, MediumHigh, High, Max }
+enum ECppVersion { Cpp11, Cpp14, Cpp17, Cpp20 }
+enum EDebugLevel { Debug, NonDebug }
 
-interface ICompilo
+interface ICompiler
 {
-    void SetupEnvironment();
+    void SetupEnvironmentVariables();
     string ExecutableName { get; }
-    string ExtraFlags { get; }
-    string LanguageFlag(LanguageVersion _language_version);
-    string OutputFileFlag(string _output_path);
-    string WarningLevelFlag(WarningLevel _warning_level);
-    string DebugFlags(DebugLevel _optimization);
-    string DefineFlag(string _name, object _value);
-    string WarningAreErrorsFlag { get; }
+    string ExtraOptionsString { get; }
+    string GetCppVersionString(ECppVersion _language_version);
+    string GetOutputFileString(string _output_path);
+    string GetWarningLevelString(EWarningLevel _warning_level);
+    string GetOptimizationString(EDebugLevel _optimization);
+    string GetDefineString(string _name, object _value);
+    string WarningAsErrorsString { get; }
 }
 
-abstract class Compilo : ICompilo
+abstract class Compiler : ICompiler
 {
-    public abstract void SetupEnvironment();
+    public abstract void SetupEnvironmentVariables();
     public abstract string ExecutableName { get; }
-    public abstract string ExtraFlags { get; }
-    public abstract string LanguageFlag(LanguageVersion _language_version);
-    public abstract string OutputFileFlag(string _output_path);
-    public abstract string WarningLevelFlag(WarningLevel _warning_level);
-    public virtual string DebugFlags(DebugLevel _optimization)
+    public abstract string ExtraOptionsString { get; }
+    public abstract string GetCppVersionString(ECppVersion _language_version);
+    public abstract string GetOutputFileString(string _output_path);
+    public abstract string GetWarningLevelString(EWarningLevel _warning_level);
+    public virtual string GetOptimizationString(EDebugLevel _optimization)
     {
-        if (_optimization==DebugLevel.Debug)
-            return DefineFlag("DEBUG",1);
+        if (_optimization==EDebugLevel.Debug)
+            return GetDefineString("DEBUG",1);
         else
-            return string.Join(" ", DefineFlag("DEBUG",0), DefineFlag("NDEBUG",null));
+            return string.Join(" ", GetDefineString("DEBUG",0), GetDefineString("NDEBUG",null));
     }
-    public abstract string DefineFlag(string _name, object _value);
-    public abstract string WarningAreErrorsFlag { get; }
+    public abstract string GetDefineString(string _name, object _value);
+    public abstract string WarningAsErrorsString { get; }
 }
 
-class MSVC : Compilo
+class MSVC : Compiler
 {
-    public override void SetupEnvironment()
+    private static string MSVCPath => @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.13.26128"; // should be deduced
+    private static string WindowsKitPath => @"C:\Program Files (x86)\Windows Kits"; // should be deduced
+    private static string Windows10KitPath(string _group) => $@"{WindowsKitPath}\10\{_group}\10.0.16299.0"; // should be deduced
+    private static string DotNetFrameworkPath => $@"{WindowsKitPath}\NETFXSDK\4.6.1"; // should be deduced
+
+    public override void SetupEnvironmentVariables()
     {
         Environment.SetEnvironmentVariable( "PATH",
-            $@"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.13.26128\bin\HostX64\x64;{Environment.GetEnvironmentVariable("PATH")}");
+            $@"{MSVCPath}\bin\HostX64\x64;{Environment.GetEnvironmentVariable("PATH")}");
         Environment.SetEnvironmentVariable( "INCLUDE", string.Join(";"
-            //, @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.13.26128\ATLMFC\include"
-            , @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.13.26128\include"
-            //, @"C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\include\um"
-            , @"C:\Program Files (x86)\Windows Kits\10\include\10.0.16299.0\ucrt"
-            //, @"C:\Program Files (x86)\Windows Kits\10\include\10.0.16299.0\shared"
-            //, @"C:\Program Files (x86)\Windows Kits\10\include\10.0.16299.0\um"
-            //, @"C:\Program Files (x86)\Windows Kits\10\include\10.0.16299.0\winrt"
-            //, @"C:\Program Files (x86)\Windows Kits\10\include\10.0.16299.0\cppwinrt"
+            //, $@"{MSVCPath}\ATLMFC\include"
+            , $@"{MSVCPath}\include"
+            //, $@"{DotNetFrameworkPath}\include\um"
+            , $@"{Windows10KitPath("include")}\ucrt"
+            //, $@"{Windows10KitPath}\shared"
+            //, $@"{Windows10KitPath}\um"
+            //, $@"{Windows10KitPath}\winrt"
+            //, $@"{Windows10KitPath}\cppwinrt"
             ));
         Environment.SetEnvironmentVariable( "LIB", string.Join(";"
-            //, @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.13.26128\ATLMFC\lib\x64"
-            , @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.13.26128\lib\x64"
-            //, @"C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\lib\um\x64"
-            , @"C:\Program Files (x86)\Windows Kits\10\lib\10.0.16299.0\ucrt\x64"
-            , @"C:\Program Files (x86)\Windows Kits\10\lib\10.0.16299.0\um\x64"
+            //, $@"{MSVCPath}\ATLMFC\lib\x64"
+            , $@"{MSVCPath}\lib\x64"
+            //, $@"{DotNetFrameworkPath}\lib\um\x64"
+            , $@"{Windows10KitPath("lib")}\ucrt\x64"
+            , $@"{Windows10KitPath("lib")}\um\x64"
             ));
-     //LIBPATH=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.13.26128\ATLMFC\lib\x64;C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.13.26128\lib\x64;C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.13.26128\lib\x86\store\references;C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.16299.0;C:\Program Files (x86)\Windows Kits\10\References\10.0.16299.0;C:\Windows\Microsoft.NET\Framework64\v4.0.30319;
+        // Environment.SetEnvironmentVariable( "LIBPATH", string.Join(";"
+        //     , $@"{MSVCPath}\ATLMFC\lib\x64"
+        //     , $@"{MSVCPath}\lib\x64"
+        //     , $@"{MSVCPath}\lib\x86\store\references"
+        //     , $@"{Windows10KitPath("UnionMetadata")}"
+        //     , $@"{Windows10KitPath("References")}"
+        //     , @"C:\Windows\Microsoft.NET\Framework64\v4.0.30319"
+        //     ));
     }
     public override string ExecutableName => "cl";
-    public override string ExtraFlags => "/EHsc";
-    public override string LanguageFlag(LanguageVersion _language_version)
+    public override string ExtraOptionsString => "/EHsc";
+    public override string GetCppVersionString(ECppVersion _language_version)
     {
         switch (_language_version)
         {
-            case LanguageVersion.Cpp11: return "/std:c++11";
-            case LanguageVersion.Cpp14: return "/std:c++14";
-            case LanguageVersion.Cpp17: return "/std:c++17";
-            case LanguageVersion.Cpp20: return "/std:c++latest";
-            default: goto case LanguageVersion.Cpp17;
+            case ECppVersion.Cpp11: return "/std:c++11";
+            case ECppVersion.Cpp14: return "/std:c++14";
+            case ECppVersion.Cpp17: return "/std:c++17";
+            case ECppVersion.Cpp20: return "/std:c++latest";
+            default: goto case ECppVersion.Cpp17;
         }
     }
-    public override string OutputFileFlag(string _output_path) => $"/Fe{_output_path}";
-    public override string WarningLevelFlag(WarningLevel _warning_level)
+    public override string GetOutputFileString(string _output_path) => $"/Fe{_output_path}";
+    public override string GetWarningLevelString(EWarningLevel _warning_level)
     {
         switch(_warning_level)
         {
-            case WarningLevel.None: return "/W0";
-            case WarningLevel.Low: return "/W1";
-            case WarningLevel.MediumLow: return "/W2";
-            case WarningLevel.MediumHigh: return "/W3";
-            case WarningLevel.High: return "/W4";
-            case WarningLevel.Max: return "/Wall";
-            default: goto case WarningLevel.Low;
+            case EWarningLevel.None: return "/W0";
+            case EWarningLevel.Low: return "/W1";
+            case EWarningLevel.MediumLow: return "/W2";
+            case EWarningLevel.MediumHigh: return "/W3";
+            case EWarningLevel.High: return "/W4";
+            case EWarningLevel.Max: return "/Wall";
+            default: goto case EWarningLevel.Low;
         }
     }
-    public override string DebugFlags(DebugLevel _optimization)
+    public override string GetOptimizationString(EDebugLevel _optimization)
     {
-        if (_optimization==DebugLevel.Debug)
-            return string.Join(" ", base.DebugFlags(_optimization), "/Zi", "/Od");
+        if (_optimization==EDebugLevel.Debug)
+            return string.Join(" ", base.GetOptimizationString(_optimization), "/Zi", "/Od");
         else
-            return string.Join(" ", base.DebugFlags(_optimization), "/Ox");
+            return string.Join(" ", base.GetOptimizationString(_optimization), "/Ox");
     }
-    public override string DefineFlag(string _name, object _value) => $"/D{_name}={_value}";
-    public override string WarningAreErrorsFlag => "/WX";
+    public override string GetDefineString(string _name, object _value) => $"/D{_name}={_value}";
+    public override string WarningAsErrorsString => "/WX";
 }
 
-class Clang6_0 : Compilo
+class Clang6_0 : Compiler
 {
-    public override void SetupEnvironment() {}
+    public override void SetupEnvironmentVariables() {}
     public override string ExecutableName => "clang";
-    public override string ExtraFlags => "-Xclang -flto-visibility-public-std";
-    public override string LanguageFlag(LanguageVersion _language_version)
+    public override string ExtraOptionsString => "-Xclang -flto-visibility-public-std";
+    public override string GetCppVersionString(ECppVersion _language_version)
     {
         switch (_language_version)
         {
-            case LanguageVersion.Cpp11: return "-std=c++11";
-            case LanguageVersion.Cpp14: return "-std=c++14";
-            case LanguageVersion.Cpp17: return "-std=c++17";
-            case LanguageVersion.Cpp20: return "-std=c++2a";
-            default: goto case LanguageVersion.Cpp17;
+            case ECppVersion.Cpp11: return "-std=c++11";
+            case ECppVersion.Cpp14: return "-std=c++14";
+            case ECppVersion.Cpp17: return "-std=c++17";
+            case ECppVersion.Cpp20: return "-std=c++2a";
+            default: goto case ECppVersion.Cpp17;
         }
     }
-    public override string OutputFileFlag(string _output_path) => $"-o {_output_path}";
-    public override string WarningLevelFlag(WarningLevel _warning_level)
+    public override string GetOutputFileString(string _output_path) => $"-o {_output_path}";
+    public override string GetWarningLevelString(EWarningLevel _warning_level)
     {
         switch(_warning_level)
         {
-            case WarningLevel.None: return "";
-            case WarningLevel.Low: return "-Wall";
-            case WarningLevel.MediumLow: return "-Wall -pedantic";
-            case WarningLevel.MediumHigh: return "-Wall -pedantic";
-            case WarningLevel.High: return "-Wall -pedantic -Wextra";
-            case WarningLevel.Max: return "-Wall -pedantic -Wextra";
-            default: goto case WarningLevel.Low;
+            case EWarningLevel.None: return "";
+            case EWarningLevel.Low: return "-Wall";
+            case EWarningLevel.MediumLow: return "-Wall -pedantic";
+            case EWarningLevel.MediumHigh: return "-Wall -pedantic";
+            case EWarningLevel.High: return "-Wall -pedantic -Wextra";
+            case EWarningLevel.Max: return "-Wall -pedantic -Wextra";
+            default: goto case EWarningLevel.Low;
         }
     }
-    public override string DebugFlags(DebugLevel _optimization)
+    public override string GetOptimizationString(EDebugLevel _optimization)
     {
-        if (_optimization==DebugLevel.Debug)
-            return string.Join(" ", base.DebugFlags(_optimization), "-O0");
+        if (_optimization==EDebugLevel.Debug)
+            return string.Join(" ", base.GetOptimizationString(_optimization), "-O0");
         else
-            return string.Join(" ", base.DebugFlags(_optimization), "-O3");
+            return string.Join(" ", base.GetOptimizationString(_optimization), "-O3");
     }
-    public override string DefineFlag(string _name, object _value) => $"-D{_name}={_value}";
-    public override string WarningAreErrorsFlag => "-Werror";
+    public override string GetDefineString(string _name, object _value) => $"-D{_name}={_value}";
+    public override string WarningAsErrorsString => "-Werror";
 }
 
 class Arguments
 {
-    public Compiler? Compiler;
-    public DebugLevel? DebugLevel;
+    public ECompiler? Compiler;
+    public EDebugLevel? DebugLevel;
     public string OutputFilename;
     public List<string> SourceFilenames = new List<string>();
     public bool ForceCompilation = false;
@@ -177,7 +187,7 @@ class Arguments
                 }
                 else
                 {
-                    arguments.Compiler = Compiler.Clang6_0;
+                    arguments.Compiler = ECompiler.Clang6_0;
                 }
                 break;
                 case "msvc":
@@ -188,7 +198,7 @@ class Arguments
                 }
                 else
                 {
-                    arguments.Compiler = Compiler.MSVC19;
+                    arguments.Compiler = ECompiler.MSVC19;
                 }
                 break;
                 case "debug":
@@ -199,7 +209,7 @@ class Arguments
                 }
                 else
                 {
-                    arguments.DebugLevel = DebugLevel.Debug;
+                    arguments.DebugLevel = EDebugLevel.Debug;
                 }
                 break;
                 case "ndebug":
@@ -210,7 +220,7 @@ class Arguments
                 }
                 else
                 {
-                    arguments.DebugLevel = DebugLevel.NonDebug;
+                    arguments.DebugLevel = EDebugLevel.NonDebug;
                 }
                 break;
                 case "output":
@@ -311,10 +321,10 @@ void Main()
 
     new FileInfo(args.OutputFilename).Directory.Create();
 
-    ICompilo compilo;
+    ICompiler compilo;
     switch (args.Compiler)
     {
-        case Compiler.Clang6_0:
+        case ECompiler.Clang6_0:
             compilo = new Clang6_0();
             break;
         default:
@@ -324,20 +334,19 @@ void Main()
 
     var arguments = string.Join(" ",
         string.Join(" ", args.SourceFilenames),
-        compilo.OutputFileFlag(args.OutputFilename),
-        compilo.WarningLevelFlag(WarningLevel.High),
-        compilo.ExtraFlags,
-        compilo.LanguageFlag(LanguageVersion.Cpp17),
-        compilo.DebugFlags(args.DebugLevel.HasValue&&args.DebugLevel == DebugLevel.Debug ? DebugLevel.Debug : DebugLevel.NonDebug)
+        compilo.GetOutputFileString(args.OutputFilename),
+        compilo.GetWarningLevelString(EWarningLevel.High),
+        compilo.ExtraOptionsString,
+        compilo.GetCppVersionString(ECppVersion.Cpp17),
+        compilo.GetOptimizationString(args.DebugLevel.HasValue&&args.DebugLevel == EDebugLevel.Debug ? EDebugLevel.Debug : EDebugLevel.NonDebug)
         );
     if (args.WarningsAreErrors)
-        arguments += " " + compilo.WarningAreErrorsFlag;
+        arguments += " " + compilo.WarningAsErrorsString;
 
     Console.WriteLine(arguments);
 
-    compilo.SetupEnvironment();
+    compilo.SetupEnvironmentVariables();
 
-    ProcessStartInfo psi = new ProcessStartInfo();
     var process = new Process();
     process.StartInfo.FileName = compilo.ExecutableName;
     process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
