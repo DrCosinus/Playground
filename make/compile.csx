@@ -46,6 +46,7 @@ abstract class Compiler : ICompiler
 
     protected virtual void PrepareRun()
     {
+        new FileInfo(OutputFilepath).Directory.Create();
     }
     public int Run()
     {
@@ -113,6 +114,7 @@ class MSVC : Compiler
     }
     protected override void PrepareRun()
     {
+        base.PrepareRun();
         if (!string.IsNullOrEmpty(IntermediaryFileFolderName))
         {
             new DirectoryInfo(IntermediaryFileFolderName).Create();
@@ -233,11 +235,24 @@ class Clang6_0 : Compiler
     }
 }
 
+public struct WriteCounter<T>
+{
+    public bool HasValue { get => writing_count_>0; }
+    public bool WasCrashed  { get => writing_count_>1; }
+    public T Value { get => value_; set{ SetValue(value); } }
+    public uint WritingCount => writing_count_;
+    private uint writing_count_;
+    private T value_;
+
+    public T GetValueOrDefault(T _default_value) => HasValue?Value:_default_value;
+    private void SetValue(T _value) { value_ = _value; writing_count_++; }
+}
+
 class Arguments
 {
-    public ECompiler? Compiler;
-    public EDebugLevel? DebugLevel;
-    public string OutputFilename;
+    public WriteCounter<ECompiler> Compiler;
+    public WriteCounter<EDebugLevel> DebugLevel;
+    public WriteCounter<string> OutputFilename;
     public List<string> SourceFilenames = new List<string>();
     public bool ForceCompilation = false;
     public bool WarningsAreErrors = false;
@@ -250,6 +265,7 @@ bool IsFlag(string arg)
 (bool no_error, Arguments arguments) ParseArguments()
 {
     bool error = false;
+    Action<string> ErrorHandler = (message) => { Console.WriteLine(message); error=true; };
     Arguments arguments = new Arguments();
     var arg_count = Args.Count;
     for(var arg_index=0; arg_index < arg_count; ++arg_index)
@@ -259,80 +275,20 @@ bool IsFlag(string arg)
             string option = Args[arg_index].Substring(1);
             switch(option)
             {
-                case "clang":
-                if (arguments.Compiler.HasValue)
-                {
-                    Console.WriteLine("Compiler already set!");
-                    error = true;
-                }
-                else
-                {
-                    arguments.Compiler = ECompiler.Clang6_0;
-                }
-                break;
-                case "msvc":
-                if (arguments.Compiler.HasValue)
-                {
-                    Console.WriteLine("Compiler already set!");
-                    error = true;
-                }
-                else
-                {
-                    arguments.Compiler = ECompiler.MSVC19;
-                }
-                break;
-                case "debug":
-                if (arguments.DebugLevel.HasValue)
-                {
-                    Console.WriteLine("Debug level already set!");
-                    error = true;
-                }
-                else
-                {
-                    arguments.DebugLevel = EDebugLevel.Debug;
-                }
-                break;
-                case "ndebug":
-                if (arguments.DebugLevel.HasValue)
-                {
-                    Console.WriteLine("Debug level already set!");
-                    error = true;
-                }
-                else
-                {
-                    arguments.DebugLevel = EDebugLevel.NonDebug;
-                }
-                break;
+                case "clang":   arguments.Compiler.Value = ECompiler.Clang6_0;          break;
+                case "msvc":    arguments.Compiler.Value = ECompiler.MSVC19;            break;
+                case "debug":   arguments.DebugLevel.Value = EDebugLevel.Debug;         break;
+                case "ndebug":  arguments.DebugLevel.Value = EDebugLevel.NonDebug;      break;
+                case "force":   arguments.ForceCompilation = true;                      break;
+                case "warnings_are_errors":  arguments.WarningsAreErrors = true;        break;
                 case "output":
-                if (!string.IsNullOrEmpty(arguments.OutputFilename))
-                {
-                    Console.WriteLine("Output filename already set!");
-                    error = true;
-                }
-                else
-                {
                     ++arg_index;
                     if (arg_index>=arg_count || IsFlag(Args[arg_index]))
-                    {
-                        Console.WriteLine("Output filename not specified in output filename option!");
-                        error = true;
-                    }
+                        ErrorHandler("Output filename not specified in output filename option!");
                     else
-                    {
-                        arguments.OutputFilename = Args[arg_index];
-                    }
-                }
-                break;
-                case "force":
-                    arguments.ForceCompilation = true;
+                        arguments.OutputFilename.Value = Args[arg_index];
                     break;
-                case "warnings_are_errors":
-                    arguments.WarningsAreErrors = true;
-                    break;
-                default:
-                    Console.WriteLine($"Unknown option \"{Args[arg_index]}\"!");
-                    error = true;
-                    break;
+                default:        ErrorHandler($"Unknown option \"{Args[arg_index]}\"!"); break;
             }
         }
         else
@@ -340,6 +296,9 @@ bool IsFlag(string arg)
             arguments.SourceFilenames.Add(Args[arg_index]);
         }
     }
+    if (arguments.Compiler.WasCrashed)          ErrorHandler("Compiler defined multiple times!");
+    if (arguments.DebugLevel.WasCrashed)        ErrorHandler("Debug level defined multiple times!");
+    if (arguments.OutputFilename.WasCrashed)    ErrorHandler("Output filepath defined multiple times!");
     return (!error, arguments);
 }
 
@@ -347,7 +306,7 @@ bool AreArgumentValids(Arguments arguments)
 {
     bool error = false;
     if (!arguments.Compiler.HasValue) { error = true; Console.WriteLine("No compiler specified! Please use -clang or -msvc"); }
-    if (string.IsNullOrEmpty(arguments.OutputFilename)) { error = true; Console.WriteLine("No output filename specified! Please use -output <filepath>"); }
+    if (!arguments.OutputFilename.HasValue) { error = true; Console.WriteLine("No output filename specified! Please use -output <filepath>"); }
     if (arguments.SourceFilenames.Count==0) { error = true; Console.WriteLine("No source filename specified! You must specify at least one source filename."); }
     return !error;
 }
@@ -387,7 +346,7 @@ int Main()
 
     if (!args.ForceCompilation)
     {
-        var outputFileInfo = new FileInfo(args.OutputFilename);
+        var outputFileInfo = new FileInfo(args.OutputFilename.Value);
         if (outputFileInfo.Exists)
         {
             //Console.WriteLine("Output file time: {0}", outputFileInfo.LastWriteTime);
@@ -399,15 +358,13 @@ int Main()
         }
     }
 
-    new FileInfo(args.OutputFilename).Directory.Create();
-
     var compilo = Compiler.Create(args.Compiler.GetValueOrDefault(ECompiler.Clang6_0));
 
     compilo.IntermediaryFileFolderName = "obj";
     compilo.CppVersion = ECppVersion.Cpp17;
     compilo.WarningLevel = EWarningLevel.High;
-    compilo.DebugLevel = args.DebugLevel;
-    compilo.OutputFilepath = args.OutputFilename;
+    compilo.DebugLevel = args.DebugLevel.Value;
+    compilo.OutputFilepath = args.OutputFilename.Value;
     compilo.WarningAsErrors = args.WarningsAreErrors;
     compilo.SourceFilePaths = args.SourceFilenames;
     var exitCode = compilo.Run();
