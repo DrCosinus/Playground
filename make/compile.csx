@@ -13,32 +13,24 @@ interface ICompiler
 {
     void SetupEnvironmentVariables();
     string ExecutableName { get; }
-    string ExtraOptionsString { get; }
-    string GetCppVersionString(ECppVersion _language_version);
-    string GetOutputFileString(string _output_path);
-    string GetWarningLevelString(EWarningLevel _warning_level);
-    string GetOptimizationString(EDebugLevel _optimization);
-    string GetDefineString(string _name, object _value);
-    string WarningAsErrorsString { get; }
+    ECppVersion? CppVersion { set; }
+    string OutputFilepath { set; }
+    EWarningLevel? WarningLevel { set; }
+    string CompilationParameters { get; }
+    EDebugLevel? DebugLevel { set; }
+    bool WarningAsErrors { set; }
 }
 
 abstract class Compiler : ICompiler
 {
     public abstract void SetupEnvironmentVariables();
     public abstract string ExecutableName { get; }
-    public abstract string ExtraOptionsString { get; }
-    public abstract string GetCppVersionString(ECppVersion _language_version);
-    public abstract string GetOutputFileString(string _output_path);
-    public abstract string GetWarningLevelString(EWarningLevel _warning_level);
-    public virtual string GetOptimizationString(EDebugLevel _optimization)
-    {
-        if (_optimization==EDebugLevel.Debug)
-            return GetDefineString("DEBUG",1);
-        else
-            return string.Join(" ", GetDefineString("DEBUG",0), GetDefineString("NDEBUG",null));
-    }
-    public abstract string GetDefineString(string _name, object _value);
-    public abstract string WarningAsErrorsString { get; }
+    public ECppVersion? CppVersion { protected get; set; }
+    public string OutputFilepath { set; protected get; }
+    public EWarningLevel? WarningLevel { set; protected get; }
+    public EDebugLevel? DebugLevel { protected get; set; }
+    public bool WarningAsErrors { set; protected get; }
+    public abstract string CompilationParameters { get; }
 }
 
 class MSVC : Compiler
@@ -80,82 +72,111 @@ class MSVC : Compiler
         new DirectoryInfo("tmp").Create();
     }
     public override string ExecutableName => "cl";
-    public override string ExtraOptionsString => "/EHsc /Fotmp/";
-    public override string GetCppVersionString(ECppVersion _language_version)
+    private string GenerateCompilationParametersString()
     {
-        switch (_language_version)
+        List<string> parameters = new List<string>();
+        if (CppVersion.HasValue)
         {
-            case ECppVersion.Cpp11: return "/std:c++11";
-            case ECppVersion.Cpp14: return "/std:c++14";
-            case ECppVersion.Cpp17: return "/std:c++17";
-            case ECppVersion.Cpp20: return "/std:c++latest";
-            default: goto case ECppVersion.Cpp17;
+            switch (CppVersion)
+            {
+                case ECppVersion.Cpp11: parameters.Add("/std:c++11"); break;
+                case ECppVersion.Cpp14: parameters.Add("/std:c++14"); break;
+                case ECppVersion.Cpp17: parameters.Add("/std:c++17"); break;
+                case ECppVersion.Cpp20: parameters.Add("/std:c++latest"); break;
+                default: goto case ECppVersion.Cpp17;
+            }
         }
-    }
-    public override string GetOutputFileString(string _output_path) => $"/Fe{_output_path}";
-    public override string GetWarningLevelString(EWarningLevel _warning_level)
-    {
-        switch(_warning_level)
+        switch(WarningLevel.GetValueOrDefault(EWarningLevel.High))
         {
-            case EWarningLevel.None: return "/W0";
-            case EWarningLevel.Low: return "/W1";
-            case EWarningLevel.MediumLow: return "/W2";
-            case EWarningLevel.MediumHigh: return "/W3";
-            case EWarningLevel.High: return "/W4";
-            case EWarningLevel.Max: return "/Wall";
+            case EWarningLevel.None: parameters.Add("/W0"); break;
+            case EWarningLevel.Low: parameters.Add("/W1"); break;
+            case EWarningLevel.MediumLow: parameters.Add("/W2"); break;
+            case EWarningLevel.MediumHigh: parameters.Add("/W3"); break;
+            case EWarningLevel.High: parameters.Add("/W4"); break;
+            case EWarningLevel.Max: parameters.Add("/Wall"); break;
             default: goto case EWarningLevel.Low;
         }
+        switch(DebugLevel.GetValueOrDefault(EDebugLevel.NonDebug))
+        {
+            case EDebugLevel.Debug:
+            parameters.Add("/DDEBUG=1");
+            parameters.Add("/Zi");
+            parameters.Add("/Od");
+            break;
+            case EDebugLevel.NonDebug:
+            parameters.Add("/DDEBUG=0");
+            parameters.Add("/DNDEBUG");
+            parameters.Add("/Ox");
+            break;
+        }
+        if(WarningAsErrors)
+        {
+            parameters.Add("/WX");
+        }
+        parameters.Add($"/Fe{OutputFilepath}");
+        parameters.Add("/EHsc");
+        parameters.Add("/Fotmp/");
+        return string.Join(" ", parameters);
     }
-    public override string GetOptimizationString(EDebugLevel _optimization)
+    public override string CompilationParameters
     {
-        if (_optimization==EDebugLevel.Debug)
-            return string.Join(" ", base.GetOptimizationString(_optimization), "/Zi", "/Od");
-        else
-            return string.Join(" ", base.GetOptimizationString(_optimization), "/Ox");
+        get => GenerateCompilationParametersString();
     }
-    public override string GetDefineString(string _name, object _value) => $"/D{_name}={_value}";
-    public override string WarningAsErrorsString => "/WX";
 }
 
 class Clang6_0 : Compiler
 {
     public override void SetupEnvironmentVariables() {}
     public override string ExecutableName => "clang";
-    public override string ExtraOptionsString => "-Xclang -flto-visibility-public-std";
-    public override string GetCppVersionString(ECppVersion _language_version)
+    private string GenerateCompilationParametersString()
     {
-        switch (_language_version)
+        List<string> parameters = new List<string>();
+        if (CppVersion.HasValue)
         {
-            case ECppVersion.Cpp11: return "-std=c++11";
-            case ECppVersion.Cpp14: return "-std=c++14";
-            case ECppVersion.Cpp17: return "-std=c++17";
-            case ECppVersion.Cpp20: return "-std=c++2a";
-            default: goto case ECppVersion.Cpp17;
+            switch (CppVersion)
+            {
+                case ECppVersion.Cpp11: parameters.Add("-std=c++11"); break;
+                case ECppVersion.Cpp14: parameters.Add("-std=c++14"); break;
+                case ECppVersion.Cpp17: parameters.Add("-std=c++17"); break;
+                case ECppVersion.Cpp20: parameters.Add("-std=c++2a"); break;
+                default: goto case ECppVersion.Cpp17;
+            }
         }
-    }
-    public override string GetOutputFileString(string _output_path) => $"-o {_output_path}";
-    public override string GetWarningLevelString(EWarningLevel _warning_level)
-    {
-        switch(_warning_level)
+        switch(WarningLevel.GetValueOrDefault(EWarningLevel.High))
         {
-            case EWarningLevel.None: return "";
-            case EWarningLevel.Low: return "-Wall";
-            case EWarningLevel.MediumLow: return "-Wall -pedantic";
-            case EWarningLevel.MediumHigh: return "-Wall -pedantic";
-            case EWarningLevel.High: return "-Wall -pedantic -Wextra";
-            case EWarningLevel.Max: return "-Wall -pedantic -Wextra";
+            case EWarningLevel.None: break;
+            case EWarningLevel.Low: parameters.Add("-Wall"); break;
+            case EWarningLevel.MediumLow: parameters.Add("-Wall -pedantic"); break;
+            case EWarningLevel.MediumHigh: parameters.Add("-Wall -pedantic"); break;
+            case EWarningLevel.High: parameters.Add("-Wall -pedantic -Wextra"); break;
+            case EWarningLevel.Max: parameters.Add("-Wall -pedantic -Wextra"); break;
             default: goto case EWarningLevel.Low;
         }
+        switch(DebugLevel.GetValueOrDefault(EDebugLevel.NonDebug))
+        {
+            case EDebugLevel.Debug:
+            parameters.Add("-DDEBUG=1");
+            parameters.Add("-O0");
+            break;
+            case EDebugLevel.NonDebug:
+            parameters.Add("-DDEBUG=0");
+            parameters.Add("-DNDEBUG");
+            parameters.Add("-O3");
+            break;
+        }
+        if(WarningAsErrors)
+        {
+            parameters.Add("-Werror");
+        }
+        parameters.Add($"-o {OutputFilepath}");
+        parameters.Add("-Xclang -flto-visibility-public-std");
+        return string.Join(" ", parameters);
     }
-    public override string GetOptimizationString(EDebugLevel _optimization)
+
+    public override string CompilationParameters
     {
-        if (_optimization==EDebugLevel.Debug)
-            return string.Join(" ", base.GetOptimizationString(_optimization), "-O0");
-        else
-            return string.Join(" ", base.GetOptimizationString(_optimization), "-O3");
+        get => GenerateCompilationParametersString();
     }
-    public override string GetDefineString(string _name, object _value) => $"-D{_name}={_value}";
-    public override string WarningAsErrorsString => "-Werror";
 }
 
 class Arguments
@@ -333,16 +354,14 @@ void Main()
             break;
     }
 
+    compilo.CppVersion = ECppVersion.Cpp17;
+    compilo.WarningLevel = EWarningLevel.High;
+    compilo.OutputFilepath = args.OutputFilename;
+    compilo.WarningAsErrors = args.WarningsAreErrors;
     var arguments = string.Join(" ",
         string.Join(" ", args.SourceFilenames),
-        compilo.GetOutputFileString(args.OutputFilename),
-        compilo.GetWarningLevelString(EWarningLevel.High),
-        compilo.ExtraOptionsString,
-        compilo.GetCppVersionString(ECppVersion.Cpp17),
-        compilo.GetOptimizationString(args.DebugLevel.HasValue&&args.DebugLevel == EDebugLevel.Debug ? EDebugLevel.Debug : EDebugLevel.NonDebug)
+        compilo.CompilationParameters
         );
-    if (args.WarningsAreErrors)
-        arguments += " " + compilo.WarningAsErrorsString;
 
     Console.WriteLine(arguments);
 
