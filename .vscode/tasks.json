@@ -6,8 +6,8 @@
         {
             "label": "build release with msvc",
             "type": "shell",
-            "command": "make\\build_with_msvc.cmd",
-            "args": [ "${relativeFile}", "/DDEBUG=0", "/Febin/windows/msvc/release/${fileBasenameNoExtension}.exe" ],
+            "command": "make\\build.cmd",
+            "args": [ "-msvc", "${relativeFile}", "-ndebug", "-output", "bin/${fileBasenameNoExtension}_msvc_r.exe" ],
             "group": "build",
             "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
             "problemMatcher": "$msCompile"
@@ -15,8 +15,8 @@
         {
             "label": "build debug with msvc",
             "type": "shell",
-            "command": "make\\build_with_msvc.cmd",
-            "args": [ "${relativeFile}", "/DDEBUG=1", "/Zi", "/Febin/windows/msvc/debug/${fileBasenameNoExtension}_d.exe" ],
+            "command": "make\\build.cmd",
+            "args": [ "-msvc", "${relativeFile}", "-debug", "-output", "bin/${fileBasenameNoExtension}_msvc_d.exe" ],
             "group": "build",
             "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
             "problemMatcher": "$msCompile"
@@ -24,20 +24,20 @@
         {
             "label": "build release with clang",
             "type": "shell",
-            "command": "make\\build_with_clang.cmd",
-            "args": [ "${relativeFile}", "-DDEBUG=0", "-o", "bin/windows/clang/release/${fileBasenameNoExtension}.exe" ],
-            "group": { "kind": "build", "isDefault": true },
+            "command": "make\\build.cmd",
+            "args": [ "-clang", "${relativeFile}", "-ndebug", "-output", "bin/${fileBasenameNoExtension}_clang_r.exe" ],
+            "group": "build",
             "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
             "problemMatcher": "$gcc"
         },
         {
             "label": "build debug with clang",
             "type": "shell",
-            "command": "make\\build_with_clang.cmd",
-            "args": [ "${relativeFile}", "-DDEBUG=1", "-o", "bin/windows/clang/debug/${fileBasenameNoExtension}_d.exe" ],
+            "command": "make\\build.cmd",
+            "args": [ "-clang", "${relativeFile}", "-debug", "-output", "bin/${fileBasenameNoExtension}_clang_d.exe" ],
             "group": "build",
             "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
             "problemMatcher": "$gcc"
-        }
+        },
     ]
 }
