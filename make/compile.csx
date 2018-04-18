@@ -11,26 +11,67 @@ enum EDebugLevel { Debug, NonDebug }
 
 interface ICompiler
 {
-    void SetupEnvironmentVariables();
-    string ExecutableName { get; }
     ECppVersion? CppVersion { set; }
-    string OutputFilepath { set; }
     EWarningLevel? WarningLevel { set; }
-    string CompilationParameters { get; }
     EDebugLevel? DebugLevel { set; }
     bool WarningAsErrors { set; }
+    List<string> SourceFilePaths { set; }
+    string OutputFilepath { set; }
+    string IntermediaryFileFolderName { set; }
+
+    int Run();
 }
 
 abstract class Compiler : ICompiler
 {
-    public abstract void SetupEnvironmentVariables();
-    public abstract string ExecutableName { get; }
+    protected virtual void SetupEnvironmentVariables() {}
+    protected abstract string ExecutableName { get; }
     public ECppVersion? CppVersion { protected get; set; }
     public string OutputFilepath { set; protected get; }
     public EWarningLevel? WarningLevel { set; protected get; }
     public EDebugLevel? DebugLevel { protected get; set; }
     public bool WarningAsErrors { set; protected get; }
-    public abstract string CompilationParameters { get; }
+    protected virtual string CompilationParameters { get; }
+    public List<string> SourceFilePaths { set; protected get; }
+    public string IntermediaryFileFolderName { set; protected get; }
+
+    public static ICompiler Create(ECompiler compiler)
+    {
+        switch (compiler)
+        {
+            case ECompiler.Clang6_0: return new Clang6_0();
+            default: return new MSVC();
+        }
+    }
+
+    protected virtual void PrepareRun()
+    {
+    }
+    public int Run()
+    {
+        PrepareRun();
+        SetupEnvironmentVariables();
+
+        var arguments = CompilationParameters;
+        Console.WriteLine(arguments);
+
+        var process = new Process();
+        process.StartInfo.FileName = ExecutableName;
+        process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+        process.StartInfo.UseShellExecute = false;
+        process.StartInfo.RedirectStandardOutput = true;
+        process.StartInfo.RedirectStandardError = true;
+        process.StartInfo.Arguments = arguments;
+        process.Start();
+        string output = process.StandardOutput.ReadToEnd();
+        string errors = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+
+        Console.WriteLine(output);
+        Console.WriteLine(errors);
+
+        return process.ExitCode;
+    }
 }
 
 class MSVC : Compiler
@@ -40,7 +81,7 @@ class MSVC : Compiler
     private static string Windows10KitPath(string _group) => $@"{WindowsKitPath}\10\{_group}\10.0.16299.0"; // should be deduced
     private static string DotNetFrameworkPath => $@"{WindowsKitPath}\NETFXSDK\4.6.1"; // should be deduced
 
-    public override void SetupEnvironmentVariables()
+    protected override void SetupEnvironmentVariables()
     {
         Environment.SetEnvironmentVariable( "PATH",
             $@"{MSVCPath}\bin\HostX64\x64;{Environment.GetEnvironmentVariable("PATH")}");
@@ -69,9 +110,15 @@ class MSVC : Compiler
         //     , $@"{Windows10KitPath("References")}"
         //     , @"C:\Windows\Microsoft.NET\Framework64\v4.0.30319"
         //     ));
-        new DirectoryInfo("tmp").Create();
     }
-    public override string ExecutableName => "cl";
+    protected override void PrepareRun()
+    {
+        if (!string.IsNullOrEmpty(IntermediaryFileFolderName))
+        {
+            new DirectoryInfo(IntermediaryFileFolderName).Create();
+        }
+    }
+    protected override string ExecutableName => "cl";
     private string GenerateCompilationParametersString()
     {
         List<string> parameters = new List<string>();
@@ -113,12 +160,19 @@ class MSVC : Compiler
         {
             parameters.Add("/WX");
         }
+        parameters.AddRange(SourceFilePaths);
         parameters.Add($"/Fe{OutputFilepath}");
-        parameters.Add("/EHsc");
-        parameters.Add("/Fotmp/");
+        parameters.Add("/EHsc"); // avoid warning C4530: C++ exception handler used, but unwind semantics are not enabled. Specify /EHsc
+        parameters.Add("/permissive-"); // disable soms nonconforming code to compile
+        parameters.Add("/Za"); // disable extensions
+        parameters.Add("/nologo"); // disable copyright message
+        if (!string.IsNullOrEmpty(IntermediaryFileFolderName))
+        {
+            parameters.Add($"/Fo{IntermediaryFileFolderName}/");
+        }
         return string.Join(" ", parameters);
     }
-    public override string CompilationParameters
+    protected override string CompilationParameters
     {
         get => GenerateCompilationParametersString();
     }
@@ -126,8 +180,7 @@ class MSVC : Compiler
 
 class Clang6_0 : Compiler
 {
-    public override void SetupEnvironmentVariables() {}
-    public override string ExecutableName => "clang";
+    protected override string ExecutableName => "clang";
     private string GenerateCompilationParametersString()
     {
         List<string> parameters = new List<string>();
@@ -168,12 +221,13 @@ class Clang6_0 : Compiler
         {
             parameters.Add("-Werror");
         }
+        parameters.AddRange(SourceFilePaths);
         parameters.Add($"-o {OutputFilepath}");
         parameters.Add("-Xclang -flto-visibility-public-std");
         return string.Join(" ", parameters);
     }
 
-    public override string CompilationParameters
+    protected override string CompilationParameters
     {
         get => GenerateCompilationParametersString();
     }
@@ -189,16 +243,20 @@ class Arguments
     public bool WarningsAreErrors = false;
 }
 
+bool IsFlag(string arg)
+{
+    return arg[0]=='-' || arg[0]=='/';
+}
 (bool no_error, Arguments arguments) ParseArguments()
 {
     bool error = false;
     Arguments arguments = new Arguments();
     var arg_count = Args.Count;
-    for(var i=0; i < arg_count; ++i)
+    for(var arg_index=0; arg_index < arg_count; ++arg_index)
     {
-        if(Args[i][0]=='-')
+        if(IsFlag(Args[arg_index]))
         {
-            string option = Args[i].Substring(1);
+            string option = Args[arg_index].Substring(1);
             switch(option)
             {
                 case "clang":
@@ -253,15 +311,15 @@ class Arguments
                 }
                 else
                 {
-                    ++i;
-                    if (i>=arg_count || Args[i][0]=='-')
+                    ++arg_index;
+                    if (arg_index>=arg_count || IsFlag(Args[arg_index]))
                     {
                         Console.WriteLine("Output filename not specified in output filename option!");
                         error = true;
                     }
                     else
                     {
-                        arguments.OutputFilename = Args[i];
+                        arguments.OutputFilename = Args[arg_index];
                     }
                 }
                 break;
@@ -272,14 +330,14 @@ class Arguments
                     arguments.WarningsAreErrors = true;
                     break;
                 default:
-                    Console.WriteLine($"Unknown option \"{Args[i]}\"!");
+                    Console.WriteLine($"Unknown option \"{Args[arg_index]}\"!");
                     error = true;
                     break;
             }
         }
         else
         {
-            arguments.SourceFilenames.Add(Args[i]);
+            arguments.SourceFilenames.Add(Args[arg_index]);
         }
     }
     return (!error, arguments);
@@ -294,14 +352,14 @@ bool AreArgumentValids(Arguments arguments)
     return !error;
 }
 
-void Main()
+int Main()
 {
     var(arg_ok,args) = ParseArguments();
     arg_ok &= AreArgumentValids(args);
     if (!arg_ok)
     {
-        Console.WriteLine("Early exit.");
-        return;
+        Console.WriteLine("Bad arguments!");
+        return 1;
     }
 
     var most_recent_source_file_time = DateTime.MinValue;
@@ -322,8 +380,8 @@ void Main()
     }
     if (error)
     {
-        Console.WriteLine("Early exit.");
-        return;
+        Console.WriteLine("Bad source files!");
+        return 1;
     }
     //Console.WriteLine("Most recent source file time: {0}", most_recent_source_file_time);
 
@@ -336,53 +394,25 @@ void Main()
             if (outputFileInfo.LastWriteTime>most_recent_source_file_time)
             {
                 Console.WriteLine("No update needed.");
-                return;
+                return 0;
             }
         }
     }
 
     new FileInfo(args.OutputFilename).Directory.Create();
 
-    ICompiler compilo;
-    switch (args.Compiler)
-    {
-        case ECompiler.Clang6_0:
-            compilo = new Clang6_0();
-            break;
-        default:
-            compilo = new MSVC();
-            break;
-    }
+    var compilo = Compiler.Create(args.Compiler.GetValueOrDefault(ECompiler.Clang6_0));
 
+    compilo.IntermediaryFileFolderName = "obj";
     compilo.CppVersion = ECppVersion.Cpp17;
     compilo.WarningLevel = EWarningLevel.High;
+    compilo.DebugLevel = args.DebugLevel;
     compilo.OutputFilepath = args.OutputFilename;
     compilo.WarningAsErrors = args.WarningsAreErrors;
-    var arguments = string.Join(" ",
-        string.Join(" ", args.SourceFilenames),
-        compilo.CompilationParameters
-        );
+    compilo.SourceFilePaths = args.SourceFilenames;
+    var exitCode = compilo.Run();
 
-    Console.WriteLine(arguments);
-
-    compilo.SetupEnvironmentVariables();
-
-    var process = new Process();
-    process.StartInfo.FileName = compilo.ExecutableName;
-    process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-    process.StartInfo.UseShellExecute = false;
-    process.StartInfo.RedirectStandardOutput = true;
-    process.StartInfo.RedirectStandardError = true;
-    process.StartInfo.Arguments = arguments;
-    process.Start();
-    string output = process.StandardOutput.ReadToEnd();
-    string errors = process.StandardError.ReadToEnd();
-    process.WaitForExit();
-
-    Console.WriteLine(output);
-    Console.WriteLine(errors);
-
-    Environment.Exit(process.ExitCode);
+    return exitCode;
 }
 
-Main();
+Environment.Exit(Main());
