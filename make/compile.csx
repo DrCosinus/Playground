@@ -77,9 +77,10 @@ class MSVC : Compiler
         //     , $@"{Windows10KitPath("References")}"
         //     , @"C:\Windows\Microsoft.NET\Framework64\v4.0.30319"
         //     ));
+        new DirectoryInfo("tmp").Create();
     }
     public override string ExecutableName => "cl";
-    public override string ExtraOptionsString => "/EHsc";
+    public override string ExtraOptionsString => "/EHsc /Fotmp/";
     public override string GetCppVersionString(ECppVersion _language_version)
     {
         switch (_language_version)
