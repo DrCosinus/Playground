@@ -1,6 +1,8 @@
 # Modern C++ Features
 
 - [Modern C++ Features](#modern-c-features)
+  - [Propositions de Guideline](#propositions-de-guideline)
+    - [Typages forts](#typages-forts)
   - [C++11](#c11)
     - [alignas & alignof](#alignas-alignof)
     - [atomic operations](#atomic-operations)
@@ -131,6 +133,39 @@
     - [/*No*/ std::filesystem](#no-stdfilesystem)
 
 La gsl
+
+## Propositions de Guideline
+
+Tout passage de paramètre par reférence doit être `const`.
+
+### Typages forts
+
+> remplacer les booléens par un enum fortement typé
+
+Classic style
+```cpp
+void Audio_SetMute(bool);
+struct Foo
+{
+  bool myVisibility; // true = Hidden, false = Visible
+};
+Foo foo;
+Audio_SetMuted(foo.myVisibility); // questionable code
+```
+
+Proposed style
+```cpp
+void Audio_SetMute(bool);
+struct Foo
+{
+  enum class Visibility { Visible, Hidden };
+  Visibility myVisibility; // no comment need
+};
+Foo foo;
+//Audio_SetMuted(foo.myVisibility);
+// error: no matching function for call to 'Audio_SetMute'
+// note: candidate function not viable: no known conversion from 'Foo::Visibility' to 'bool'
+```
 
 ## C++11
 
