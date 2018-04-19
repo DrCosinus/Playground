@@ -77,18 +77,22 @@ abstract class Compiler : ICompiler
 
 class MSVC : Compiler
 {
-    private static string MSVCPath => @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.13.26128"; // should be deduced
+    private static string MSVCPath(string _flavor) => $@"C:\Program Files (x86)\Microsoft Visual Studio\2017\{_flavor}\VC\Tools\MSVC\14.13.26128"; // should be deduced
     private static string WindowsKitPath => @"C:\Program Files (x86)\Windows Kits"; // should be deduced
     private static string Windows10KitPath(string _group) => $@"{WindowsKitPath}\10\{_group}\10.0.16299.0"; // should be deduced
     private static string DotNetFrameworkPath => $@"{WindowsKitPath}\NETFXSDK\4.6.1"; // should be deduced
 
     protected override void SetupEnvironmentVariables()
     {
-        Environment.SetEnvironmentVariable( "PATH",
-            $@"{MSVCPath}\bin\HostX64\x64;{Environment.GetEnvironmentVariable("PATH")}");
+        Environment.SetEnvironmentVariable( "PATH", string.Join(";"
+            , $@"{MSVCPath("Community")}\bin\HostX64\x64"
+            , $@"{MSVCPath("Professional")}\bin\HostX64\x64"
+            , $"{Environment.GetEnvironmentVariable("PATH")}"
+            ));
         Environment.SetEnvironmentVariable( "INCLUDE", string.Join(";"
             //, $@"{MSVCPath}\ATLMFC\include"
-            , $@"{MSVCPath}\include"
+            , $@"{MSVCPath("Community")}\include"
+            , $@"{MSVCPath("Professional")}\include"
             //, $@"{DotNetFrameworkPath}\include\um"
             , $@"{Windows10KitPath("include")}\ucrt"
             //, $@"{Windows10KitPath}\shared"
@@ -98,7 +102,8 @@ class MSVC : Compiler
             ));
         Environment.SetEnvironmentVariable( "LIB", string.Join(";"
             //, $@"{MSVCPath}\ATLMFC\lib\x64"
-            , $@"{MSVCPath}\lib\x64"
+            , $@"{MSVCPath("Community")}\lib\x64"
+            , $@"{MSVCPath("Professional")}\lib\x64"
             //, $@"{DotNetFrameworkPath}\lib\um\x64"
             , $@"{Windows10KitPath("lib")}\ucrt\x64"
             , $@"{Windows10KitPath("lib")}\um\x64"
