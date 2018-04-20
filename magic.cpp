@@ -1,3 +1,5 @@
+#include <iostream>
+
 struct Bar
 {
   enum class Visibility : char { Visible, Hidden };
@@ -34,6 +36,15 @@ Bar::Visibility ConvertTo<Bar::Visibility>(Foo::Visibility aFooEnum)
     return (aFooEnum == Foo::Visibility::Visible) ? Bar::Visibility::Visible : Bar::Visibility::Hidden;
 }
 
+template<typename T>
+const char* ToString(const T&);
+
+template<>
+const char* ToString<Bar::Visibility>(const Bar::Visibility& aBarVisibility)
+{
+    return aBarVisibility==Bar::Visibility::Hidden ? "Bar::Visibility::Hidden" : "Bar::Visibility::Visible";
+}
+
 int main()
 {
   auto bar = Bar{};
@@ -52,4 +63,7 @@ int main()
   // if the user intentionnally want to pass a Foo::Visibility for a Bar::Visibility
   // he/she has to explicit the "conversion"
   bar.ProcessImpact(ConvertTo<Bar::Visibility>(foo.myVisibility), foo.myShowImpact, foo.myApplyDamage, Bar::SpawnSideEffect::Spawn);
+
+  std::cout << ToString(Bar::Visibility::Hidden) << std::endl;
+  std::cout << ToString(Bar::Visibility::Visible) << std::endl;
 }
