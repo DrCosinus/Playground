@@ -2,7 +2,8 @@
 
 - [Modern C++ Features](#modern-c-features)
   - [Propositions de Guideline](#propositions-de-guideline)
-    - [Typages forts](#typages-forts)
+    - [Strong Types](#strong-types)
+      - [Remplace the boolean used as state by the scoped enum](#remplace-the-boolean-used-as-state-by-the-scoped-enum)
   - [C++11](#c11)
     - [alignas & alignof](#alignas-alignof)
     - [atomic operations](#atomic-operations)
@@ -138,34 +139,114 @@ La gsl
 
 Tout passage de paramètre par reférence doit être `const`.
 
-### Typages forts
+### Strong Types
 
-> remplacer les booléens par un enum fortement typé
+#### Remplace the boolean used as state by the scoped enum
+
+Keep the bool for boolean arithmetic only.
+
+> Pro:
+> - Can not use a bool for another
+> - Meaning are clearer and explicit
+> - Can allow to improve the serialization
 
 Classic style
+
 ```cpp
-void Audio_SetMute(bool);
+struct Bar
+{
+  // argument names matter and some extra comment helpful
+  // if aVisible is true the Impact is visible, otherwise it is hidden
+  void ProcessImpact(bool aVisible, bool aShowImpact, bool aApplyDamage, bool aHasSideEffect);
+};
+
 struct Foo
 {
-  bool myVisibility; // true = Hidden, false = Visible
+  bool myVisibility; // true = Hidden, false = Visible => counter-intuitive choice, does it?
+  bool myBarVisilibility; // true = Hidden, false = Visible => counter-intuitive choice, does it?
+  bool myShowImpact;
+  bool myApplyDamage;
 };
-Foo foo;
-Audio_SetMuted(foo.myVisibility); // questionable code
+
+int main()
+{
+  auto bar = Bar{};
+  auto foo = Foo{};
+
+  bar.ProcessImpact(foo.myVisibility, foo.myApplyDamage, foo.myShowImpact, true); 
+  // questionable hard to read parameters:
+  // - using myVisibility instead of myBarVisibility
+  // - myBarVisibility behalfs the opposite of aVisible argument
+  // - ApplyDamage and ShowDamage are reversed (by mistake)
+  // - what the 'true' parameter stands for? Reader must see the function declaration to understand.
+}
 ```
 
 Proposed style
+
 ```cpp
-void Audio_SetMute(bool);
+struct Bar
+{
+  enum class Visibility : char { Visible, Hidden };
+  enum class ShowImpact : char { Show, DoNotShow };
+  enum class ApplyDamage : char { Apply, DoNotApply };
+  enum class SpawnSideEffect : char { Spawn, DoNotSpawn };
+  // argument names are not necessary
+  void ProcessImpact(Visibility, ShowImpact, ApplyDamage, SpawnSideEffect);
+};
+
 struct Foo
 {
-  enum class Visibility { Visible, Hidden };
-  Visibility myVisibility; // no comment need
+  enum class Visibility : char { Hidden, Visible }; // please that Hidden and Visible and in the reverse order compared to Bar::Visible
+  Visibility myVisibility; // no comment needed
+  Bar::Visibility myBarVisibility; // no comment needed
+  Bar::ShowImpact myShowImpact;
+  Bar::ApplyDamage myApplyDamage;
 };
-Foo foo;
-//Audio_SetMuted(foo.myVisibility);
-// error: no matching function for call to 'Audio_SetMute'
-// note: candidate function not viable: no known conversion from 'Foo::Visibility' to 'bool'
+
+// explicit conversion function
+template<typename ToEnum, typename FromEnum>
+ToEnum ConvertTo(FromEnum);
+
+// conversion function specialization for specific need
+template<>
+Foo::Visibility ConvertTo<Foo::Visibility>(Bar::Visibility aBarEnum)
+{
+    // do not use the underlying numeric values!!
+    return (aBarEnum == Bar::Visibility::Visible) ? Foo::Visibility::Visible : Foo::Visibility::Hidden;
+}
+
+template<>
+Bar::Visibility ConvertTo<Bar::Visibility>(Foo::Visibility aFooEnum)
+{
+    // do not use the underlying numeric values!!
+    return (aFooEnum == Foo::Visibility::Visible) ? Bar::Visibility::Visible : Bar::Visibility::Hidden;
+}
+
+int main()
+{
+  auto bar = Bar{};
+  auto foo = Foo{};
+
+  //bar.ProcessImpact(foo.myVisibility, foo.myApplyDamage, foo.myShowImpact, true);
+  // => do not compile because:
+  //    - first param:  argument of type 'Foo::Visibility' is incompatible with parameter of type 'Bar::Visibility'
+  //    - second param: argument of type 'Foo::ApplyDamage' is incompatible with parameter of type 'Bar::ShowImpact'
+  //    - third param:  argument of type 'Foo::ShowImpact' is incompatible with parameter of type 'Bar::ApplyDamage'
+  //    - fourth param: argument of type 'bool' is incompatible with parameter of type 'Bar::ApplyDamage'
+
+  // OK
+  bar.ProcessImpact(foo.myBarVisibility, foo.myShowImpact, foo.myApplyDamage, Bar::SpawnSideEffect::Spawn);
+
+  // if the user intentionnally want to pass a Foo::Visibility for a Bar::Visibility
+  // he/she has to explicit the "conversion", this is clear this is not a mistake this is intentional
+  bar.ProcessImpact(ConvertTo<Bar::Visibility>(foo.myVisibility), foo.myShowImpact, foo.myApplyDamage, Bar::SpawnSideEffect::Spawn);
+}
 ```
+
+Don't worry, the generated code is the same.
+
+---
 
 ## C++11
 

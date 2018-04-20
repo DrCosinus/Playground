@@ -1,42 +1,55 @@
-#include <iostream>
-#include <memory>
-
-using namespace std;
+struct Bar
+{
+  enum class Visibility : char { Visible, Hidden };
+  enum class ShowImpact : char { Show, DoNotShow };
+  enum class ApplyDamage : char { Apply, DoNotApply };
+  enum class SpawnSideEffect : char { Spawn, DoNotSpawn };
+  // argument names are not necessary
+  void ProcessImpact(Visibility, ShowImpact, ApplyDamage, SpawnSideEffect)
+  {
+  }
+};
 
 struct Foo
 {
-    static Foo Create() { return {}; }
-    static unique_ptr<Foo> CreatePtr() { return make_unique<Foo>(); }
-
-    Foo() { cout << "default constructor" << endl; }
-    Foo(const Foo&) { cout << "copy constructor" << endl; }
-    Foo(Foo&&) { cout << "move constructor" << endl; }
+  enum class Visibility : char { Hidden, Visible }; // please that Hidden and Visible and in the reverse order compared to Bar::Visible
+  Visibility myVisibility; // no comment needed
+  Bar::Visibility myBarVisibility; // no comment needed
+  Bar::ShowImpact myShowImpact;
+  Bar::ApplyDamage myApplyDamage;
 };
 
-constexpr int get_size() { return 42; }
-//int tableau_statique[get_size() + 17];
-template<int I> struct Bar {};
-Bar<get_size()> bar;
+template<typename ToEnum, typename FromEnum>
+ToEnum ConvertTo(FromEnum);
+
+template<>
+Foo::Visibility ConvertTo<Foo::Visibility>(Bar::Visibility aBarEnum)
+{
+    return (aBarEnum == Bar::Visibility::Visible) ? Foo::Visibility::Visible : Foo::Visibility::Hidden;
+}
+
+template<>
+Bar::Visibility ConvertTo<Bar::Visibility>(Foo::Visibility aFooEnum)
+{
+    return (aFooEnum == Foo::Visibility::Visible) ? Bar::Visibility::Visible : Bar::Visibility::Hidden;
+}
 
 int main()
 {
-    #pragma region toto
-  __pragma(region toto);
-  {
-    auto plip = std::make_unique<Foo>();
-    // output:  default constructor
-  }
-  __pragma(endregion);
-  #pragma endregion
-  cout << endl;
-  {
-    auto plop = std::make_unique<Foo>(Foo::Create());
-    // output:  default constructor
-    //          move constructor
-  }
-  cout << endl;
-  {
-    auto plup = Foo::CreatePtr();
-    // output:  default constructor
-  }
+  auto bar = Bar{};
+  auto foo = Foo{};
+
+  //bar.ProcessImpact(foo.myVisibility, foo.myApplyDamage, foo.myShowImpact, true);
+  // do not compile because:
+  // - first param:  argument of type 'Foo::Visibility' is incompatible with parameter of type 'Bar::Visibility'
+  // - second param: argument of type 'Foo::ApplyDamage' is incompatible with parameter of type 'Bar::ShowImpact'
+  // - third param:  argument of type 'Foo::ShowImpact' is incompatible with parameter of type 'Bar::ApplyDamage'
+  // - fourth param: argument of type 'bool' is incompatible with parameter of type 'Bar::ApplyDamage'
+
+  // OK
+  bar.ProcessImpact(foo.myBarVisibility, foo.myShowImpact, foo.myApplyDamage, Bar::SpawnSideEffect::Spawn);
+
+  // if the user intentionnally want to pass a Foo::Visibility for a Bar::Visibility
+  // he/she has to explicit the "conversion"
+  bar.ProcessImpact(ConvertTo<Bar::Visibility>(foo.myVisibility), foo.myShowImpact, foo.myApplyDamage, Bar::SpawnSideEffect::Spawn);
 }
