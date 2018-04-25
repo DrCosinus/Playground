@@ -35,24 +35,6 @@ namespace detail
     };
 }
 
-template<typename TYPE>
-using can_check_equality = detail::can_check_equality<TYPE>;
-
-template<typename TYPE>
-[[maybe_unused]]constexpr bool can_check_equality_v = can_check_equality<TYPE>::value;
-
-template<typename TYPE>
-using can_check_order = detail::can_check_order<TYPE>;
-
-template<typename TYPE>
-[[maybe_unused]]constexpr bool can_check_order_v = can_check_order<TYPE>::value;
-
-template<typename TYPE>
-using can_explicitly_convert_to_underlying_type = detail::can_explicitly_convert_to_underlying_type<TYPE>;
-
-template<typename TYPE>
-[[maybe_unused]]constexpr bool can_explicitly_convert_to_underlying_type_v = can_explicitly_convert_to_underlying_type<TYPE>::value;
-
 // -------------------------------------
 
 template<template<typename> class CONDITION_TYPE, typename... OTHER_TYPES>
@@ -80,9 +62,9 @@ struct strong_type
     template<typename ANOTHER_UNDERLYING_TYPE, typename ANOTHER_TAG_TYPE>
     strong_type(const strong_type<ANOTHER_UNDERLYING_TYPE, ANOTHER_TAG_TYPE>&) = delete; // conversion from another strong_type
 
-    using equality_type = find_if_t<can_check_equality, MODIFIER_TYPES...>;
-    using ordering_type = find_if_t<can_check_order, MODIFIER_TYPES...>;
-    using explicit_convert_to_utype = find_if_t<can_explicitly_convert_to_underlying_type, MODIFIER_TYPES...>;
+    using equality_type = find_if_t<detail::can_check_equality, MODIFIER_TYPES...>;
+    using ordering_type = find_if_t<detail::can_check_order, MODIFIER_TYPES...>;
+    using explicit_convert_to_utype = find_if_t<detail::can_explicitly_convert_to_underlying_type, MODIFIER_TYPES...>;
 
 // comparison
 // comparison/equality
@@ -221,22 +203,22 @@ int main()
         CHECK(>);
         CHECK(<=);
         CHECK(>=);
+        #undef CHECK
     };
     test(v1, v2);
     test(v2, v3);
 
     if constexpr(true)
     {
-        auto Expect_True = [&](bool condition, const char* message) { test_count++; if (!condition) { cout << message << " **ERROR**" << endl; } else { success_count++; } };
-        auto Expect_False = [&](bool condition, const char* message) { test_count++; if (condition) { cout << message << " **ERROR**" << endl; } else { success_count++; } };
+        #define CHECK(CONDITION) test_count++; if (!CONDITION) { cout << #CONDITION << " **ERROR**" << endl; } else { success_count++; }
+        CHECK(detail::can_check_equality<comparable>::value);
+        CHECK(!detail::can_check_equality<orderable>::value);
+        CHECK(!detail::can_check_equality<nul>::value);
 
-        Expect_True( can_check_equality_v<comparable>, "can_check_equality_v<comparable>" );
-        Expect_False( can_check_equality_v<orderable>, "can_check_equality_v<orderable>" );
-        Expect_False( can_check_equality_v<nul>, "can_check_equality_v<nul>" );
-
-        Expect_False( can_check_order_v<comparable>, "can_check_order_v<comparable>" );
-        Expect_True( can_check_order_v<orderable>, "can_check_order_v<orderable>" );
-        Expect_False( can_check_order_v<nul>, "can_check_order_v<nul>" );
+        CHECK(!detail::can_check_order<comparable>::value);
+        CHECK(detail::can_check_order<orderable>::value);
+        CHECK(!detail::can_check_order<nul>::value);
+        #undef CHECK
     }
 
     cout << success_count << " success over " << test_count << " tests." << endl;
