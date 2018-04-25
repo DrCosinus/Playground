@@ -8,9 +8,8 @@ namespace detail
     struct can_check_equality
     {
     private:
-        template<typename U, bool(*)(float, float)> struct SFINAE {};
         template<typename U> static int Test(...);
-        template<typename U> static void Test(SFINAE<U, U::equals>*);
+        template<typename U> static void Test(std::enable_if_t<std::is_same_v<decltype(U::equals(std::declval<float>(), std::declval<float>())), bool>>*);
     public:
         static constexpr bool value = std::is_void_v<decltype(Test<TYPE>(nullptr))>;
     };
@@ -19,9 +18,8 @@ namespace detail
     struct can_check_order
     {
     private:
-        template<typename U, bool(*)(float, float)> struct SFINAE {};
         template<typename U> static int Test(...);
-        template<typename U> static void Test(SFINAE<U, U::less>*);
+        template<typename U> static void Test(std::enable_if_t<std::is_same_v<decltype(U::less(std::declval<float>(), std::declval<float>())), bool>>*);
     public:
         static constexpr bool value = std::is_void_v<decltype(Test<TYPE>(nullptr))>;
     };
@@ -30,9 +28,8 @@ namespace detail
     struct can_explicitly_convert_to_underlying_type
     {
     private:
-        template<typename U, bool> struct SFINAE {};
         template<typename U> static int Test(...);
-        template<typename U> static void Test(SFINAE<U, U::can_explicitly_convertible_to_underlying_type>*);
+        template<typename U> static void Test(decltype(U::can_explicitly_convertible_to_underlying_type)*);
     public:
         static constexpr bool value = std::is_void_v<decltype(Test<TYPE>(nullptr))>;
     };
@@ -114,20 +111,25 @@ struct strong_type
     {
         return !ordering_type::less(value_, _rhs.value_);
     }
-
+// conversion operator
     explicit operator std::enable_if_t<!std::is_void_v<explicit_convert_to_utype>, UNDERLYING_TYPE>() const { return value_; }
+// value getter
+    // UNDERLYING_TYPE& get() { return value_; }
+    // const UNDERLYING_TYPE& get() const { return value_; }
 private:
     UNDERLYING_TYPE value_;
 };
 
 struct comparable
 {
-    static bool equals(float _lhs, float _rhs) { return _lhs == _rhs; }
+    template<typename T>
+    static bool equals(const T& _lhs, const T& _rhs) { return _lhs == _rhs; }
 };
 
 struct orderable
 {
-    static bool less(float _lhs, float _rhs) { return _lhs < _rhs; }
+    template<typename T>
+    static bool less(const T& _lhs, const T& _rhs) { return _lhs < _rhs; }
 };
 
 struct explicitly_convertible_to_underlying_type
@@ -137,7 +139,6 @@ struct explicitly_convertible_to_underlying_type
 
 struct nul
 {
-
 };
 
 template<typename...>
@@ -148,7 +149,6 @@ struct commutative_addition
 template<typename...>
 struct divisible
 {
-
 };
 
 // ------------------------
@@ -177,6 +177,15 @@ struct length_unit : strong_type<
     length_unit() : strong_type{ 0 } {}
 };
 
+// struct time_unit : strong_type<
+//     long long
+//     , time_unit
+//     , comparable
+//     >
+// {
+//     using strong_type::strong_type;
+//     time_unit() : strong_type{ 0 } {}
+// };
 /*
 struct position;
 
@@ -199,25 +208,27 @@ int main()
     using namespace std;
     length_unit v1 = 17, v2 = 42, v3 = 42;
 
+    unsigned int test_count = 0;
+    unsigned int success_count = 0;
+
     cout << boolalpha;
-    auto test = [](const length_unit& a, const length_unit& b)
+    auto test = [&](const length_unit& a, const length_unit& b)
     {
-        cout << "a = " << (float)a << ", b = " << (float)b << endl;
-        cout << "(a == b) is " << (a == b) << endl;
-        cout << "(a != b) is " << (a != b) << endl;
-        cout << "(a <  b) is " << (a <  b) << endl;
-        cout << "(a >  b) is " << (a >  b) << endl;
-        cout << "(a <= b) is " << (a <= b) << endl;
-        cout << "(a >= b) is " << (a >= b) << endl;
-        cout << "------------" << endl;
+        #define CHECK(OP) test_count++; if ((float(a) OP float(b))!=(a OP b)) { cout << (float)a << #OP << (float)b << " returned " << (a OP b) << "**ERROR**" << endl; } else { success_count++; }
+        CHECK(==);
+        CHECK(!=);
+        CHECK(<);
+        CHECK(>);
+        CHECK(<=);
+        CHECK(>=);
     };
     test(v1, v2);
     test(v2, v3);
 
-    if constexpr(false)
+    if constexpr(true)
     {
-        auto Expect_True = [](bool condition, const char* message) { cout << message << (condition ? " -OK":" **ERROR**") << endl; };
-        auto Expect_False = [](bool condition, const char* message) { cout << message << (!condition ? " -OK":" **ERROR**") << endl; };
+        auto Expect_True = [&](bool condition, const char* message) { test_count++; if (!condition) { cout << message << " **ERROR**" << endl; } else { success_count++; } };
+        auto Expect_False = [&](bool condition, const char* message) { test_count++; if (condition) { cout << message << " **ERROR**" << endl; } else { success_count++; } };
 
         Expect_True( can_check_equality_v<comparable>, "can_check_equality_v<comparable>" );
         Expect_False( can_check_equality_v<orderable>, "can_check_equality_v<orderable>" );
@@ -227,4 +238,6 @@ int main()
         Expect_True( can_check_order_v<orderable>, "can_check_order_v<orderable>" );
         Expect_False( can_check_order_v<nul>, "can_check_order_v<nul>" );
     }
+
+    cout << success_count << " success over " << test_count << " tests." << endl;
 }
