@@ -4,28 +4,57 @@
 
 namespace detail
 {
-    template<typename TYPE, typename DUMMY>
-    struct can_check_equality : std::false_type {};
-    template<typename XTYPE>
-    struct can_check_equality<XTYPE, std::enable_if_t<std::is_same_v<decltype(XTYPE::Equals(std::declval<float>(),std::declval<float>())),bool>>> : std::true_type {};
+    template<typename TYPE>
+    struct can_check_equality
+    {
+    private:
+        template<typename U, bool(*)(float, float)> struct SFINAE {};
+        template<typename U> static int Test(...);
+        template<typename U> static void Test(SFINAE<U, U::equals>*);
+    public:
+        static constexpr bool value = std::is_void_v<decltype(Test<TYPE>(nullptr))>;
+    };
 
-    template<typename TYPE, typename DUMMY>
-    struct can_check_order : std::false_type {};
-    template<typename XTYPE>
-    struct can_check_order<XTYPE, std::enable_if_t<std::is_same_v<decltype(XTYPE::Less(std::declval<float>(),std::declval<float>())),bool>>> : std::true_type {};
+    template<typename TYPE>
+    struct can_check_order
+    {
+    private:
+        template<typename U, bool(*)(float, float)> struct SFINAE {};
+        template<typename U> static int Test(...);
+        template<typename U> static void Test(SFINAE<U, U::less>*);
+    public:
+        static constexpr bool value = std::is_void_v<decltype(Test<TYPE>(nullptr))>;
+    };
+
+    template<typename TYPE>
+    struct can_explicitly_convert_to_underlying_type
+    {
+    private:
+        template<typename U, bool> struct SFINAE {};
+        template<typename U> static int Test(...);
+        template<typename U> static void Test(SFINAE<U, U::can_explicitly_convertible_to_underlying_type>*);
+    public:
+        static constexpr bool value = std::is_void_v<decltype(Test<TYPE>(nullptr))>;
+    };
 }
 
 template<typename TYPE>
-using can_check_equality = detail::can_check_equality<TYPE, void>;
+using can_check_equality = detail::can_check_equality<TYPE>;
 
 template<typename TYPE>
 [[maybe_unused]]constexpr bool can_check_equality_v = can_check_equality<TYPE>::value;
 
 template<typename TYPE>
-using can_check_order = detail::can_check_order<TYPE, void>;
+using can_check_order = detail::can_check_order<TYPE>;
 
 template<typename TYPE>
 [[maybe_unused]]constexpr bool can_check_order_v = can_check_order<TYPE>::value;
+
+template<typename TYPE>
+using can_explicitly_convert_to_underlying_type = detail::can_explicitly_convert_to_underlying_type<TYPE>;
+
+template<typename TYPE>
+[[maybe_unused]]constexpr bool can_explicitly_convert_to_underlying_type_v = can_explicitly_convert_to_underlying_type<TYPE>::value;
 
 // -------------------------------------
 
@@ -56,51 +85,54 @@ struct strong_type
 
     using equality_type = find_if_t<can_check_equality, MODIFIER_TYPES...>;
     using ordering_type = find_if_t<can_check_order, MODIFIER_TYPES...>;
+    using explicit_convert_to_utype = find_if_t<can_explicitly_convert_to_underlying_type, MODIFIER_TYPES...>;
 
 // comparison
 // comparison/equality
     std::enable_if_t<!std::is_void_v<equality_type>, bool> operator==(const strong_type& _rhs) const
     {
-        return equality_type::Equals(value_, _rhs.value_);
+        return equality_type::equals(value_, _rhs.value_);
     }
     std::enable_if_t<!std::is_void_v<equality_type>, bool> operator!=(const strong_type& _rhs) const
     {
-        return !equality_type::Equals(value_, _rhs.value_);
+        return !equality_type::equals(value_, _rhs.value_);
     }
 // comparison/ordering
     std::enable_if_t<!std::is_void_v<ordering_type>, bool> operator<(const strong_type& _rhs) const
     {
-        return ordering_type::Less(value_, _rhs.value_);
+        return ordering_type::less(value_, _rhs.value_);
     }
     std::enable_if_t<!std::is_void_v<ordering_type>, bool> operator>(const strong_type& _rhs) const
     {
-        return ordering_type::Less(_rhs.value_, value_);
+        return ordering_type::less(_rhs.value_, value_);
     }
     std::enable_if_t<!std::is_void_v<ordering_type>, bool> operator<=(const strong_type& _rhs) const
     {
-        return !ordering_type::Less(_rhs.value_, value_);
+        return !ordering_type::less(_rhs.value_, value_);
     }
     std::enable_if_t<!std::is_void_v<ordering_type>, bool> operator>=(const strong_type& _rhs) const
     {
-        return !ordering_type::Less(value_, _rhs.value_);
+        return !ordering_type::less(value_, _rhs.value_);
     }
 
-    //bool operator<(const strong_type& _rhs) const { return value_ < _rhs.value_; }
-    explicit operator UNDERLYING_TYPE() const { return value_; }
+    explicit operator std::enable_if_t<!std::is_void_v<explicit_convert_to_utype>, UNDERLYING_TYPE>() const { return value_; }
 private:
     UNDERLYING_TYPE value_;
 };
 
 struct comparable
 {
-    static bool Equals(float _lhs, float _rhs) { return _lhs == _rhs; }
-    static constexpr const char* name_ = "comparable";
+    static bool equals(float _lhs, float _rhs) { return _lhs == _rhs; }
 };
 
 struct orderable
 {
-    static bool Less(float _lhs, float _rhs) { return _lhs < _rhs; }
-    static constexpr const char* name_ = "orderable";
+    static bool less(float _lhs, float _rhs) { return _lhs < _rhs; }
+};
+
+struct explicitly_convertible_to_underlying_type
+{
+    static constexpr bool can_explicitly_convertible_to_underlying_type = true;
 };
 
 struct nul
@@ -136,6 +168,7 @@ struct length_unit : strong_type<
     , length_unit   // unique tag (thank to CRTP, it is the type itself)
     , comparable
     , orderable
+    , explicitly_convertible_to_underlying_type
     //, hashable
     //, printable
     >
@@ -171,29 +204,27 @@ int main()
     {
         cout << "a = " << (float)a << ", b = " << (float)b << endl;
         cout << "(a == b) is " << (a == b) << endl;
-        // cout << "(a != b) is " << (a != b) << endl;
-        // cout << "(a <  b) is " << (a <  b) << endl;
-        // cout << "(a >  b) is " << (a >  b) << endl;
-        // cout << "(a <= b) is " << (a <= b) << endl;
-        // cout << "(a >= b) is " << (a >= b) << endl;
+        cout << "(a != b) is " << (a != b) << endl;
+        cout << "(a <  b) is " << (a <  b) << endl;
+        cout << "(a >  b) is " << (a >  b) << endl;
+        cout << "(a <= b) is " << (a <= b) << endl;
+        cout << "(a >= b) is " << (a >= b) << endl;
         cout << "------------" << endl;
     };
     test(v1, v2);
     test(v2, v3);
-    cout << length_unit::ordering_type::name_ << endl;
 
-    cout << "Check for MSVC" << endl;
-    cout << can_check_equality_v<comparable> << (can_check_equality_v<comparable>?" -OK":" **ERROR**") << endl;
-    cout << can_check_equality_v<orderable> << (can_check_equality_v<orderable>?" **ERROR**":" -OK") << endl;
-    cout << can_check_equality_v<nul> << (can_check_equality_v<nul>?" **ERROR**":" -OK") << endl;
+    if constexpr(false)
+    {
+        auto Expect_True = [](bool condition, const char* message) { cout << message << (condition ? " -OK":" **ERROR**") << endl; };
+        auto Expect_False = [](bool condition, const char* message) { cout << message << (!condition ? " -OK":" **ERROR**") << endl; };
 
-    cout << can_check_order_v<comparable> << (can_check_order_v<comparable>?" **ERROR**":" -OK") << endl;
-    cout << can_check_order_v<orderable> << (can_check_order_v<orderable>?" -OK":" **ERROR**") << endl;
-    cout << can_check_order_v<nul> << (can_check_order_v<nul>?" **ERROR**":" -OK") << endl;
+        Expect_True( can_check_equality_v<comparable>, "can_check_equality_v<comparable>" );
+        Expect_False( can_check_equality_v<orderable>, "can_check_equality_v<orderable>" );
+        Expect_False( can_check_equality_v<nul>, "can_check_equality_v<nul>" );
 
-    cout << can_check_order<comparable>::value << (detail::can_check_order<comparable, void>::value?" **ERROR**":" -OK") << endl;
-    cout << can_check_order<orderable>::value << (detail::can_check_order<orderable, void>::value?" -OK":" **ERROR**") << endl;
-    cout << can_check_order<nul>::value << (detail::can_check_order<nul, void>::value?" **ERROR**":" -OK") << endl;
-
-    //cout << typeid(decltype(comparable::Less(std::declval<float>(),std::declval<float>()))) << endl;
+        Expect_False( can_check_order_v<comparable>, "can_check_order_v<comparable>" );
+        Expect_True( can_check_order_v<orderable>, "can_check_order_v<orderable>" );
+        Expect_False( can_check_order_v<nul>, "can_check_order_v<nul>" );
+    }
 }
