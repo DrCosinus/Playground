@@ -119,13 +119,14 @@ struct orderable
     static bool less(const T& _lhs, const T& _rhs) { return _lhs < _rhs; }
 };
 
-struct explicitly_convertible_to_float
+template<typename TYPE>
+struct explicitly_convertible_to
 {
-    template<typename U>
+    template<typename U, typename = void>
     static constexpr bool can_explicitly_convertible_to = false;
+    template<typename DUMMY>
+    static constexpr bool can_explicitly_convertible_to<TYPE, DUMMY> = true;
 };
-template<>
-constexpr bool explicitly_convertible_to_float::can_explicitly_convertible_to<float> = true;
 
 struct nul
 {
@@ -143,7 +144,6 @@ struct divisible
 
 // ------------------------
 
-
 // a 3d vector without any semantic
 template<typename T>
 struct vector3
@@ -157,8 +157,7 @@ struct length_unit : strong_type<
     , length_unit   // unique tag (thank to CRTP, it is the type itself)
     , comparable
     , orderable
-    , explicitly_convertible_to_float
-    //, explicitly_convertible_to<float>
+    , explicitly_convertible_to<float>
     //, hashable
     //, printable
     >
