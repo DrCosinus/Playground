@@ -36,6 +36,7 @@ struct time_unit : wit::strong_type<
     long long
     , time_unit
     , wit::comparable
+    , wit::incrementable
     //, from_to<milliseconds, 1>
     //, from_to<seconds, 1000>
     //, from_to<minutes, 60000>
@@ -110,5 +111,8 @@ int main()
     stats.Check(float{ length_unit{ 5 } }==5, "float{ length_unit{ 5 } }==5");
     stats.Check(length_unit{ 4 } + length_unit{ 7 }==length_unit{ 11 }, "length_unit{ 4 } + length_unit{ 7 }==length_unit{ 11 }");
     stats.Check(std::to_string(length_unit{ 18 }) == std::to_string(18.f), "std::to_string(length_unit{ 18 }) == std::to_string(18.f)");
+    { auto t = time_unit{37}; stats.Check(++t == time_unit{38}, "pre increment"); }
+    { auto t = time_unit{37}; stats.Check(t++ == time_unit{37} && t == time_unit{38}, "post increment"); }
+    { auto t = time_unit{37}; t += time_unit{17}; stats.Check(t == time_unit{54}, "addition assignment"); }
     cout << stats.success_count << " success over " << stats.test_count << " tests." << endl;
 }

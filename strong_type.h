@@ -9,10 +9,12 @@ namespace wit
         template<typename STRONG_TYPE, template<typename> class MODIFIER_TYPE> // second type only because of multiple modifiers and avoid crash (CRTP)
         struct modifier
         {
+        protected:
             // modifier is friend of strong_type but the children of modifier will not
+            auto& get_value() { return strongly_typed_object().get_value(); }
             const auto& get_value() const { return strongly_typed_object().get_value(); }
             static const auto& get_value(const STRONG_TYPE& _object) { return _object.get_value(); }
-        private:
+            static auto& get_value(STRONG_TYPE& _object) { return _object.get_value(); }
             STRONG_TYPE& strongly_typed_object() { return static_cast<STRONG_TYPE&>(*this); }
             const STRONG_TYPE& strongly_typed_object() const { return static_cast<const STRONG_TYPE&>(*this); }
         };
@@ -64,6 +66,22 @@ namespace wit
     };
 
     template<typename STRONG_TYPE>
+    struct incrementable : detail::modifier<STRONG_TYPE, incrementable>
+    {
+        STRONG_TYPE& operator++() { ++this->get_value(); return this->strongly_typed_object(); }
+        STRONG_TYPE operator++(int) { auto res = this->strongly_typed_object(); ++this->get_value(); return res; }
+        STRONG_TYPE& operator+=(const STRONG_TYPE& _rhs) { this->get_value() += this->get_value(_rhs); return this->strongly_typed_object(); }
+    };
+
+    template<typename STRONG_TYPE>
+    struct decrementable : detail::modifier<STRONG_TYPE, decrementable>
+    {
+        STRONG_TYPE& operator--() { --this->get_value(); return this->strongly_typed_object(); }
+        STRONG_TYPE operator--(int) { auto res = this->strongly_typed_object(); --this->get_value(); return res; }
+        STRONG_TYPE& operator-=(const STRONG_TYPE& _rhs) { this->get_value() -= this->get_value(_rhs); return this->strongly_typed_object(); }
+    };
+
+    template<typename STRONG_TYPE>
     struct stringable : detail::modifier<STRONG_TYPE, stringable>
     {
         static constexpr bool is_stringable = true;
@@ -83,6 +101,16 @@ namespace wit
         };
     };
 
+    // template<template<typename, typename, template<typename> class...> MULTIPLICAND_STRONG_TYPE, typename PRODUCT_STRONG_TYPE>
+    // struct multipliable_by
+    // {
+    //     template<typename STRONG_TYPE>
+    //     struct modifier : detail::modifier<STRONG_TYPE, modifier>
+    //     {
+    //         PRODUCT_STRONG_TYPE operator+(const MULTIPLICAND_STRONG_TYPE&) { this->get_value()}
+    //     }
+    // };
+
     // -------------------------------------
 
     template<typename UNDERLYING_TYPE, typename TAG_TYPE, template<typename> class... MODIFIER_TYPES>
@@ -97,6 +125,7 @@ namespace wit
         template<typename STRONG_TYPE, template<typename> class MODIFIER_TYPE >
         friend struct detail::modifier;
         const UNDERLYING_TYPE& get_value() const { return value_; }
+        UNDERLYING_TYPE& get_value() { return value_; }
         UNDERLYING_TYPE value_;
     };
 } // namespace wit
