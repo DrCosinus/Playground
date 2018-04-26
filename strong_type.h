@@ -1,121 +1,98 @@
 #include <type_traits>
 #include <utility>
+#include <string>
 
 namespace wit
 {
     namespace detail
     {
-        // modifier predicated MUST:
-        // - be templated by the UNDERLYING_TYPE and have a static constant boolean member variable called value and templated by the MODIFIER_TYPE
-        template<typename UNDERLYING_TYPE>
-        struct can_check_equality
+        template<typename STRONG_TYPE, template<typename> class MODIFIER_TYPE > // second type only because of multiple modifiers and avoid crash (CRTP)
+        struct modifier
         {
+            // modifier is friend of strong_type but the children of modifier will not
+            const auto& get_value() const { return strongly_typed_object().get_value(); }
+            static const auto& get_value(const STRONG_TYPE& _object) { return _object.get_value(); }
         private:
-            template<typename U> static int Test(...);
-            template<typename U> static void Test(std::enable_if_t<std::is_same_v<decltype(U::equals(std::declval<UNDERLYING_TYPE>(), std::declval<UNDERLYING_TYPE>())), bool>>*);
-        public:
-            template<typename MODIFIER_TYPE>
-            static constexpr bool value = std::is_void_v<decltype(Test<MODIFIER_TYPE>(nullptr))>;
-        };
-
-        template<typename UNDERLYING_TYPE>
-        struct can_check_order
-        {
-        private:
-            template<typename U> static int Test(...);
-            template<typename U> static void Test(std::enable_if_t<std::is_same_v<decltype(U::less(std::declval<UNDERLYING_TYPE>(), std::declval<UNDERLYING_TYPE>())), bool>>*);
-        public:
-            template<typename MODIFIER_TYPE>
-            static constexpr bool value = std::is_void_v<decltype(Test<MODIFIER_TYPE>(nullptr))>;
-        };
-
-        template<typename UNDERLYING_TYPE>
-        struct can_explicitly_convert_to
-        {
-        private:
-            template<typename U> static int Test(...);
-            template<typename U> static void Test(decltype(U::template can_explicitly_convertible_to<UNDERLYING_TYPE>)*);
-        public:
-            template<typename MODIFIER_TYPE>
-            static constexpr bool value = std::is_void_v<decltype(Test<MODIFIER_TYPE>(nullptr))>;
-        };
-
-        template<typename CONDITION_TYPE, typename... OTHER_TYPES>
-        struct find_if;
-
-        template<typename CONDITION_TYPE, typename... OTHER_TYPES>
-        using find_if_t = typename find_if<CONDITION_TYPE, OTHER_TYPES...>::type;
-
-        template<typename CONDITION_TYPE, typename FIRST_TYPE, typename... OTHER_TYPES>
-        struct find_if<CONDITION_TYPE, FIRST_TYPE, OTHER_TYPES...>
-        {
-            using type = typename std::conditional<CONDITION_TYPE::template value<FIRST_TYPE>, FIRST_TYPE, typename find_if<CONDITION_TYPE, OTHER_TYPES...>::type >::type;
-        };
-
-        template<typename CONDITION_TYPE>
-        struct find_if<CONDITION_TYPE>
-        {
-            using type = void;
+            STRONG_TYPE& strongly_typed_object() { return static_cast<STRONG_TYPE&>(*this); }
+            const STRONG_TYPE& strongly_typed_object() const { return static_cast<const STRONG_TYPE&>(*this); }
         };
     } // namespace detail
 
+    template<typename STRONG_TYPE>
+    struct comparable : detail::modifier<STRONG_TYPE, comparable>
+    {
+        bool operator==(const STRONG_TYPE& _rhs) const { return  this->get_value() == this->get_value(_rhs); }
+        bool operator!=(const STRONG_TYPE& _rhs) const { return  !(*this == _rhs); }
+    };
+
+    template<typename STRONG_TYPE>
+    struct orderable : detail::modifier<STRONG_TYPE, orderable>
+    {
+        bool operator<(const STRONG_TYPE& _rhs) const { return  this->get_value() < this->get_value(_rhs); }
+        bool operator>(const STRONG_TYPE& _rhs) const { return  this->get_value(_rhs) < this->get_value(); }
+        bool operator<=(const STRONG_TYPE& _rhs) const { return  !(*this > _rhs); }
+        bool operator>=(const STRONG_TYPE& _rhs) const { return  !(*this < _rhs); }
+    };
+
+    template<typename STRONG_TYPE>
+    struct self_addable : detail::modifier<STRONG_TYPE, self_addable>
+    {
+        STRONG_TYPE operator+(const STRONG_TYPE& _rhs) const { return STRONG_TYPE{ this->get_value() + this->get_value(_rhs) }; }
+    };
+
+    template<typename STRONG_TYPE>
+    struct self_subtractable : detail::modifier<STRONG_TYPE, self_subtractable>
+    {
+        STRONG_TYPE operator-(const STRONG_TYPE& _rhs) const { return STRONG_TYPE{ this->get_value() - this->get_value(_rhs) }; }
+    };
+
+    template<typename STRONG_TYPE>
+    struct self_multipliable : detail::modifier<STRONG_TYPE, self_multipliable>
+    {
+        STRONG_TYPE operator-(const STRONG_TYPE& _rhs) const { return STRONG_TYPE{ this->get_value() * this->get_value(_rhs) }; }
+    };
+
+    template<typename STRONG_TYPE>
+    struct self_dividable : detail::modifier<STRONG_TYPE, self_multipliable>
+    {
+        STRONG_TYPE operator/(const STRONG_TYPE& _rhs) const { return STRONG_TYPE{ this->get_value() / this->get_value(_rhs) }; }
+    };
+
+    template<typename STRONG_TYPE>
+    struct stringable : detail::modifier<STRONG_TYPE, stringable>
+    {
+        std::string str() const { return std::to_string( this->get_value() ); }
+        friend std::string to_string(const STRONG_TYPE& _strongly_typed_object) { return std::to_string( detail::modifier<STRONG_TYPE, stringable>::get_value(_strongly_typed_object) ); }
+    };
+
+
+    template<typename TYPE>
+    struct explicitly_convertible_to
+    {
+        template<typename STRONG_TYPE>
+        struct modifier : detail::modifier<STRONG_TYPE, modifier>
+        {
+            explicit operator TYPE() const
+            {
+                return this->get_value();
+            }
+        };
+    };
+
     // -------------------------------------
 
-    // the tag type is in the modifier types
-    template<typename UNDERLYING_TYPE, typename... MODIFIER_TYPES>
-    struct strong_type
+    template<typename UNDERLYING_TYPE, typename TAG_TYPE, template<typename> class... MODIFIER_TYPES>
+    struct strong_type : MODIFIER_TYPES<strong_type<UNDERLYING_TYPE, TAG_TYPE, MODIFIER_TYPES...>>...
     {
-        constexpr strong_type(UNDERLYING_TYPE _value) : value_(std::move(_value)) {} // implicit construction from UNDERLYING_TYPE
+        using underlying_type = UNDERLYING_TYPE;
+        explicit constexpr strong_type(UNDERLYING_TYPE _value) : value_(std::move(_value)) {}
         template<typename ANOTHER_UNDERLYING_TYPE, typename ANOTHER_TAG_TYPE>
         strong_type(const strong_type<ANOTHER_UNDERLYING_TYPE, ANOTHER_TAG_TYPE>&) = delete; // conversion from another strong_type
-
-        template<typename U>
-        using equality_type = detail::find_if_t<detail::can_check_equality<U>, MODIFIER_TYPES...>;
-        template<typename U>
-        using ordering_type = detail::find_if_t<detail::can_check_order<U>, MODIFIER_TYPES...>;
-        template<typename U>
-        using explicit_convertible_to = detail::find_if_t<detail::can_explicitly_convert_to<U>, MODIFIER_TYPES...>;
-
-    // comparison
-    // comparison/equality
-        template<typename T = UNDERLYING_TYPE>
-        constexpr std::enable_if_t<!std::is_void_v<equality_type<T>>, bool> operator==(const strong_type& _rhs) const
-        {
-            return equality_type<T>::equals(value_, _rhs.value_);
-        }
-        template<typename T = UNDERLYING_TYPE>
-        constexpr std::enable_if_t<!std::is_void_v<equality_type<T>>, bool> operator!=(const strong_type& _rhs) const
-        {
-            return !equality_type<T>::equals(value_, _rhs.value_);
-        }
-    // comparison/ordering
-        template<typename T = UNDERLYING_TYPE>
-        constexpr std::enable_if_t<!std::is_void_v<ordering_type<T>>,bool>  operator<(const strong_type& _rhs) const
-        {
-            return ordering_type<T>::less(value_, _rhs.value_);
-        }
-        template<typename T = UNDERLYING_TYPE>
-        constexpr std::enable_if_t<!std::is_void_v<ordering_type<T>>,bool> operator>(const strong_type& _rhs) const
-        {
-            return ordering_type<T>::less(_rhs.value_, value_);
-        }
-        template<typename T = UNDERLYING_TYPE>
-        constexpr std::enable_if_t<!std::is_void_v<ordering_type<T>>,bool> operator<=(const strong_type& _rhs) const
-        {
-            return !ordering_type<T>::less(_rhs.value_, value_);
-        }
-        template<typename T = UNDERLYING_TYPE>
-        constexpr std::enable_if_t<!std::is_void_v<ordering_type<T>>,bool> operator>=(const strong_type& _rhs) const
-        {
-            return !ordering_type<T>::less(value_, _rhs.value_);
-        }
-    // conversion operator
-        template<typename T = UNDERLYING_TYPE> // to enable SFINAE
-        constexpr explicit operator std::enable_if_t<!std::is_void_v<explicit_convertible_to<T>>, T>() const { return T{value_}; }
-    // value getter (for now, for test purpose only)
-        // UNDERLYING_TYPE& get() { return value_; }
         const UNDERLYING_TYPE& get() const { return value_; }
     private:
+        template<typename STRONG_TYPE, template<typename> class MODIFIER_TYPE >
+        friend struct detail::modifier;
+        const UNDERLYING_TYPE& get_value() const { return value_; }
         UNDERLYING_TYPE value_;
     };
 } // namespace wit

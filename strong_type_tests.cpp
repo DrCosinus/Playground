@@ -2,59 +2,26 @@
 
 #include <iostream>
 
-struct comparable
-{
-    template<typename T>
-    static bool equals(const T& _lhs, const T& _rhs) { return _lhs == _rhs; }
-};
-
-struct orderable
-{
-    template<typename T>
-    static bool less(const T& _lhs, const T& _rhs) { return _lhs < _rhs; }
-};
-
-template<typename TYPE>
-struct explicitly_convertible_to
-{
-    template<typename U, typename = void>
-    static constexpr bool can_explicitly_convertible_to = false;
-    template<typename DUMMY>
-    static constexpr bool can_explicitly_convertible_to<TYPE, DUMMY> = true;
-};
-
-struct nul
-{
-};
-
-template<typename...>
-struct commutative_addition
-{
-};
-
-template<typename...>
-struct divisible
-{
-};
-
-// ------------------------
+// commutative_addition
+// divisible
 
 // a 3d vector without any semantic
-template<typename T>
-struct vector3
-{
-    T x, y, z;
-};
+// template<typename T>
+// struct vector3
+// {
+//     T x, y, z;
+// };
 
 // safe length unit => underlying value is in meter (should be carved in the code, not in a comment)
 struct length_unit : wit::strong_type<
     float           // underlying type
     , length_unit   // unique tag (thank to CRTP, it is the type itself)
-    , comparable
-    , orderable
-    , explicitly_convertible_to<float>
+    , wit::comparable
+    , wit::orderable
+    , wit::explicitly_convertible_to<float>::modifier
+    , wit::self_addable
     //, hashable
-    //, printable
+    , wit::stringable
     >
 {
     struct meter;
@@ -62,15 +29,15 @@ struct length_unit : wit::strong_type<
     length_unit() : strong_type{ 0 } {}
 };
 
-struct milliseconds;
-struct seconds;
-struct minutes;
+// struct milliseconds;
+// struct seconds;
+// struct minutes;
 
 struct time_unit : wit::strong_type<
     long long
-    , struct milliseconds
-    , comparable
-    , orderable
+    , time_unit
+    , wit::comparable
+    , wit::orderable
     //, from_to<milliseconds, 1>
     //, from_to<seconds, 1000>
     //, from_to<minutes, 60000>
@@ -96,70 +63,54 @@ using displacement = strong_type
     divisible<timespan, velocity> // displacement divide by timespan gives velocity
     >;
 */
+using namespace std;
 
-int main()
+struct stats
 {
-    using namespace std;
-
     unsigned int test_count = 0;
     unsigned int success_count = 0;
 
+    void Check(bool _condition, const char* _failure_message)
+    {
+        test_count++; 
+        if (!_condition)
+        {
+            cout << _failure_message << "**ERROR**" << endl;
+        }
+        else
+        {
+            success_count++;
+        }
+    }
+};
+
+template<typename T>
+stats test(stats _stats, const T& a, const T& b)
+{
+    #define CHECK(OP) _stats.test_count++; if ((a.get() OP b.get())!=(a OP b)) { cout << a.get() << #OP << b.get() << " returned " << (a OP b) << "**ERROR**" << endl; } else { _stats.success_count++; }
+    CHECK(==);
+    CHECK(!=);
+    CHECK(<);
+    CHECK(>);
+    CHECK(<=);
+    CHECK(>=);
+    #undef CHECK
+    return _stats;
+};
+
+int main()
+{
+    stats stats;
+
     cout << boolalpha;
-    {
-        //length_unit v1 = 17, v2 = 42, v3 = 42;
 
-        auto test = [&](const length_unit& a, const length_unit& b)
-        {
-            #define CHECK(OP) test_count++; if ((a.get() OP b.get())!=(a OP b)) { cout << a.get() << #OP << b.get() << " returned " << (a OP b) << "**ERROR**" << endl; } else { success_count++; }
-            CHECK(==);
-            CHECK(!=);
-            CHECK(<);
-            CHECK(>);
-            CHECK(<=);
-            CHECK(>=);
-            #undef CHECK
-        };
-        test(17, 42);
-        test(23, 23);
-    }
-    {
-        auto test = [&](const time_unit& a, const time_unit& b)
-        {
-            (void)a; (void)b;
-            #define CHECK(OP) test_count++; if ((a.get() OP b.get())!=(a OP b)) { cout << a.get() << #OP << b.get() << " returned " << (a OP b) << "**ERROR**" << endl; } else { success_count++; }
-            CHECK(==);
-            CHECK(!=);
-            CHECK(<);
-            CHECK(>);
-            CHECK(<=);
-            CHECK(>=);
-            #undef CHECK
-        };
-        test(17, 42);
-        test(23, 23);
-    }
+    stats = test(stats, length_unit{ 17 }, length_unit{ 42 });
+    stats = test(stats, length_unit{ 23 }, length_unit{ 23 });
 
-    // wit::detail tests
-    if constexpr(true)
-    {
-        #define CHECK(CONDITION) test_count++; if (!CONDITION) { cout << #CONDITION << " **ERROR**" << endl; } else { success_count++; }
-        CHECK(wit::detail::can_check_equality<float>::value<comparable>);
-        CHECK(!wit::detail::can_check_equality<float>::value<orderable>);
-        CHECK(!wit::detail::can_check_equality<float>::value<nul>);
-
-        CHECK(!wit::detail::can_check_order<float>::value<comparable>);
-        CHECK(wit::detail::can_check_order<float>::value<orderable>);
-        CHECK(!wit::detail::can_check_order<float>::value<nul>);
-
-        CHECK(wit::detail::can_check_equality<long long>::value<comparable>);
-        CHECK(!wit::detail::can_check_equality<long long>::value<orderable>);
-        CHECK(!wit::detail::can_check_equality<long long>::value<nul>);
-
-        CHECK(!wit::detail::can_check_order<long long>::value<comparable>);
-        CHECK(wit::detail::can_check_order<long long>::value<orderable>);
-        CHECK(!wit::detail::can_check_order<long long>::value<nul>);
-        #undef CHECK
-    }
-
-    cout << success_count << " success over " << test_count << " tests." << endl;
+    stats = test(stats, time_unit{ 17 }, time_unit{ 42 });
+    stats = test(stats, time_unit{ 23 }, time_unit{ 23 });
+    stats.Check(float{ length_unit{ 5 } }==5, "float{ length_unit{ 5 } }==5");
+    stats.Check(length_unit{ 4 } + length_unit{ 7 }==length_unit{ 11 }, "length_unit{ 4 } + length_unit{ 7 }==length_unit{ 11 }");
+    stats.Check(to_string(length_unit{ 18 }) == std::to_string(18.f), "to_string(length_unit{ 18 }) == std::to_string(18)");
+    cout << stats.success_count << " success over " << stats.test_count << " tests." << endl;
 }
