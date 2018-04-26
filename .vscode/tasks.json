@@ -9,7 +9,7 @@
             "command": "make\\build.cmd",
             "args": [ "-msvc", "${relativeFile}", "-ndebug", "-output", "bin/${fileBasenameNoExtension}_msvc_r.exe" ],
             "group": "build",
-            "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+            "presentation": { "reveal": "silent", "focus": false, "panel": "shared" },
             "problemMatcher": "$msCompile"
         },
         {
@@ -18,7 +18,7 @@
             "command": "make\\build.cmd",
             "args": [ "-msvc", "${relativeFile}", "-debug", "-output", "bin/${fileBasenameNoExtension}_msvc_d.exe" ],
             "group": "build",
-            "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+            "presentation": { "reveal": "silent", "focus": false, "panel": "shared" },
             "problemMatcher": "$msCompile"
         },
         {
@@ -27,7 +27,7 @@
             "command": "make\\build.cmd",
             "args": [ "-clang", "${relativeFile}", "-ndebug", "-output", "bin/${fileBasenameNoExtension}_clang_r.exe" ],
             "group": "build",
-            "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+            "presentation": { "reveal": "silent", "focus": false, "panel": "shared" },
             "problemMatcher": "$gcc"
         },
         {
@@ -36,7 +36,7 @@
             "command": "make\\build.cmd",
             "args": [ "-clang", "${relativeFile}", "-debug", "-output", "bin/${fileBasenameNoExtension}_clang_d.exe" ],
             "group": "build",
-            "presentation": { "reveal": "always", "focus": true, "panel": "dedicated" },
+            "presentation": { "reveal": "silent", "focus": false, "panel": "shared" },
             "problemMatcher": "$gcc"
         },
     ]
