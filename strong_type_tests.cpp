@@ -4,13 +4,9 @@
 
 // commutative_addition
 // divisible
-
-// a 3d vector without any semantic
-// template<typename T>
-// struct vector3
-// {
-//     T x, y, z;
-// };
+// invokable
+// hashable
+// serializable
 
 // safe length unit => underlying value is in meter (should be carved in the code, not in a comment)
 struct length_unit : wit::strong_type<
@@ -20,7 +16,6 @@ struct length_unit : wit::strong_type<
     , wit::explicitly_convertible_to<float>::modifier
     , wit::self_addable
     , wit::stringable
-    //, hashable
     >
 {
     struct meter;
@@ -40,28 +35,37 @@ struct time_unit : wit::strong_type<
     //, from_to<milliseconds, 1>
     //, from_to<seconds, 1000>
     //, from_to<minutes, 60000>
-    //, serializable
     >
 {
     using strong_type::strong_type;
     time_unit() : strong_type{ 0 } {}
 };
+
+// a 3d vector without any semantic
+template<typename T>
+struct vector3
+{
+    vector3(T _x, T _y, T _z) : x{std::move(_x)}, y{std::move(_y)}, z{std::move(_z)} {}
+    bool operator==(const vector3& _rhs) const { return x == _rhs.x && y == _rhs.y && z == _rhs.z; }
+    bool operator!=(const vector3& _rhs) const { return !(*this == _rhs); }
+    T x, y, z;
+};
+
 /*
 struct position;
 
 struct timespan;
 
 struct velocity;
-
-using displacement = strong_type
-    <
-    vector3<float>, // underlying type
-    struct string_int_tag, // unique tag
-    comparable, // displacement can use the underlying type comparison operators
-    commutative_addition<position, position>, // displacement + position = position + displacement => give a position
-    divisible<timespan, velocity> // displacement divide by timespan gives velocity
-    >;
 */
+using displacement = wit::strong_type<
+    vector3<length_unit> // underlying type
+    , struct displacement_tag // unique tag
+    , wit::equalable // displacement can use the underlying type comparison operators
+    //, commutative_addition<position, position>, // displacement + position = position + displacement => give a position
+    //, divisible<timespan, velocity> // displacement divide by timespan gives velocity
+>;
+
 using namespace std;
 
 struct stats
@@ -114,5 +118,13 @@ int main()
     { auto t = time_unit{37}; stats.Check(++t == time_unit{38}, "pre increment"); }
     { auto t = time_unit{37}; stats.Check(t++ == time_unit{37} && t == time_unit{38}, "post increment"); }
     { auto t = time_unit{37}; t += time_unit{17}; stats.Check(t == time_unit{54}, "addition assignment"); }
+
+    {
+        auto v0 = vector3<length_unit>{ length_unit{1}, length_unit{2}, length_unit{3} };
+        auto v1 = vector3<length_unit>{ length_unit{1}, length_unit{2}, length_unit{3} };
+        auto v2 = vector3<length_unit>{ length_unit{4}, length_unit{5}, length_unit{6} };
+        stats.Check(v0==v1,"vector3 equal");
+        stats.Check(v1!=v2,"vector3 different");
+    }
     cout << stats.success_count << " success over " << stats.test_count << " tests." << endl;
 }
