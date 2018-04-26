@@ -17,11 +17,10 @@ struct length_unit : wit::strong_type<
     float           // underlying type
     , length_unit   // unique tag (thank to CRTP, it is the type itself)
     , wit::comparable
-    , wit::orderable
     , wit::explicitly_convertible_to<float>::modifier
     , wit::self_addable
-    //, hashable
     , wit::stringable
+    //, hashable
     >
 {
     struct meter;
@@ -37,7 +36,6 @@ struct time_unit : wit::strong_type<
     long long
     , time_unit
     , wit::comparable
-    , wit::orderable
     //, from_to<milliseconds, 1>
     //, from_to<seconds, 1000>
     //, from_to<minutes, 60000>
@@ -111,6 +109,6 @@ int main()
     stats = test(stats, time_unit{ 23 }, time_unit{ 23 });
     stats.Check(float{ length_unit{ 5 } }==5, "float{ length_unit{ 5 } }==5");
     stats.Check(length_unit{ 4 } + length_unit{ 7 }==length_unit{ 11 }, "length_unit{ 4 } + length_unit{ 7 }==length_unit{ 11 }");
-    stats.Check(to_string(length_unit{ 18 }) == std::to_string(18.f), "to_string(length_unit{ 18 }) == std::to_string(18)");
+    stats.Check(std::to_string(length_unit{ 18 }) == std::to_string(18.f), "std::to_string(length_unit{ 18 }) == std::to_string(18.f)");
     cout << stats.success_count << " success over " << stats.test_count << " tests." << endl;
 }

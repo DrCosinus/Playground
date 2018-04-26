@@ -6,7 +6,7 @@ namespace wit
 {
     namespace detail
     {
-        template<typename STRONG_TYPE, template<typename> class MODIFIER_TYPE > // second type only because of multiple modifiers and avoid crash (CRTP)
+        template<typename STRONG_TYPE, template<typename> class MODIFIER_TYPE> // second type only because of multiple modifiers and avoid crash (CRTP)
         struct modifier
         {
             // modifier is friend of strong_type but the children of modifier will not
@@ -18,16 +18,21 @@ namespace wit
         };
     } // namespace detail
 
+    // operators == and != only (need only operator == on the underlying type)
     template<typename STRONG_TYPE>
-    struct comparable : detail::modifier<STRONG_TYPE, comparable>
+    struct equalable : detail::modifier<STRONG_TYPE, equalable>
     {
         bool operator==(const STRONG_TYPE& _rhs) const { return  this->get_value() == this->get_value(_rhs); }
         bool operator!=(const STRONG_TYPE& _rhs) const { return  !(*this == _rhs); }
     };
 
+    // operators == , != , <, >, <= and >= (need only operator == and < on the underlying type)
     template<typename STRONG_TYPE>
-    struct orderable : detail::modifier<STRONG_TYPE, orderable>
+    struct comparable : detail::modifier<STRONG_TYPE, comparable>
     {
+        //static_assert(!std::is_base_of_v<equalable<STRONG_TYPE>, STRONG_TYPE>);
+        bool operator==(const STRONG_TYPE& _rhs) const { return  this->get_value() == this->get_value(_rhs); } // should consider using !(a<b || b<a) to not use operator ==
+        bool operator!=(const STRONG_TYPE& _rhs) const { return  !(*this == _rhs); }
         bool operator<(const STRONG_TYPE& _rhs) const { return  this->get_value() < this->get_value(_rhs); }
         bool operator>(const STRONG_TYPE& _rhs) const { return  this->get_value(_rhs) < this->get_value(); }
         bool operator<=(const STRONG_TYPE& _rhs) const { return  !(*this > _rhs); }
@@ -61,10 +66,9 @@ namespace wit
     template<typename STRONG_TYPE>
     struct stringable : detail::modifier<STRONG_TYPE, stringable>
     {
-        std::string str() const { return std::to_string( this->get_value() ); }
-        friend std::string to_string(const STRONG_TYPE& _strongly_typed_object) { return std::to_string( detail::modifier<STRONG_TYPE, stringable>::get_value(_strongly_typed_object) ); }
+        static constexpr bool is_stringable = true;
+        std::string to_string() const { return std::to_string( this->get_value() ); }
     };
-
 
     template<typename TYPE>
     struct explicitly_convertible_to
@@ -96,3 +100,12 @@ namespace wit
         UNDERLYING_TYPE value_;
     };
 } // namespace wit
+
+namespace std
+{
+    template<typename UNDERLYING_TYPE, typename TAG_TYPE, template<typename> class... MODIFIER_TYPES, typename = std::enable_if_t<wit::strong_type<UNDERLYING_TYPE, TAG_TYPE, MODIFIER_TYPES...>::is_stringable>>
+    string to_string(const wit::strong_type<UNDERLYING_TYPE, TAG_TYPE, MODIFIER_TYPES...>& _strongly_typed_object)
+    {
+        return _strongly_typed_object.to_string();
+    }
+}
