@@ -60,7 +60,7 @@ using find_if_t = typename find_if<CONDITION_TYPE, OTHER_TYPES...>::type;
 template<typename UNDERLYING_TYPE, typename, typename... MODIFIER_TYPES>
 struct strong_type
 {
-    strong_type(UNDERLYING_TYPE _value) : value_(std::move(_value)) {} // implicit construction from UNDERLYING_TYPE
+    constexpr strong_type(UNDERLYING_TYPE _value) : value_(std::move(_value)) {} // implicit construction from UNDERLYING_TYPE
     template<typename ANOTHER_UNDERLYING_TYPE, typename ANOTHER_TAG_TYPE>
     strong_type(const strong_type<ANOTHER_UNDERLYING_TYPE, ANOTHER_TAG_TYPE>&) = delete; // conversion from another strong_type
 
@@ -70,34 +70,34 @@ struct strong_type
 
 // comparison
 // comparison/equality
-    std::enable_if_t<!std::is_void_v<equality_type>, bool> operator==(const strong_type& _rhs) const
+    constexpr std::enable_if_t<!std::is_void_v<equality_type>, bool> operator==(const strong_type& _rhs) const
     {
         return equality_type::equals(value_, _rhs.value_);
     }
-    std::enable_if_t<!std::is_void_v<equality_type>, bool> operator!=(const strong_type& _rhs) const
+    constexpr std::enable_if_t<!std::is_void_v<equality_type>, bool> operator!=(const strong_type& _rhs) const
     {
         return !equality_type::equals(value_, _rhs.value_);
     }
 // comparison/ordering
-    std::enable_if_t<!std::is_void_v<ordering_type>, bool> operator<(const strong_type& _rhs) const
+    constexpr std::enable_if_t<!std::is_void_v<ordering_type>, bool> operator<(const strong_type& _rhs) const
     {
         return ordering_type::less(value_, _rhs.value_);
     }
-    std::enable_if_t<!std::is_void_v<ordering_type>, bool> operator>(const strong_type& _rhs) const
+    constexpr std::enable_if_t<!std::is_void_v<ordering_type>, bool> operator>(const strong_type& _rhs) const
     {
         return ordering_type::less(_rhs.value_, value_);
     }
-    std::enable_if_t<!std::is_void_v<ordering_type>, bool> operator<=(const strong_type& _rhs) const
+    constexpr std::enable_if_t<!std::is_void_v<ordering_type>, bool> operator<=(const strong_type& _rhs) const
     {
         return !ordering_type::less(_rhs.value_, value_);
     }
-    std::enable_if_t<!std::is_void_v<ordering_type>, bool> operator>=(const strong_type& _rhs) const
+    constexpr std::enable_if_t<!std::is_void_v<ordering_type>, bool> operator>=(const strong_type& _rhs) const
     {
         return !ordering_type::less(value_, _rhs.value_);
     }
 // conversion operator
     template<typename T = UNDERLYING_TYPE> // to enable SFINAE
-    explicit operator std::enable_if_t<!std::is_void_v<explicit_convert_to_utype>, T>() const { return value_; }
+    constexpr explicit operator std::enable_if_t<!std::is_void_v<explicit_convert_to_utype>, T>() const { return value_; }
 // value getter
     // UNDERLYING_TYPE& get() { return value_; }
     // const UNDERLYING_TYPE& get() const { return value_; }
