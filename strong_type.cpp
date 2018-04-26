@@ -26,11 +26,12 @@ namespace detail
         static constexpr bool value = std::is_void_v<decltype(Test<MODIFIER_TYPE>(nullptr))>;
     };
 
-    struct can_explicitly_convert_to_underlying_type
+    template<typename UNDERLYING_TYPE>
+    struct can_explicitly_convert_to
     {
     private:
         template<typename U> static int Test(...);
-        template<typename U> static void Test(decltype(U::can_explicitly_convertible_to_underlying_type)*);
+        template<typename U> static void Test(decltype(U::template can_explicitly_convertible_to<UNDERLYING_TYPE>)*);
     public:
         template<typename MODIFIER_TYPE>
         static constexpr bool value = std::is_void_v<decltype(Test<MODIFIER_TYPE>(nullptr))>;
@@ -66,7 +67,8 @@ struct strong_type
 
     using equality_type = find_if_t<detail::can_check_equality<UNDERLYING_TYPE>, MODIFIER_TYPES...>;
     using ordering_type = find_if_t<detail::can_check_order<UNDERLYING_TYPE>, MODIFIER_TYPES...>;
-    using explicit_convert_to_utype = find_if_t<detail::can_explicitly_convert_to_underlying_type, MODIFIER_TYPES...>;
+    template<typename OTHER_TYPE>
+    using explicit_convertible_to = find_if_t<detail::can_explicitly_convert_to<OTHER_TYPE>, MODIFIER_TYPES...>;
 
 // comparison
 // comparison/equality
@@ -97,7 +99,7 @@ struct strong_type
     }
 // conversion operator
     template<typename T = UNDERLYING_TYPE> // to enable SFINAE
-    constexpr explicit operator std::enable_if_t<!std::is_void_v<explicit_convert_to_utype>, T>() const { return value_; }
+    constexpr explicit operator std::enable_if_t<!std::is_void_v<explicit_convertible_to<T>>, T>() const { return T{value_}; }
 // value getter
     // UNDERLYING_TYPE& get() { return value_; }
     // const UNDERLYING_TYPE& get() const { return value_; }
@@ -117,10 +119,13 @@ struct orderable
     static bool less(const T& _lhs, const T& _rhs) { return _lhs < _rhs; }
 };
 
-struct explicitly_convertible_to_underlying_type
+struct explicitly_convertible_to_float
 {
-    static constexpr bool can_explicitly_convertible_to_underlying_type = true;
+    template<typename U>
+    static constexpr bool can_explicitly_convertible_to = false;
 };
+template<>
+constexpr bool explicitly_convertible_to_float::can_explicitly_convertible_to<float> = true;
 
 struct nul
 {
@@ -152,7 +157,7 @@ struct length_unit : strong_type<
     , length_unit   // unique tag (thank to CRTP, it is the type itself)
     , comparable
     , orderable
-    , explicitly_convertible_to_underlying_type
+    , explicitly_convertible_to_float
     //, explicitly_convertible_to<float>
     //, hashable
     //, printable
