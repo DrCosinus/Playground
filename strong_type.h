@@ -1,6 +1,7 @@
 #include <type_traits>
 #include <utility>
 #include <string>
+#include <typeinfo>
 
 namespace wit
 {
@@ -18,7 +19,27 @@ namespace wit
             STRONG_TYPE& strongly_typed_object() { return static_cast<STRONG_TYPE&>(*this); }
             const STRONG_TYPE& strongly_typed_object() const { return static_cast<const STRONG_TYPE&>(*this); }
         };
+
+        template<typename T>     struct is_tuple :                    std::false_type {};
+        template<typename... Ts> struct is_tuple<std::tuple<Ts...>> : std::true_type {};
+        template<typename T> constexpr bool is_tuple_v = is_tuple<T>::value;
     } // namespace detail
+
+    template<typename UNDERLYING_TYPE, typename TAG_TYPE, template<typename> class... MODIFIER_TYPES>
+    struct strong_type : MODIFIER_TYPES<strong_type<UNDERLYING_TYPE, TAG_TYPE, MODIFIER_TYPES...>>...
+    {
+        using underlying_type = UNDERLYING_TYPE;
+        explicit constexpr strong_type(UNDERLYING_TYPE _value) : value_(std::move(_value)) {}
+        template<typename ANOTHER_UNDERLYING_TYPE, typename ANOTHER_TAG_TYPE>
+        strong_type(const strong_type<ANOTHER_UNDERLYING_TYPE, ANOTHER_TAG_TYPE>&) = delete; // conversion from another strong_type
+        const UNDERLYING_TYPE& get() const { return value_; }
+    private:
+        template<typename STRONG_TYPE, template<typename> class MODIFIER_TYPE >
+        friend struct detail::modifier;
+        const UNDERLYING_TYPE& get_value() const { return value_; }
+        UNDERLYING_TYPE& get_value() { return value_; }
+        UNDERLYING_TYPE value_;
+    };
 
     // operators == and != only (need only operator == on the underlying type)
     template<typename STRONG_TYPE>
@@ -45,7 +66,16 @@ namespace wit
     struct self_addable : detail::modifier<STRONG_TYPE, self_addable>
     {
         STRONG_TYPE operator+(const STRONG_TYPE& _rhs) const { return STRONG_TYPE{ this->get_value() + this->get_value(_rhs) }; }
+        template<typename U=STRONG_TYPE>
+        std::enable_if_t<detail::is_tuple_v<typename U::underlying_type>, U> operator+(const U& _rhs) const { return U{ 0 }; }
     };
+
+    //template<typename... TUPLE_TYPES, typename TAG_TYPE, template<typename> class... MODIFIER_TYPES>
+    // template<typename STRONG_TUPLE, std::enable_if_t<detail::is_tuple_v<typename STRONG_TUPLE::underlying_type>, int> = 0>
+    // struct self_addable<STRONG_TUPLE> : detail::modifier<STRONG_TUPLE, self_addable>
+    // {
+    //     STRONG_TYPE operator+(const STRONG_TYPE& _rhs) const { return STRONG_TYPE{ 0 }; }
+    // };
 
     template<typename STRONG_TYPE>
     struct self_subtractable : detail::modifier<STRONG_TYPE, self_subtractable>
@@ -113,21 +143,7 @@ namespace wit
 
     // -------------------------------------
 
-    template<typename UNDERLYING_TYPE, typename TAG_TYPE, template<typename> class... MODIFIER_TYPES>
-    struct strong_type : MODIFIER_TYPES<strong_type<UNDERLYING_TYPE, TAG_TYPE, MODIFIER_TYPES...>>...
-    {
-        using underlying_type = UNDERLYING_TYPE;
-        explicit constexpr strong_type(UNDERLYING_TYPE _value) : value_(std::move(_value)) {}
-        template<typename ANOTHER_UNDERLYING_TYPE, typename ANOTHER_TAG_TYPE>
-        strong_type(const strong_type<ANOTHER_UNDERLYING_TYPE, ANOTHER_TAG_TYPE>&) = delete; // conversion from another strong_type
-        const UNDERLYING_TYPE& get() const { return value_; }
-    private:
-        template<typename STRONG_TYPE, template<typename> class MODIFIER_TYPE >
-        friend struct detail::modifier;
-        const UNDERLYING_TYPE& get_value() const { return value_; }
-        UNDERLYING_TYPE& get_value() { return value_; }
-        UNDERLYING_TYPE value_;
-    };
+
 } // namespace wit
 
 namespace std

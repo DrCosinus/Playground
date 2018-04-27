@@ -1,12 +1,10 @@
 #include "strong_type.h"
 
 #include <iostream>
+#include <tuple>
 
 // commutative_addition
 // divisible
-// invokable
-// hashable
-// serializable
 
 // safe length unit => underlying value is in meter (should be carved in the code, not in a comment)
 struct length_unit : wit::strong_type<
@@ -51,6 +49,21 @@ struct vector3
     T x, y, z;
 };
 
+namespace experimental
+{
+    template<typename T>
+    struct vector3 : wit::strong_type<
+        std::tuple<T, T, T>
+        , vector3<T>
+        , wit::equalable
+        //, wit::self_addable
+    >
+    {
+        using super = wit::strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable>;
+        vector3(T _x, T _y, T _z) : super{ std::make_tuple(std::move(_x), std::move(_y), std::move(_z)) } {}
+        vector3() : vector3( T{0}, T{0}, T{0}) {}
+    };
+} // namespace experimental
 /*
 struct position;
 
@@ -68,7 +81,7 @@ using displacement = wit::strong_type<
 
 using namespace std;
 
-struct stats
+struct test_group
 {
     unsigned int test_count = 0;
     unsigned int success_count = 0;
@@ -78,7 +91,7 @@ struct stats
         test_count++; 
         if (!_condition)
         {
-            cout << _failure_message << "**ERROR**" << endl;
+            cout << _failure_message << " **FAILED**" << endl;
         }
         else
         {
@@ -88,43 +101,56 @@ struct stats
 };
 
 template<typename T>
-stats test(stats _stats, const T& a, const T& b)
+test_group test(test_group&& _tg, const T& a, const T& b)
 {
-    #define CHECK(OP) _stats.test_count++; if ((a.get() OP b.get())!=(a OP b)) { cout << a.get() << #OP << b.get() << " returned " << (a OP b) << "**ERROR**" << endl; } else { _stats.success_count++; }
-    CHECK(==);
-    CHECK(!=);
-    CHECK(<);
-    CHECK(>);
-    CHECK(<=);
-    CHECK(>=);
-    #undef CHECK
-    return _stats;
+    _tg.Check((a.get()==b.get())==(a==b), "equal to");
+    _tg.Check((a.get()!=b.get())==(a!=b), "not equal to");
+    _tg.Check((a.get()<b.get())==(a<b), "less than");
+    _tg.Check((a.get()>b.get())==(a>b), "greater than");
+    _tg.Check((a.get()<=b.get())==(a<=b), "less than or equal to");
+    _tg.Check((a.get()>=b.get())==(a>=b), "greater than or equal to");
+    return _tg;
 };
 
 int main()
 {
-    stats stats;
+    test_group tg;
 
     cout << boolalpha;
 
-    stats = test(stats, length_unit{ 17 }, length_unit{ 42 });
-    stats = test(stats, length_unit{ 23 }, length_unit{ 23 });
+    tg = test(move(tg), length_unit{ 17 }, length_unit{ 42 });
+    tg = test(move(tg), length_unit{ 23 }, length_unit{ 23 });
 
-    stats = test(stats, time_unit{ 17 }, time_unit{ 42 });
-    stats = test(stats, time_unit{ 23 }, time_unit{ 23 });
-    stats.Check(float{ length_unit{ 5 } }==5, "float{ length_unit{ 5 } }==5");
-    stats.Check(length_unit{ 4 } + length_unit{ 7 }==length_unit{ 11 }, "length_unit{ 4 } + length_unit{ 7 }==length_unit{ 11 }");
-    stats.Check(std::to_string(length_unit{ 18 }) == std::to_string(18.f), "std::to_string(length_unit{ 18 }) == std::to_string(18.f)");
-    { auto t = time_unit{37}; stats.Check(++t == time_unit{38}, "pre increment"); }
-    { auto t = time_unit{37}; stats.Check(t++ == time_unit{37} && t == time_unit{38}, "post increment"); }
-    { auto t = time_unit{37}; t += time_unit{17}; stats.Check(t == time_unit{54}, "addition assignment"); }
+    tg = test(move(tg), time_unit{ 17 }, time_unit{ 42 });
+    tg = test(move(tg), time_unit{ 23 }, time_unit{ 23 });
+    tg.Check(float{ length_unit{ 5 } }==5, "explicit conversion to");
+    tg.Check(length_unit{ 4 } + length_unit{ 7 }==length_unit{ 11 }, "self_addable");
+    tg.Check(std::to_string(length_unit{ 18 }) == std::to_string(18.f), "stringable: std::to_string");
+
+    { 
+        auto t = time_unit{37};
+        tg.Check(++t == time_unit{38}, "incrementable: pre increment");
+        tg.Check(t++ == time_unit{38} && t == time_unit{39}, "incrementable: post increment");
+        t += time_unit{17};
+        tg.Check(t == time_unit{56}, "incrementable: addition assignment");
+    }
 
     {
         auto v0 = vector3<length_unit>{ length_unit{1}, length_unit{2}, length_unit{3} };
         auto v1 = vector3<length_unit>{ length_unit{1}, length_unit{2}, length_unit{3} };
         auto v2 = vector3<length_unit>{ length_unit{4}, length_unit{5}, length_unit{6} };
-        stats.Check(v0==v1,"vector3 equal");
-        stats.Check(v1!=v2,"vector3 different");
+        tg.Check(v0==v1,"vector3 equal operator");
+        tg.Check(v1!=v2,"vector3 not equal operator");
     }
-    cout << stats.success_count << " success over " << stats.test_count << " tests." << endl;
+
+    {
+        using vec3 = experimental::vector3<length_unit>;
+        auto v0 = vec3{ length_unit{1}, length_unit{2}, length_unit{3} };
+        auto v1 = vec3{ length_unit{1}, length_unit{2}, length_unit{3} };
+        auto v2 = vec3{ length_unit{4}, length_unit{5}, length_unit{6} };
+        tg.Check(v0==v1,"experimental::vector3 equal operator");
+        tg.Check(v1!=v2,"experimental::vector3 not equal operator");
+        //tg.Check(v1+v2 == vec3{ length_unit{1}, length_unit{2}, length_unit{3} }, "experimental::vector3 self addition operator");
+    }
+    cout << tg.success_count << " success over " << tg.test_count << " tests." << endl;
 }
