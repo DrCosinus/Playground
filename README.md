@@ -2,9 +2,54 @@
 
 ## strong type lib // WIP //
 
-Modifiers:
+### Type safety
 
-**st** : strong_type, **ut** : underlying type
+Wikipedia/Wiktionary definition:
+
+In computer science, type safety is the extent to which a programming language **discourages** or **prevents** type errors.
+
+At compiletime, check for:
+
+- use of one type when another is intended
+- operations that do not make sense
+- use of values outside the defined space
+
+#### Affine space
+
+...
+
+### Implementation
+
+```cpp
+namespace wit {
+template<
+  // the type in which the value is effectively stored
+  typename UNDERLYING_TYPE,
+  // ensure the unicity of the whole strong type... 
+  // typically it could be the inherithing type itself
+  typename TAG_TYPE,
+  // a set of modifiers. 
+  // the strong type will inherit from them
+  template<typename> class... MODIFIER_TYPES 
+  >
+struct strong_type : MODIFIER_TYPES<strong_type<UNDERLYING_TYPE, TAG_TYPE, MODIFIER_TYPES...>>...
+{
+  explicit constexpr strong_type(UNDERLYING_TYPE _value)
+  : value_(std::move(_value))
+  {}
+  // ...
+private:
+  UNDERLYING_TYPE value_;
+}
+} // namespace wit
+```
+
+- No implicit construction from underlying type
+- No implicit copy-assignment
+
+#### List of built-in modifiers:
+
+**st** : strong_type, **ut** : underlying type, **dt** difference type
 
 | | modifier                               | defined operators                   | needed operators of ut |
 |-| -------------------------------------- | ----------------------------------- | ---------------------- |
@@ -22,6 +67,7 @@ Modifiers:
 | | serializable                           |                                     |                        |
 | | hashable                               |                                     |                        |
 | | addable_to<OPERAND_T, RESULT_T>        | res = st + op = op + st             |                        |
+| | define_difference_type<st>             | st = st + dt = dt + st; dt = st - st; | st and df hav the same ut |
 
 ```cpp
 #include <wit/strong_type.hpp>
