@@ -18,6 +18,14 @@ At compiletime, check for:
 
 ...
 
+| measure    | difference   |
+| ---------- | ------------ |
+| position   | displacement |
+| angle      | arc          |
+| time_stamp | time_span    |
+| pointer    | offset       |
+| treasury   | cost         |
+
 ### Implementation
 
 ```cpp
@@ -47,27 +55,27 @@ private:
 - No implicit construction from underlying type
 - No implicit copy-assignment
 
-#### List of built-in modifiers:
+#### List of built-in modifiers
 
 **st** : strong_type, **ut** : underlying type, **dt** difference type
 
-| | modifier                               | defined operators                   | needed operators of ut |
-|-| -------------------------------------- | ----------------------------------- | ---------------------- |
-|x| equalable                              | `==` `!=`                           | `==`                   |
-|x| comparable                             | `==` `!=` `<` `>` `<=` `>=`         | `==` & `<`             |
-|x| explicitly_convertible_to<T>::modifier | explicit convert to T               |                        |
-|x| self_addable                           | st = st `+` st                      | `+`                    |
-|x| self_substractable                     | st = st `-` st                      | `-`                    |
-|x| self_multipliable                      | st = st `*` st                      | `*`                    |
-|x| self_dividable                         | st = st `/` st                      | `/`                    |
-|x| stringable                             | st.to_string() & std::to_string(st) |                        |
-|x| incrementable                          | st++, ++st & st += st;              | ++ut & ut+=ut          |
-|x| decrementable                          |                                     |                        |
-| | invokable                              | st()                                |                        |
-| | serializable                           |                                     |                        |
-| | hashable                               |                                     |                        |
-| | addable_to<OPERAND_T, RESULT_T>        | res = st + op = op + st             |                        |
-| | define_difference_type<st>             | st = st + dt = dt + st; dt = st - st; | st and df hav the same ut |
+| | modifier                                | defined operators                   | needed operators of ut |
+|-| --------------------------------------- | ----------------------------------- | ---------------------- |
+|x| equalable                               | `==` `!=`                           | `==`                   |
+|x| comparable                              | `==` `!=` `<` `>` `<=` `>=`         | `==` & `<`             |
+|x| explicitly_convertible_to\<T>::modifier | explicit convert to T               |                        |
+|x| self_addable                            | st = st `+` st                      | `+`                    |
+|x| self_substractable                      | st = st `-` st                      | `-`                    |
+|x| self_multipliable                       | st = st `*` st                      | `*`                    |
+|x| self_dividable                          | st = st `/` st                      | `/`                    |
+|x| stringable                              | st.to_string() & std::to_string(st) |                        |
+|x| incrementable                           | st++, ++st & st += st;              | ++ut & ut+=ut          |
+|x| decrementable                           |                                     |                        |
+| | invokable                               | st()                                |                        |
+| | serializable                            |                                     |                        |
+| | hashable                                |                                     |                        |
+| | addable_to<OPERAND_T, RESULT_T>         | res = st + op = op + st             |                        |
+| | define_difference_type\<st>             | st = st + dt = dt + st; dt = st - st; | st and df hav the same ut |
 
 ```cpp
 #include <wit/strong_type.hpp>
