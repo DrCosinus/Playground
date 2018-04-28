@@ -61,15 +61,12 @@ abstract class Compiler : ICompiler
         process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
         process.StartInfo.UseShellExecute = false;
         process.StartInfo.RedirectStandardOutput = true;
-        process.StartInfo.RedirectStandardError = true;
         process.StartInfo.Arguments = arguments;
         process.Start();
         string output = process.StandardOutput.ReadToEnd();
-        string errors = process.StandardError.ReadToEnd();
         process.WaitForExit();
 
         Console.WriteLine(output);
-        Console.WriteLine(errors);
 
         return process.ExitCode;
     }
@@ -324,6 +321,11 @@ int Main()
     {
         Console.WriteLine("Bad arguments!");
         return 1;
+    }
+    // header only => try to compile associated tests source file
+    if (args.SourceFilenames.Count==1 && args.SourceFilenames[0].EndsWith(".h"))
+    {
+        args.SourceFilenames[0] = args.SourceFilenames[0].Replace(".h", "_tests.cpp");
     }
 
     var most_recent_source_file_time = DateTime.MinValue;
