@@ -18,6 +18,7 @@ struct length_unit : wit::strong_type<
 {
     struct meter;
     using strong_type::strong_type;
+    length_unit(strong_type _super) : strong_type(std::move(_super)) {}
     length_unit() : strong_type{ 0 } {}
 };
 
@@ -52,32 +53,15 @@ struct vector3
 namespace experimental
 {
     template<typename T>
-    struct vector3 : wit::strong_type<
-        std::tuple<T, T, T>
-        , vector3<T>
-        , wit::equalable
-        //, wit::self_addable
-    >
+    struct vector3 : wit::strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable, wit::self_addable>
     {
-        using super = wit::strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable>;
+        using super = wit::strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable, wit::self_addable>;
         vector3(T _x, T _y, T _z) : super{ std::make_tuple(std::move(_x), std::move(_y), std::move(_z)) } {}
-        vector3() : vector3( T{0}, T{0}, T{0}) {}
+        vector3() : vector3( T{}, T{}, T{}) {}
+        template<typename U, std::enable_if_t<std::is_base_of_v<U,T>,int> =0>
+        vector3(U x, U y, U z) : vector3{ T{x}, T{y}, T{z} } {}
     };
 } // namespace experimental
-/*
-struct position;
-
-struct timespan;
-
-struct velocity;
-*/
-using displacement = wit::strong_type<
-    vector3<length_unit> // underlying type
-    , struct displacement_tag // unique tag
-    , wit::equalable // displacement can use the underlying type comparison operators
-    //, commutative_addition<position, position>, // displacement + position = position + displacement => give a position
-    //, divisible<timespan, velocity> // displacement divide by timespan gives velocity
->;
 
 using namespace std;
 
@@ -150,7 +134,7 @@ int main()
         auto v2 = vec3{ length_unit{4}, length_unit{5}, length_unit{6} };
         tg.Check(v0==v1,"experimental::vector3 equal operator");
         tg.Check(v1!=v2,"experimental::vector3 not equal operator");
-        //tg.Check(v1+v2 == vec3{ length_unit{1}, length_unit{2}, length_unit{3} }, "experimental::vector3 self addition operator");
+        tg.Check(v1+v2 == vec3{ length_unit{5}, length_unit{7}, length_unit{9} }, "experimental::vector3 self addition operator");
     }
     cout << tg.success_count << " success over " << tg.test_count << " tests." << endl;
 }

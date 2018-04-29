@@ -1,16 +1,23 @@
 #include <type_traits>
 #include <utility>
 #include <string>
-#include <typeinfo>
+#include <tuple>
 
 namespace wit
 {
+    template<typename UNDERLYING_TYPE, typename TAG_TYPE, template<typename> class... MODIFIER_TYPES>
+    struct strong_type;
+
     namespace detail
     {
         template<typename STRONG_TYPE, template<typename> class MODIFIER_TYPE> // second type only because of multiple modifiers and avoid crash (CRTP)
-        struct modifier
+        struct modifier;
+
+        template<template<typename> class MODIFIER_TYPE, typename UNDERLYING_TYPE, typename TAG_TYPE, template<typename> class... MODIFIER_TYPES>
+        struct modifier<strong_type<UNDERLYING_TYPE, TAG_TYPE, MODIFIER_TYPES...>, MODIFIER_TYPE>
         {
         protected:
+            using STRONG_TYPE = strong_type<UNDERLYING_TYPE, TAG_TYPE, MODIFIER_TYPES...>;
             // modifier is friend of strong_type but the children of modifier will not
             auto& get_value() { return strongly_typed_object().get_value(); }
             const auto& get_value() const { return strongly_typed_object().get_value(); }
@@ -29,12 +36,13 @@ namespace wit
     struct strong_type : MODIFIER_TYPES<strong_type<UNDERLYING_TYPE, TAG_TYPE, MODIFIER_TYPES...>>...
     {
         using underlying_type = UNDERLYING_TYPE;
+        using tag_type = TAG_TYPE;
         explicit constexpr strong_type(UNDERLYING_TYPE _value) : value_(std::move(_value)) {}
         template<typename ANOTHER_UNDERLYING_TYPE, typename ANOTHER_TAG_TYPE>
         strong_type(const strong_type<ANOTHER_UNDERLYING_TYPE, ANOTHER_TAG_TYPE>&) = delete; // conversion from another strong_type
         const UNDERLYING_TYPE& get() const { return value_; }
     private:
-        template<typename STRONG_TYPE, template<typename> class MODIFIER_TYPE >
+        template<typename STRONG_TYPE, template<typename> class MODIFIER_TYPE>
         friend struct detail::modifier;
         const UNDERLYING_TYPE& get_value() const { return value_; }
         UNDERLYING_TYPE& get_value() { return value_; }
@@ -66,16 +74,22 @@ namespace wit
     struct self_addable : detail::modifier<STRONG_TYPE, self_addable>
     {
         STRONG_TYPE operator+(const STRONG_TYPE& _rhs) const { return STRONG_TYPE{ this->get_value() + this->get_value(_rhs) }; }
-        template<typename U=STRONG_TYPE>
-        std::enable_if_t<detail::is_tuple_v<typename U::underlying_type>, U> operator+(const U& _rhs) const { return U{ 0 }; }
     };
 
-    //template<typename... TUPLE_TYPES, typename TAG_TYPE, template<typename> class... MODIFIER_TYPES>
-    // template<typename STRONG_TUPLE, std::enable_if_t<detail::is_tuple_v<typename STRONG_TUPLE::underlying_type>, int> = 0>
-    // struct self_addable<STRONG_TUPLE> : detail::modifier<STRONG_TUPLE, self_addable>
-    // {
-    //     STRONG_TYPE operator+(const STRONG_TYPE& _rhs) const { return STRONG_TYPE{ 0 }; }
-    // };
+    template<typename T1, typename T2, typename T3, typename TAG_TYPE, template<typename> class... MODIFIER_TYPES>
+    struct self_addable<strong_type<std::tuple<T1,T2,T3>, TAG_TYPE, MODIFIER_TYPES...>>
+     : detail::modifier<strong_type<std::tuple<T1,T2,T3>, TAG_TYPE, MODIFIER_TYPES...>, self_addable>
+    {
+        using STRONG_TUPLE = strong_type<std::tuple<T1,T2,T3>, TAG_TYPE, MODIFIER_TYPES...>;
+        TAG_TYPE operator+(const TAG_TYPE& _rhs) const
+        {
+            return TAG_TYPE{
+            std::get<0>(this->get_value()) + std::get<0>(this->get_value(_rhs)),
+            std::get<1>(this->get_value()) + std::get<1>(this->get_value(_rhs)),
+            std::get<2>(this->get_value()) + std::get<2>(this->get_value(_rhs))
+            };
+        }
+    };
 
     template<typename STRONG_TYPE>
     struct self_subtractable : detail::modifier<STRONG_TYPE, self_subtractable>
@@ -90,7 +104,7 @@ namespace wit
     };
 
     template<typename STRONG_TYPE>
-    struct self_dividable : detail::modifier<STRONG_TYPE, self_multipliable>
+    struct self_dividable : detail::modifier<STRONG_TYPE, self_dividable>
     {
         STRONG_TYPE operator/(const STRONG_TYPE& _rhs) const { return STRONG_TYPE{ this->get_value() / this->get_value(_rhs) }; }
     };
@@ -140,9 +154,6 @@ namespace wit
     //         PRODUCT_STRONG_TYPE operator+(const MULTIPLICAND_STRONG_TYPE&) { this->get_value()}
     //     }
     // };
-
-    // -------------------------------------
-
 
 } // namespace wit
 
