@@ -59,23 +59,23 @@ private:
 
 **st** : strong_type, **ut** : underlying type, **dt** difference type
 
-| | modifier                                | defined operators                   | needed operators of ut |
+| | modifier                                | defined<br>operators                | required<br>operators of ut |
 |-| --------------------------------------- | ----------------------------------- | ---------------------- |
 |x| equalable                               | `==` `!=`                           | `==`                   |
-|x| comparable                              | `==` `!=` `<` `>` `<=` `>=`         | `==` & `<`             |
-|x| explicitly_convertible_to\<T>::modifier | explicit convert to T               |                        |
+|x| comparable                              | `==` `!=`<br>`<` `>` `<=` `>=`      | `==` &<br>`<`          |
+|x| explicitly_convertible_to\<T>::modifier | T(st)                               |                        |
 |x| self_addable                            | st = st `+` st                      | `+`                    |
 |x| self_substractable                      | st = st `-` st                      | `-`                    |
 |x| self_multipliable                       | st = st `*` st                      | `*`                    |
 |x| self_dividable                          | st = st `/` st                      | `/`                    |
-|x| stringable                              | st.to_string() & std::to_string(st) |                        |
-|x| incrementable                           | st++, ++st & st += st;              | ++ut & ut+=ut          |
+|x| stringable                              | st.to_string() &<br>std::to_string(st) |                     |
+|x| incrementable                           | st++, ++st &<br>st += st;           | ++ut &<br>ut+=ut       |
 |x| decrementable                           |                                     |                        |
 | | invokable                               | st()                                |                        |
 | | serializable                            |                                     |                        |
 | | hashable                                |                                     |                        |
-| | addable_to<OPERAND_T, RESULT_T>         | res = st + op = op + st             |                        |
-| | define_difference_type\<st>             | st = st + dt = dt + st; dt = st - st; | st and df hav the same ut |
+| | addable_to<OPERAND_T, RESULT_T>         | res = st + op<br> res = op + st     |                        |
+| | define_difference_type\<dt>             | st = st + dt<br>st = dt + st<br>dt = st - st | st and df have<br>the same ut |
 
 ```cpp
 #include <wit/strong_type.hpp>
