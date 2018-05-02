@@ -145,6 +145,12 @@ namespace wit
         };
     };
 
+    template<typename STRONG_TYPE>
+    struct unary_sign : detail::modifier<STRONG_TYPE, unary_sign>
+    {
+        STRONG_TYPE operator+() const { return STRONG_TYPE{this->get_value()}; }
+        STRONG_TYPE operator-() const { return STRONG_TYPE{-this->get_value()}; }
+    };
     // template<template<typename, typename, template<typename> class...> MULTIPLICAND_STRONG_TYPE, typename PRODUCT_STRONG_TYPE>
     // struct multipliable_by
     // {

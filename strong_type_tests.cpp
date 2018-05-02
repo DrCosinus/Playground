@@ -6,21 +6,26 @@
 // commutative_addition
 // divisible
 
+struct meter;
+
 // safe length unit => underlying value is in meter (should be carved in the code, not in a comment)
 struct length_unit : wit::strong_type<
     float           // underlying type
     , length_unit   // unique tag (thank to CRTP, it is the type itself)
     , wit::comparable
     , wit::explicitly_convertible_to<float>::modifier
-    , wit::self_addable
+    , wit::self_addable, wit::self_subtractable, wit::unary_sign
     , wit::stringable
+    //, wit::from<meter>::modifier
     >
 {
-    struct meter;
     using strong_type::strong_type;
     length_unit(strong_type _super) : strong_type(std::move(_super)) {}
     length_unit() : strong_type{ 0 } {}
 };
+
+length_unit operator""_m(long double _meters) { return length_unit{float(_meters)}; }
+length_unit operator""_m(unsigned long long _meters) { return length_unit{float(_meters)}; }
 
 // struct milliseconds;
 // struct seconds;
@@ -102,16 +107,18 @@ int main()
 
     cout << boolalpha;
 
-    tg = test(move(tg), length_unit{ 17 }, length_unit{ 42 });
-    tg = test(move(tg), length_unit{ 23 }, length_unit{ 23 });
+    tg = test(move(tg), 17_m, 42_m);
+    tg = test(move(tg), 23_m, 23_m);
+    tg.Check( +5_m == length_unit{ 5 }, "unary plus operator" );
+    tg.Check( -5_m == length_unit{ -5 }, "unary minus operator" );
 
     tg = test(move(tg), time_unit{ 17 }, time_unit{ 42 });
     tg = test(move(tg), time_unit{ 23 }, time_unit{ 23 });
-    tg.Check(float{ length_unit{ 5 } }==5, "explicit conversion to");
-    tg.Check(length_unit{ 4 } + length_unit{ 7 }==length_unit{ 11 }, "self_addable");
-    tg.Check(std::to_string(length_unit{ 18 }) == std::to_string(18.f), "stringable: std::to_string");
+    tg.Check(float{ 5_m }==5, "explicit conversion to");
+    tg.Check(4_m + 7_m == 11_m, "self_addable");
+    tg.Check(std::to_string( 18_m ) == std::to_string(18.f), "stringable: std::to_string");
 
-    { 
+    {
         auto t = time_unit{37};
         tg.Check(++t == time_unit{38}, "incrementable: pre increment");
         tg.Check(t++ == time_unit{38} && t == time_unit{39}, "incrementable: post increment");
@@ -120,21 +127,21 @@ int main()
     }
 
     {
-        auto v0 = vector3<length_unit>{ length_unit{1}, length_unit{2}, length_unit{3} };
-        auto v1 = vector3<length_unit>{ length_unit{1}, length_unit{2}, length_unit{3} };
-        auto v2 = vector3<length_unit>{ length_unit{4}, length_unit{5}, length_unit{6} };
+        auto v0 = vector3<length_unit>{ 1_m, 2_m, 3_m };
+        auto v1 = vector3<length_unit>{ 1_m, 2_m, 3_m };
+        auto v2 = vector3<length_unit>{ 4_m, 5_m, 6_m };
         tg.Check(v0==v1,"vector3 equal operator");
         tg.Check(v1!=v2,"vector3 not equal operator");
     }
 
     {
         using vec3 = experimental::vector3<length_unit>;
-        auto v0 = vec3{ length_unit{1}, length_unit{2}, length_unit{3} };
-        auto v1 = vec3{ length_unit{1}, length_unit{2}, length_unit{3} };
-        auto v2 = vec3{ length_unit{4}, length_unit{5}, length_unit{6} };
+        auto v0 = vec3{ 1_m, 2_m, 3_m };
+        auto v1 = vec3{ 1_m, 2_m, 3_m };
+        auto v2 = vec3{ 4_m, 5_m, 6_m };
         tg.Check(v0==v1,"experimental::vector3 equal operator");
         tg.Check(v1!=v2,"experimental::vector3 not equal operator");
-        tg.Check(v1+v2 == vec3{ length_unit{5}, length_unit{7}, length_unit{9} }, "experimental::vector3 self addition operator");
+        tg.Check(v1+v2 == vec3{ 5_m, 7_m, 9_m }, "experimental::vector3 self addition operator");
     }
     cout << tg.success_count << " success over " << tg.test_count << " tests." << endl;
 }
