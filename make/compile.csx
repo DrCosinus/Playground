@@ -92,9 +92,9 @@ class MSVC : Compiler
             , $@"{MSVCPath("Professional")}\include"
             //, $@"{DotNetFrameworkPath}\include\um"
             , $@"{Windows10KitPath("include")}\ucrt"
-            //, $@"{Windows10KitPath}\shared"
-            //, $@"{Windows10KitPath}\um"
-            //, $@"{Windows10KitPath}\winrt"
+            , $@"{Windows10KitPath("include")}\shared"
+            , $@"{Windows10KitPath("include")}\um"
+            //, $@"{Windows10KitPath("include")}\winrt"
             //, $@"{Windows10KitPath}\cppwinrt"
             ));
         Environment.SetEnvironmentVariable( "LIB", string.Join(";"
@@ -168,7 +168,7 @@ class MSVC : Compiler
         parameters.Add($"/Fe{OutputFilepath}");
         parameters.Add("/EHsc"); // avoid warning C4530: C++ exception handler used, but unwind semantics are not enabled. Specify /EHsc
         parameters.Add("/permissive-"); // disable soms nonconforming code to compile
-        parameters.Add("/Za"); // disable extensions
+        //parameters.Add("/Za"); // disable extensions... unfortunately some extension are required in some windows header :(
         parameters.Add("/nologo"); // disable copyright message
         if (!string.IsNullOrEmpty(IntermediaryFileFolderName))
         {

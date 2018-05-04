@@ -1,12 +1,7 @@
+#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
+#include "extern_libs/catch.hpp"
+
 #include "strong_type.h"
-
-#include <iostream>
-#include <tuple>
-
-// commutative_addition
-// divisible
-
-struct meter;
 
 // safe length unit => underlying value is in meter (should be carved in the code, not in a comment)
 struct length_unit : wit::strong_type<
@@ -14,36 +9,69 @@ struct length_unit : wit::strong_type<
     , length_unit   // unique tag (thank to CRTP, it is the type itself)
     , wit::comparable
     , wit::explicitly_convertible_to<float>::modifier
-    , wit::self_addable, wit::self_subtractable, wit::unary_sign
+    , wit::self_addable, wit::self_subtractable //, wit::unary_sign
     , wit::stringable
-    //, wit::from<meter>::modifier
+    , wit::incrementable
     >
 {
     using strong_type::strong_type;
     length_unit(strong_type _super) : strong_type(std::move(_super)) {}
     length_unit() : strong_type{ 0 } {}
+    using strong_type::operator+;
+    using strong_type::operator-;
+    length_unit operator+() { return *this; }
+    length_unit operator-() { return length_unit{ -value_ }; }
 };
 
 length_unit operator""_m(long double _meters) { return length_unit{float(_meters)}; }
 length_unit operator""_m(unsigned long long _meters) { return length_unit{float(_meters)}; }
 
-// struct milliseconds;
-// struct seconds;
-// struct minutes;
-
-struct time_unit : wit::strong_type<
-    long long
-    , time_unit
-    , wit::comparable
-    , wit::incrementable
-    //, from_to<milliseconds, 1>
-    //, from_to<seconds, 1000>
-    //, from_to<minutes, 60000>
-    >
+TEST_CASE( "Strong type: length_unit", "[strong_type]" )
 {
-    using strong_type::strong_type;
-    time_unit() : strong_type{ 0 } {}
-};
+    SECTION( "Explicit construction from underlying type, unary plus/minus operator and custom literal operators" )
+    {
+        REQUIRE( +17_m == length_unit{ 17 });
+        REQUIRE( -509_m == length_unit{ -509 });
+    }
+    SECTION( "Comparison operators" )
+    {
+        REQUIRE_FALSE( -17_m == 42_m );
+        REQUIRE( -17_m != 42_m );
+        REQUIRE( -17_m < 42_m );
+        REQUIRE_FALSE( -17_m > 42_m );
+        REQUIRE( -17_m <= 42_m );
+        REQUIRE_FALSE( -17_m >= 42_m );
+
+        REQUIRE( 23_m == 23_m );
+        REQUIRE_FALSE( 23_m != 23_m );
+        REQUIRE_FALSE( 23_m <  23_m );
+        REQUIRE_FALSE( 23_m >  23_m );
+        REQUIRE( 23_m <= 23_m );
+        REQUIRE( 23_m >= 23_m );
+    }
+    SECTION( "Explicit convertion to underlying type" )
+    {
+        REQUIRE( float(5_m) == 5 );
+    }
+    SECTION( "Arithmetic operators" )
+    {
+        REQUIRE( 4_m + 7_m == 11_m );
+        REQUIRE( 24_m - 11_m == 13_m );
+    }
+    SECTION( "std::to_string")
+    {
+        REQUIRE( std::to_string(18_m) == std::to_string(18.f));
+    }
+    SECTION( "Incrementation operators")
+    {
+        auto t = 37_m;
+        REQUIRE( ++t == 38_m );
+        REQUIRE( t++ == 38_m );
+        REQUIRE( t == 39_m );
+        t += 17_m;
+        REQUIRE( t == 56_m );
+    }
+}
 
 // a 3d vector without any semantic
 template<typename T>
@@ -52,9 +80,21 @@ struct vector3
     vector3(T _x, T _y, T _z) : x{std::move(_x)}, y{std::move(_y)}, z{std::move(_z)} {}
     bool operator==(const vector3& _rhs) const { return x == _rhs.x && y == _rhs.y && z == _rhs.z; }
     bool operator!=(const vector3& _rhs) const { return !(*this == _rhs); }
+    vector3 operator+(const vector3& _rhs) const { return { x + _rhs.x, y + _rhs.y, z + _rhs.z }; }
     T x, y, z;
 };
 
+TEST_CASE( "Strong type: vector3<length_unit>", "[strong_type]" )
+{
+    auto v0 = vector3<length_unit>{ 1_m, 2_m, 3_m };
+    auto v1 = vector3<length_unit>{ 1_m, 2_m, 3_m };
+    auto v2 = vector3<length_unit>{ 4_m, 5_m, 6_m };
+
+    REQUIRE(v0==v1);
+    REQUIRE(v1!=v2);
+}
+
+// strong type aggregate tentative
 namespace experimental
 {
     template<typename T>
@@ -68,80 +108,17 @@ namespace experimental
     };
 } // namespace experimental
 
-using namespace std;
+#include <tuple>
 
-struct test_group
+TEST_CASE( "Strong type: experimental::vector3<length_unit>", "[strong_type]" )
 {
-    unsigned int test_count = 0;
-    unsigned int success_count = 0;
+    using vec3 = experimental::vector3<length_unit>;
 
-    void Check(bool _condition, const char* _failure_message)
-    {
-        test_count++; 
-        if (!_condition)
-        {
-            cout << _failure_message << " **FAILED**" << endl;
-        }
-        else
-        {
-            success_count++;
-        }
-    }
-};
+    auto v0 = vec3{ 1_m, 2_m, 3_m };
+    auto v1 = vec3{ 1_m, 2_m, 3_m };
+    auto v2 = vec3{ 4_m, 5_m, 6_m };
 
-template<typename T>
-test_group test(test_group&& _tg, const T& a, const T& b)
-{
-    _tg.Check((a.get()==b.get())==(a==b), "equal to");
-    _tg.Check((a.get()!=b.get())==(a!=b), "not equal to");
-    _tg.Check((a.get()<b.get())==(a<b), "less than");
-    _tg.Check((a.get()>b.get())==(a>b), "greater than");
-    _tg.Check((a.get()<=b.get())==(a<=b), "less than or equal to");
-    _tg.Check((a.get()>=b.get())==(a>=b), "greater than or equal to");
-    return _tg;
-};
-
-int main()
-{
-    test_group tg;
-
-    cout << boolalpha;
-
-    tg = test(move(tg), 17_m, 42_m);
-    tg = test(move(tg), 23_m, 23_m);
-    tg.Check( +5_m == length_unit{ 5 }, "unary plus operator" );
-    tg.Check( -5_m == length_unit{ -5 }, "unary minus operator" );
-
-    tg = test(move(tg), time_unit{ 17 }, time_unit{ 42 });
-    tg = test(move(tg), time_unit{ 23 }, time_unit{ 23 });
-    tg.Check(float{ 5_m }==5, "explicit conversion to");
-    tg.Check(4_m + 7_m == 11_m, "self_addable");
-    tg.Check(std::to_string( 18_m ) == std::to_string(18.f), "stringable: std::to_string");
-
-    {
-        auto t = time_unit{37};
-        tg.Check(++t == time_unit{38}, "incrementable: pre increment");
-        tg.Check(t++ == time_unit{38} && t == time_unit{39}, "incrementable: post increment");
-        t += time_unit{17};
-        tg.Check(t == time_unit{56}, "incrementable: addition assignment");
-    }
-
-    {
-        auto v0 = vector3<length_unit>{ 1_m, 2_m, 3_m };
-        auto v1 = vector3<length_unit>{ 1_m, 2_m, 3_m };
-        auto v2 = vector3<length_unit>{ 4_m, 5_m, 6_m };
-        tg.Check(v0==v1,"vector3 equal operator");
-        tg.Check(v1!=v2,"vector3 not equal operator");
-    }
-
-    {
-        using vec3 = experimental::vector3<length_unit>;
-        auto v0 = vec3{ 1_m, 2_m, 3_m };
-        auto v1 = vec3{ 1_m, 2_m, 3_m };
-        auto v2 = vec3{ 4_m, 5_m, 6_m };
-        tg.Check(v0==v1,"experimental::vector3 equal operator");
-        tg.Check(v1!=v2,"experimental::vector3 not equal operator");
-        tg.Check(v1+v2 == vec3{ 5_m, 7_m, 9_m }, "experimental::vector3 self addition operator");
-    }
-    cout << tg.success_count << " success over " << tg.test_count << " tests." << endl;
+    REQUIRE( v0==v1 );
+    REQUIRE( v1!=v2 );
+    REQUIRE( v1+v2 == vec3{ 5_m, 7_m, 9_m });
 }

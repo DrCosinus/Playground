@@ -41,7 +41,7 @@ namespace wit
         template<typename ANOTHER_UNDERLYING_TYPE, typename ANOTHER_TAG_TYPE>
         strong_type(const strong_type<ANOTHER_UNDERLYING_TYPE, ANOTHER_TAG_TYPE>&) = delete; // conversion from another strong_type
         const UNDERLYING_TYPE& get() const { return value_; }
-    private:
+    protected:
         template<typename STRONG_TYPE, template<typename> class MODIFIER_TYPE>
         friend struct detail::modifier;
         const UNDERLYING_TYPE& get_value() const { return value_; }
@@ -145,12 +145,12 @@ namespace wit
         };
     };
 
-    template<typename STRONG_TYPE>
-    struct unary_sign : detail::modifier<STRONG_TYPE, unary_sign>
-    {
-        STRONG_TYPE operator+() const { return STRONG_TYPE{this->get_value()}; }
-        STRONG_TYPE operator-() const { return STRONG_TYPE{-this->get_value()}; }
-    };
+    // template<typename STRONG_TYPE>
+    // struct unary_sign : detail::modifier<STRONG_TYPE, unary_sign>
+    // {
+    //     STRONG_TYPE operator+() const { return STRONG_TYPE{this->get_value()}; }
+    //     STRONG_TYPE operator-() const { return STRONG_TYPE{-this->get_value()}; }
+    // };
     // template<template<typename, typename, template<typename> class...> MULTIPLICAND_STRONG_TYPE, typename PRODUCT_STRONG_TYPE>
     // struct multipliable_by
     // {
