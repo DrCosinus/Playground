@@ -3,6 +3,22 @@
 #include <string>
 #include <tuple>
 
+template<typename T>     struct is_tuple :                    std::false_type {};
+template<typename... Ts> struct is_tuple<std::tuple<Ts...>> : std::true_type {};
+template<typename T> constexpr bool is_tuple_v = is_tuple<T>::value;
+
+template<typename Tuple, std::size_t... Ints>
+constexpr Tuple tuple_add_helper(const Tuple& _lhs, const Tuple& _rhs, std::index_sequence<Ints...>)
+{
+    return std::make_tuple((std::get<Ints>(_lhs) + std::get<Ints>(_rhs))...);
+}
+
+template<typename TUPLE, std::enable_if_t<is_tuple_v<TUPLE>, int> = 0>
+constexpr TUPLE operator+(const TUPLE& _lhs, const TUPLE& _rhs)
+{
+    return tuple_add_helper(_lhs, _rhs, std::make_index_sequence<std::tuple_size_v<TUPLE>>{});
+}
+
 namespace wit
 {
     template<typename UNDERLYING_TYPE, typename TAG_TYPE, template<typename> class... MODIFIER_TYPES>
@@ -26,21 +42,68 @@ namespace wit
             STRONG_TYPE& strongly_typed_object() { return static_cast<STRONG_TYPE&>(*this); }
             const STRONG_TYPE& strongly_typed_object() const { return static_cast<const STRONG_TYPE&>(*this); }
         };
-
-        template<typename T>     struct is_tuple :                    std::false_type {};
-        template<typename... Ts> struct is_tuple<std::tuple<Ts...>> : std::true_type {};
-        template<typename T> constexpr bool is_tuple_v = is_tuple<T>::value;
     } // namespace detail
 
     template<typename UNDERLYING_TYPE, typename TAG_TYPE, template<typename> class... MODIFIER_TYPES>
     struct strong_type : MODIFIER_TYPES<strong_type<UNDERLYING_TYPE, TAG_TYPE, MODIFIER_TYPES...>>...
     {
+        using full_strong_type = typename strong_type<UNDERLYING_TYPE, TAG_TYPE, MODIFIER_TYPES...>;
         using underlying_type = UNDERLYING_TYPE;
         using tag_type = TAG_TYPE;
         explicit constexpr strong_type(UNDERLYING_TYPE _value) : value_(std::move(_value)) {}
         template<typename ANOTHER_UNDERLYING_TYPE, typename ANOTHER_TAG_TYPE>
         strong_type(const strong_type<ANOTHER_UNDERLYING_TYPE, ANOTHER_TAG_TYPE>&) = delete; // conversion from another strong_type
         const UNDERLYING_TYPE& get() const { return value_; }
+
+        template<bool B> using int_if = std::enable_if_t<B, int>;
+
+        //template<int dummy = 0> static constexpr bool is_equatable_ = false;
+        //template<typename U> std::enable_if_t<U::is_equalable, bool> is_equatable_<0> = U::is_equatable;
+
+// comparison
+        template<typename U = strong_type, int_if<U::is_equalable> = 0>
+        bool operator==(const strong_type& _rhs) const { return value_ == _rhs.value_; } // should eventually consider using !(a<b || b<a) to not use operator ==
+        template<typename U = strong_type, int_if<U::is_comparable> = 0>
+        bool operator==(const strong_type& _rhs) const { return value_ == _rhs.value_; } // should eventually consider using !(a<b || b<a) to not use operator ==
+        template<typename U = strong_type, int_if<U::is_equalable> = 0>
+        bool operator!=(const strong_type& _rhs) const { return  !(*this == _rhs); }
+        template<typename U = strong_type, int_if<U::is_comparable> = 0>
+        bool operator!=(const strong_type& _rhs) const { return  !(*this == _rhs); }
+        template<typename U = strong_type, int_if<U::is_comparable> = 0>
+        bool operator<(const strong_type& _rhs) const { return  value_ < _rhs.value_; }
+        template<typename U = strong_type, int_if<U::is_comparable> = 0>
+        bool operator>(const strong_type& _rhs) const { return  _rhs < *this; }
+        template<typename U = strong_type, int_if<U::is_comparable> = 0>
+        bool operator<=(const strong_type& _rhs) const { return  !(*this > _rhs); }
+        template<typename U = strong_type, int_if<U::is_comparable> = 0>
+        bool operator>=(const strong_type& _rhs) const { return  !(*this < _rhs); }
+
+// arithmetic
+        template<typename U = strong_type, int_if<U::is_self_addable> = 0>
+        auto operator+(const tag_type& _rhs) const { return tag_type{ value_ + _rhs.value_ }; }
+        template<typename U = strong_type, int_if<U::is_self_substractable> = 0>
+        U operator-(const tag_type& _rhs) const { return tag_type{ value_ - _rhs.value_ }; }
+        template<typename U = strong_type, int_if<U::has_unary_sign_operators> = 0>
+        U operator+() const { return tag_type{ value_ }; }
+        template<typename U = strong_type, int_if<U::has_unary_sign_operators> = 0>
+        U operator-() const { return tag_type{ -value_ }; }
+
+        template<typename U = strong_type, int_if<U::is_incrementable> = 0>
+        U& operator++() { ++value_; return *this; }
+        template<typename U = strong_type, int_if<U::is_incrementable> = 0>
+        U  operator++(int) { auto res = *this; ++value_; return res; }
+        template<typename U = strong_type, int_if<U::is_incrementable> = 0>
+        U& operator+=(const strong_type& _rhs) { value_ += _rhs.value_; return *this; }
+
+        template<typename U = strong_type, int_if<U::is_decrementable> = 0>
+        U& operator--() { --value_; return *this; }
+        template<typename U = strong_type, int_if<U::is_decrementable> = 0>
+        U  operator--(int) { auto res = *this; --value_; return res; }
+        template<typename U = strong_type, int_if<U::is_decrementable> = 0>
+        U& operator-=(const strong_type& _rhs) { value_ -= _rhs.value_; return *this; }
+
+        template<typename U = strong_type, int_if<U::is_stringable> = 0>
+        std::string to_string() const { return std::to_string( value_ ); }
     protected:
         template<typename STRONG_TYPE, template<typename> class MODIFIER_TYPE>
         friend struct detail::modifier;
@@ -50,86 +113,59 @@ namespace wit
     };
 
     // operators == and != only (need only operator == on the underlying type)
-    template<typename STRONG_TYPE>
-    struct equalable : detail::modifier<STRONG_TYPE, equalable>
+    template<typename>
+    struct equalable
     {
-        bool operator==(const STRONG_TYPE& _rhs) const { return  this->get_value() == this->get_value(_rhs); }
-        bool operator!=(const STRONG_TYPE& _rhs) const { return  !(*this == _rhs); }
+        static constexpr bool is_equalable = true;
     };
 
     // operators == , != , <, >, <= and >= (need only operator == and < on the underlying type)
-    template<typename STRONG_TYPE>
-    struct comparable : detail::modifier<STRONG_TYPE, comparable>
+    template<typename>
+    struct comparable
     {
-        //static_assert(!std::is_base_of_v<equalable<STRONG_TYPE>, STRONG_TYPE>);
-        bool operator==(const STRONG_TYPE& _rhs) const { return  this->get_value() == this->get_value(_rhs); } // should consider using !(a<b || b<a) to not use operator ==
-        bool operator!=(const STRONG_TYPE& _rhs) const { return  !(*this == _rhs); }
-        bool operator<(const STRONG_TYPE& _rhs) const { return  this->get_value() < this->get_value(_rhs); }
-        bool operator>(const STRONG_TYPE& _rhs) const { return  this->get_value(_rhs) < this->get_value(); }
-        bool operator<=(const STRONG_TYPE& _rhs) const { return  !(*this > _rhs); }
-        bool operator>=(const STRONG_TYPE& _rhs) const { return  !(*this < _rhs); }
+        static constexpr bool is_comparable = true;
     };
 
-    template<typename STRONG_TYPE>
-    struct self_addable : detail::modifier<STRONG_TYPE, self_addable>
+    template<typename>
+    struct self_addable
     {
-        STRONG_TYPE operator+(const STRONG_TYPE& _rhs) const { return STRONG_TYPE{ this->get_value() + this->get_value(_rhs) }; }
+        static constexpr bool is_self_addable = true;
     };
 
-    template<typename T1, typename T2, typename T3, typename TAG_TYPE, template<typename> class... MODIFIER_TYPES>
-    struct self_addable<strong_type<std::tuple<T1,T2,T3>, TAG_TYPE, MODIFIER_TYPES...>>
-     : detail::modifier<strong_type<std::tuple<T1,T2,T3>, TAG_TYPE, MODIFIER_TYPES...>, self_addable>
+    template<typename>
+    struct self_subtractable
     {
-        using STRONG_TUPLE = strong_type<std::tuple<T1,T2,T3>, TAG_TYPE, MODIFIER_TYPES...>;
-        TAG_TYPE operator+(const TAG_TYPE& _rhs) const
-        {
-            return TAG_TYPE{
-            std::get<0>(this->get_value()) + std::get<0>(this->get_value(_rhs)),
-            std::get<1>(this->get_value()) + std::get<1>(this->get_value(_rhs)),
-            std::get<2>(this->get_value()) + std::get<2>(this->get_value(_rhs))
-            };
-        }
+        static constexpr bool is_self_substractable = true;
     };
 
-    template<typename STRONG_TYPE>
-    struct self_subtractable : detail::modifier<STRONG_TYPE, self_subtractable>
+    // template<typename STRONG_TYPE>
+    // struct self_multipliable : detail::modifier<STRONG_TYPE, self_multipliable>
+    // {
+    //     STRONG_TYPE operator-(const STRONG_TYPE& _rhs) const { return STRONG_TYPE{ this->get_value() * this->get_value(_rhs) }; }
+    // };
+
+    // template<typename STRONG_TYPE>
+    // struct self_dividable : detail::modifier<STRONG_TYPE, self_dividable>
+    // {
+    //     STRONG_TYPE operator/(const STRONG_TYPE& _rhs) const { return STRONG_TYPE{ this->get_value() / this->get_value(_rhs) }; }
+    // };
+
+    template<typename /*STRONG_TYPE*/>
+    struct incrementable
     {
-        STRONG_TYPE operator-(const STRONG_TYPE& _rhs) const { return STRONG_TYPE{ this->get_value() - this->get_value(_rhs) }; }
+        static constexpr bool is_incrementable = true;
     };
 
-    template<typename STRONG_TYPE>
-    struct self_multipliable : detail::modifier<STRONG_TYPE, self_multipliable>
+    template<typename>
+    struct decrementable
     {
-        STRONG_TYPE operator-(const STRONG_TYPE& _rhs) const { return STRONG_TYPE{ this->get_value() * this->get_value(_rhs) }; }
+        static constexpr bool is_decrementable = true;
     };
 
-    template<typename STRONG_TYPE>
-    struct self_dividable : detail::modifier<STRONG_TYPE, self_dividable>
-    {
-        STRONG_TYPE operator/(const STRONG_TYPE& _rhs) const { return STRONG_TYPE{ this->get_value() / this->get_value(_rhs) }; }
-    };
-
-    template<typename STRONG_TYPE>
-    struct incrementable : detail::modifier<STRONG_TYPE, incrementable>
-    {
-        STRONG_TYPE& operator++() { ++this->get_value(); return this->strongly_typed_object(); }
-        STRONG_TYPE operator++(int) { auto res = this->strongly_typed_object(); ++this->get_value(); return res; }
-        STRONG_TYPE& operator+=(const STRONG_TYPE& _rhs) { this->get_value() += this->get_value(_rhs); return this->strongly_typed_object(); }
-    };
-
-    template<typename STRONG_TYPE>
-    struct decrementable : detail::modifier<STRONG_TYPE, decrementable>
-    {
-        STRONG_TYPE& operator--() { --this->get_value(); return this->strongly_typed_object(); }
-        STRONG_TYPE operator--(int) { auto res = this->strongly_typed_object(); --this->get_value(); return res; }
-        STRONG_TYPE& operator-=(const STRONG_TYPE& _rhs) { this->get_value() -= this->get_value(_rhs); return this->strongly_typed_object(); }
-    };
-
-    template<typename STRONG_TYPE>
-    struct stringable : detail::modifier<STRONG_TYPE, stringable>
+    template<typename>
+    struct stringable
     {
         static constexpr bool is_stringable = true;
-        std::string to_string() const { return std::to_string( this->get_value() ); }
     };
 
     template<typename TYPE>
@@ -145,12 +181,11 @@ namespace wit
         };
     };
 
-    // template<typename STRONG_TYPE>
-    // struct unary_sign : detail::modifier<STRONG_TYPE, unary_sign>
-    // {
-    //     STRONG_TYPE operator+() const { return STRONG_TYPE{this->get_value()}; }
-    //     STRONG_TYPE operator-() const { return STRONG_TYPE{-this->get_value()}; }
-    // };
+    template<typename STRONG_TYPE>
+    struct unary_sign
+    {
+        static constexpr bool has_unary_sign_operators = true;
+    };
     // template<template<typename, typename, template<typename> class...> MULTIPLICAND_STRONG_TYPE, typename PRODUCT_STRONG_TYPE>
     // struct multipliable_by
     // {
