@@ -35,6 +35,7 @@ abstract class Compiler : ICompiler
     public List<string> SourceFilePaths { set; protected get; }
     public string IntermediaryFileFolderName { set; protected get; }
 
+    private StringBuilder OutputBuilder = null;
     public static ICompiler Create(ECompiler compiler)
     {
         switch (compiler)
@@ -58,19 +59,35 @@ abstract class Compiler : ICompiler
 
         var process = new Process();
         process.StartInfo.FileName = ExecutableName;
-        process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+        //process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
         process.StartInfo.UseShellExecute = false;
         process.StartInfo.RedirectStandardOutput = true;
+        process.StartInfo.RedirectStandardError = true;
         process.StartInfo.Arguments = arguments;
+        process.OutputDataReceived += new DataReceivedEventHandler(OutputDataHandler);
+        process.ErrorDataReceived += new DataReceivedEventHandler(ErrorDataHandler);
+        OutputBuilder = new StringBuilder();
         process.Start();
-        string output = process.StandardOutput.ReadToEnd();
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        //string output = process.StandardOutput.ReadToEnd();
         process.WaitForExit();
 
-        Console.WriteLine(output);
+        Console.WriteLine(OutputBuilder);
+        var exit_code = process.ExitCode;
+        process.Close();
 
-        return process.ExitCode;
+        return exit_code;
     }
-}
+
+    private void OutputDataHandler(object sendingProcess, DataReceivedEventArgs _data_args)
+    {
+        OutputBuilder.AppendLine(_data_args.Data);
+    }
+    private void ErrorDataHandler(object sendingProcess, DataReceivedEventArgs _data_args)
+    {
+        OutputBuilder.AppendLine(_data_args.Data);
+    }}
 
 class MSVC : Compiler
 {
