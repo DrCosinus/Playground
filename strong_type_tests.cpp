@@ -149,26 +149,15 @@ TEST_CASE( "Strong type: experimental::vector3<length_unit>", "[strong_type]" )
     REQUIRE( v2-v1 == vec3{ 2_m, 3_m, 4_m });
 }
 
-// TEST_CASE( "Check for type names", "Types")
-// {
-//     {
-//         auto t = 1_m;
-//         std::cout << typeid(t).name() << std::endl;
-//         { decltype(auto) z = t++; std::cout << typeid(z).name() << std::endl; }
-//         { decltype(auto) z = ++t; std::cout << typeid(z).name() << std::endl; }
-//         { decltype(auto) z = t+=5_m; std::cout << typeid(z).name() << std::endl; }
-//         { decltype(auto) z = t--; std::cout << typeid(z).name() << std::endl; }
-//         { decltype(auto) z = --t; std::cout << typeid(z).name() << std::endl; }
-//         { decltype(auto) z = t-=5_m; std::cout << typeid(z).name() << std::endl; }
-//         // std::cout << typeid(t).name() << std::endl;
-//         // std::cout << t.to_string() << std::endl;
-//         // std::cout << t.get() << std::endl;
-//     }
-//     {
-//         auto t = 56_m;
-//         (++((t += 3_m) += 5_m))++;
-//         int i = 56;
-//         (++((i += 3) += 5))++;
-//         std::cout << "===========> " << t.get() << " vs " << i << std::endl;
-//     }
-// }
+TEST_CASE( "Check for type names", "Types")
+{
+    auto name = typeid(1_m).name();
+    REQUIRE(0==strcmp(name, typeid(1_m++).name()));
+    REQUIRE(0==strcmp(name, typeid(++1_m).name()));
+    REQUIRE(0==strcmp(name, typeid(1_m+=5_m).name()));
+    REQUIRE(0==strcmp(name, typeid(1_m--).name()));
+    REQUIRE(0==strcmp(name, typeid(--1_m).name()));
+    REQUIRE(0==strcmp(name, typeid(1_m-=5_m).name()));
+    REQUIRE(0==strcmp(name, typeid(1_m+5_m).name()));
+    REQUIRE(0==strcmp(name, typeid(1_m-5_m).name()));
+}
