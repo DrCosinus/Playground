@@ -36,15 +36,15 @@ constexpr TUPLE operator-(const TUPLE& _lhs, const TUPLE& _rhs)
 
 namespace wit
 {
-    template<typename UNDERLYING_TYPE, typename TAG_TYPE, typename... MODIFIER_TYPES>
+    template<typename VALUE_TYPE, typename TAG_TYPE, typename... MODIFIER_TYPES>
     struct strong_type : MODIFIER_TYPES...
     {
-        using underlying_type = UNDERLYING_TYPE;
+        using value_type = VALUE_TYPE;
         using tag_type = TAG_TYPE;
-        explicit constexpr strong_type(UNDERLYING_TYPE _value) : value_(std::move(_value)) {}
-        template<typename ANOTHER_UNDERLYING_TYPE, typename ANOTHER_TAG_TYPE>
-        strong_type(const strong_type<ANOTHER_UNDERLYING_TYPE, ANOTHER_TAG_TYPE>&) = delete; // conversion from another strong_type
-        const UNDERLYING_TYPE& get() const { return value_; }
+        explicit constexpr strong_type(value_type _value) : value_(std::move(_value)) {}
+        //template<typename ANOTHER_VALUE_TYPE, typename ANOTHER_TAG_TYPE>
+        //strong_type(const strong_type<ANOTHER_VALUE_TYPE, ANOTHER_TAG_TYPE>&) = delete; // conversion from another strong_type
+        const value_type& get() const { return value_; }
 
         template<typename... Ts>
         explicit strong_type(Ts&&... _args) : value_{ std::forward<Ts>(_args)... } {}
@@ -56,7 +56,7 @@ namespace wit
 
 // convertion
         template<typename U = strong_type, int_if<U::is_explicitly_convertible_to_value> = 0>
-        explicit operator underlying_type() const { return value_; }
+        explicit operator value_type() const { return value_; }
 
 // comparison
         template<typename U = strong_type, int_if<U::is_equalable> = 0>
@@ -105,7 +105,7 @@ namespace wit
     protected:
         tag_type& tag_object() { return static_cast<tag_type&>(*this); }
         const tag_type& tag_object() const { return static_cast<const tag_type&>(*this); }
-        UNDERLYING_TYPE value_;
+        value_type value_;
     };
 
     // operators == and != only (need only operator == on the underlying type)
