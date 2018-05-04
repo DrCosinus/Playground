@@ -8,19 +8,15 @@ struct length_unit : wit::strong_type<
     float           // underlying type
     , length_unit   // unique tag (thank to CRTP, it is the type itself)
     , wit::comparable
-    , wit::explicitly_convertible_to<float>::modifier
+    , wit::explicitly_convertible_to_value
     , wit::self_addable, wit::self_subtractable, wit::unary_sign
     , wit::stringable
-    , wit::incrementable
+    , wit::incrementable, wit::decrementable
     >
 {
     using strong_type::strong_type;
     //length_unit(strong_type _super) : strong_type(std::move(_super)) {}
     //length_unit() : strong_type{ 0 } {}
-    //using strong_type::operator+;
-    //using strong_type::operator-;
-    //length_unit operator+() { return *this; }
-    //length_unit operator-() { return length_unit{ -value_ }; }
 };
 
 length_unit operator""_m(long double _meters) { return length_unit{float(_meters)}; }
@@ -30,12 +26,12 @@ TEST_CASE( "Strong type: length_unit", "[strong_type]" )
 {
     SECTION( "Explicit construction from underlying type, unary plus/minus operator and custom literal operators" )
     {
-        REQUIRE( length_unit{ 17 } == 17_m);
-        REQUIRE( 17_m == length_unit{ 17 });
-        REQUIRE( +17_m == length_unit{ 17 });
-        REQUIRE( -17_m == -length_unit{ 17 });
-        REQUIRE( +17_m == length_unit{ 17 });
-        REQUIRE( -509_m == length_unit{ -509 });
+        REQUIRE( length_unit{ 17.f } == 17_m);
+        REQUIRE( 17_m == length_unit{ 17.f });
+        REQUIRE( +17_m == length_unit{ 17.f });
+        REQUIRE( -17_m == -length_unit{ 17.f });
+        REQUIRE( +17_m == length_unit{ 17.f });
+        REQUIRE( -509_m == length_unit{ -509.f });
     }
     SECTION( "Comparison operators" )
     {
@@ -81,6 +77,8 @@ TEST_CASE( "Strong type: length_unit", "[strong_type]" )
         REQUIRE( t == 39_m );
         t += 17_m;
         REQUIRE( t == 56_m );
+        (++((t += 3_m) += 5_m))++;
+        REQUIRE( t == 66_m );
     }
 }
 
@@ -105,21 +103,6 @@ TEST_CASE( "Strong type: vector3<length_unit>", "[strong_type]" )
     REQUIRE(v1!=v2);
 }
 
-// strong type aggregate tentative
-namespace experimental
-{
-    template<typename T>
-    struct vector3 : wit::strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable, wit::self_addable>
-    {
-        using super = wit::strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable, wit::self_addable>;
-        using wit::strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable, wit::self_addable>::strong_type;
-        vector3(T _x, T _y, T _z) : super{ std::make_tuple(std::move(_x), std::move(_y), std::move(_z)) } {}
-        vector3() : vector3( T{}, T{}, T{}) {}
-        template<typename U, std::enable_if_t<std::is_base_of_v<U,T>,int> =0>
-        vector3(U x, U y, U z) : vector3{ T{x}, T{y}, T{z} } {}
-    };
-} // namespace experimental
-
 #include <tuple>
 
 TEST_CASE( "Tuple helper", "[Tuple helpers]")
@@ -140,16 +123,52 @@ TEST_CASE( "Tuple helper", "[Tuple helpers]")
     }
 }
 
+// strong type aggregate tentative
+namespace experimental
+{
+    template<typename T>
+    struct vector3 : wit::strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable, wit::self_addable, wit::self_subtractable>
+    {
+        //using super = wit::strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable, wit::self_addable, wit::self_subtractable>;
+        using wit::strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable, wit::self_addable, wit::self_subtractable>::strong_type;
+        //vector3(T _x, T _y, T _z) : super{ std::make_tuple(std::move(_x), std::move(_y), std::move(_z)) } {}
+    };
+} // namespace experimental
+
 TEST_CASE( "Strong type: experimental::vector3<length_unit>", "[strong_type]" )
 {
     using vec3 = experimental::vector3<length_unit>;
 
     auto v0 = vec3{ 1_m, 2_m, 3_m };
     auto v1 = vec3{ 1_m, 2_m, 3_m };
-    auto v2 = vec3{ 4_m, 5_m, 6_m };
+    auto v2 = vec3{ 3_m, 5_m, 7_m };
 
     REQUIRE( v0==v1 );
     REQUIRE( v1!=v2 );
-    auto v3 = v1+v2;
-    REQUIRE( v1+v2 == vec3{ 5_m, 7_m, 9_m });
+    REQUIRE( v1+v2 == vec3{ 4_m, 7_m, 10_m });
+    REQUIRE( v2-v1 == vec3{ 2_m, 3_m, 4_m });
 }
+
+// TEST_CASE( "Check for type names", "Types")
+// {
+//     {
+//         auto t = 1_m;
+//         std::cout << typeid(t).name() << std::endl;
+//         { decltype(auto) z = t++; std::cout << typeid(z).name() << std::endl; }
+//         { decltype(auto) z = ++t; std::cout << typeid(z).name() << std::endl; }
+//         { decltype(auto) z = t+=5_m; std::cout << typeid(z).name() << std::endl; }
+//         { decltype(auto) z = t--; std::cout << typeid(z).name() << std::endl; }
+//         { decltype(auto) z = --t; std::cout << typeid(z).name() << std::endl; }
+//         { decltype(auto) z = t-=5_m; std::cout << typeid(z).name() << std::endl; }
+//         // std::cout << typeid(t).name() << std::endl;
+//         // std::cout << t.to_string() << std::endl;
+//         // std::cout << t.get() << std::endl;
+//     }
+//     {
+//         auto t = 56_m;
+//         (++((t += 3_m) += 5_m))++;
+//         int i = 56;
+//         (++((i += 3) += 5))++;
+//         std::cout << "===========> " << t.get() << " vs " << i << std::endl;
+//     }
+// }
