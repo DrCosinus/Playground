@@ -3,10 +3,10 @@
 
 #include "strong_type.h"
 
-// safe length unit => underlying value is in meter (should be carved in the code, not in a comment)
+// safe length unit => value is in meter (should be carved in the code, not in a comment)
 struct length_unit : wit::strong_type<
-    float           // underlying type
-    , length_unit   // unique tag (thank to CRTP, it is the type itself)
+    float           // value type
+    , length_unit   // unique tag (thank to CRTP, it is the type itself) moreover the result of some operations will be cast to it
     , wit::comparable
     , wit::convertible_to_value
     , wit::self_addable, wit::self_subtractable, wit::unary_sign
@@ -15,8 +15,7 @@ struct length_unit : wit::strong_type<
     >
 {
     using strong_type::strong_type;
-    //length_unit(strong_type _super) : strong_type(std::move(_super)) {}
-    //length_unit() : strong_type{ 0 } {}
+    using strong_type::get_value; // bring get_value member function publicly for test purpose only
 };
 
 length_unit operator""_m(long double _meters) { return length_unit{float(_meters)}; }
@@ -26,6 +25,7 @@ TEST_CASE( "Strong type: length_unit", "[strong_type]" )
 {
     SECTION( "Explicit construction from underlying type, unary plus/minus operator and custom literal operators" )
     {
+        REQUIRE( length_unit{ 32.f }.get_value() == 32.f );
         REQUIRE( length_unit{ 17.f } == 17_m);
         REQUIRE( 17_m == length_unit{ 17.f });
         REQUIRE( +17_m == length_unit{ 17.f });
@@ -56,7 +56,7 @@ TEST_CASE( "Strong type: length_unit", "[strong_type]" )
         REQUIRE( 23_m <= 23_m );
         REQUIRE( 23_m >= 23_m );
     }
-    SECTION( "Explicit convertion to underlying type" )
+    SECTION( "Explicit convertion to value type" )
     {
         REQUIRE( float(5_m) == 5 );
     }
@@ -131,6 +131,7 @@ namespace experimental
     {
         //using super = wit::strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable, wit::self_addable, wit::self_subtractable>;
         using wit::strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable, wit::self_addable, wit::self_subtractable>::strong_type;
+        //using strong_type::strong_type;
         //vector3(T _x, T _y, T _z) : super{ std::make_tuple(std::move(_x), std::move(_y), std::move(_z)) } {}
     };
 } // namespace experimental
@@ -149,7 +150,7 @@ TEST_CASE( "Strong type: experimental::vector3<length_unit>", "[strong_type]" )
     REQUIRE( v2-v1 == vec3{ 2_m, 3_m, 4_m });
 }
 
-TEST_CASE( "Check for type names", "Types")
+TEST_CASE( "Check for the name of the type return by some operators", "Types")
 {
     auto name = typeid(1_m).name();
     REQUIRE(0==strcmp(name, typeid(1_m++).name()));

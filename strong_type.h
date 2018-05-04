@@ -41,70 +41,75 @@ namespace wit
     {
         using value_type = VALUE_TYPE;
         using tag_type = TAG_TYPE;
-        explicit constexpr strong_type(value_type _value) : value_(std::move(_value)) {}
-        //template<typename ANOTHER_VALUE_TYPE, typename ANOTHER_TAG_TYPE>
-        //strong_type(const strong_type<ANOTHER_VALUE_TYPE, ANOTHER_TAG_TYPE>&) = delete; // conversion from another strong_type
-        const value_type& get() const { return value_; }
+
+// constructors
+        constexpr explicit strong_type(value_type _value) : value_(std::move(_value)) {}
 
         template<typename... Ts>
-        explicit strong_type(Ts&&... _args) : value_{ std::forward<Ts>(_args)... } {}
+        constexpr explicit strong_type(Ts&&... _args) : value_{ std::forward<Ts>(_args)... } {}
 
+// helpers
+    private:
         template<bool B> using int_if = std::enable_if_t<B, int>;
-
+    public:
         //template<int dummy = 0> static constexpr bool is_equatable_ = false;
         //template<typename U> std::enable_if_t<U::is_equalable, bool> is_equatable_<0> = U::is_equatable;
 
 // convertion
         template<typename U = strong_type, int_if<U::is_explicitly_convertible_to_value> = 0>
-        explicit operator value_type() const { return value_; }
+        constexpr explicit operator value_type() const { return value_; }
 
 // comparison
         template<typename U = strong_type, int_if<U::is_equalable> = 0>
-        bool operator==(const tag_type& _rhs) const { return value_ == _rhs.value_; } // should eventually consider using !(a<b || b<a) to not use operator ==
+        constexpr bool operator==(const tag_type& _rhs) const { return value_ == _rhs.value_; } // should eventually consider using !(a<b || b<a) to not use operator ==
         template<typename U = strong_type, int_if<U::is_comparable> = 0>
-        bool operator==(const tag_type& _rhs) const { return value_ == _rhs.value_; } // should eventually consider using !(a<b || b<a) to not use operator ==
+        constexpr bool operator==(const tag_type& _rhs) const { return value_ == _rhs.value_; } // should eventually consider using !(a<b || b<a) to not use operator ==
         template<typename U = strong_type, int_if<U::is_equalable> = 0>
-        bool operator!=(const tag_type& _rhs) const { return  !(tag_object() == _rhs); }
+        constexpr bool operator!=(const tag_type& _rhs) const { return  !(tag_object() == _rhs); }
         template<typename U = strong_type, int_if<U::is_comparable> = 0>
-        bool operator!=(const tag_type& _rhs) const { return  !(tag_object() == _rhs); }
+        constexpr bool operator!=(const tag_type& _rhs) const { return  !(tag_object() == _rhs); }
         template<typename U = strong_type, int_if<U::is_comparable> = 0>
-        bool operator<(const tag_type& _rhs) const { return  value_ < _rhs.value_; }
+        constexpr bool operator<(const tag_type& _rhs) const { return  value_ < _rhs.value_; }
         template<typename U = strong_type, int_if<U::is_comparable> = 0>
-        bool operator>(const tag_type& _rhs) const { return  _rhs < tag_object(); }
+        constexpr bool operator>(const tag_type& _rhs) const { return  _rhs < tag_object(); }
         template<typename U = strong_type, int_if<U::is_comparable> = 0>
-        bool operator<=(const tag_type& _rhs) const { return  !(tag_object() > _rhs); }
+        constexpr bool operator<=(const tag_type& _rhs) const { return  !(tag_object() > _rhs); }
         template<typename U = strong_type, int_if<U::is_comparable> = 0>
-        bool operator>=(const tag_type& _rhs) const { return  !(tag_object() < _rhs); }
+        constexpr bool operator>=(const tag_type& _rhs) const { return  !(tag_object() < _rhs); }
 
 // arithmetic
         template<typename U = strong_type, int_if<U::is_self_addable> = 0>
-        auto operator+(const tag_type& _rhs) const { return tag_type{ value_ + _rhs.value_ }; }
+        constexpr auto operator+(const tag_type& _rhs) const { return tag_type{ value_ + _rhs.value_ }; }
         template<typename U = strong_type, int_if<U::is_self_substractable> = 0>
-        auto operator-(const tag_type& _rhs) const { return tag_type{ value_ - _rhs.value_ }; }
+        constexpr auto operator-(const tag_type& _rhs) const { return tag_type{ value_ - _rhs.value_ }; }
         template<typename U = strong_type, int_if<U::has_unary_sign_operators> = 0>
-        auto operator+() const { return tag_type{ value_ }; }
+        constexpr auto operator+() const { return tag_object(); }
         template<typename U = strong_type, int_if<U::has_unary_sign_operators> = 0>
-        auto operator-() const { return tag_type{ -value_ }; }
+        constexpr auto operator-() const { return tag_type{ -value_ }; }
 
         template<typename U = strong_type, int_if<U::is_incrementable> = 0>
-        decltype(auto) operator++() { ++value_; return tag_object(); }
+        constexpr decltype(auto) operator++() { ++value_; return tag_object(); }
         template<typename U = strong_type, int_if<U::is_incrementable> = 0>
-        auto operator++(int) { auto res = tag_object(); ++value_; return res; }
+        constexpr auto operator++(int) { auto res = tag_object(); ++value_; return res; }
         template<typename U = strong_type, int_if<U::is_incrementable> = 0>
-        decltype(auto) operator+=(const tag_type& _rhs) { value_ += _rhs.value_; return tag_object(); }
+        constexpr decltype(auto) operator+=(const tag_type& _rhs) { value_ += _rhs.value_; return tag_object(); }
 
         template<typename U = strong_type, int_if<U::is_decrementable> = 0>
-        decltype(auto) operator--() { --value_; return tag_object(); }
+        constexpr decltype(auto) operator--() { --value_; return tag_object(); }
         template<typename U = strong_type, int_if<U::is_decrementable> = 0>
-        auto  operator--(int) { auto res = tag_object(); --value_; return res; }
+        constexpr auto  operator--(int) { auto res = tag_object(); --value_; return res; }
         template<typename U = strong_type, int_if<U::is_decrementable> = 0>
-        decltype(auto) operator-=(const tag_type& _rhs) { value_ -= _rhs.value_; return tag_object(); }
+        constexpr decltype(auto) operator-=(const tag_type& _rhs) { value_ -= _rhs.value_; return tag_object(); }
 
+// to_string
         template<typename U = strong_type, int_if<U::is_stringable> = 0>
         std::string to_string() const { return std::to_string( value_ ); }
+
     protected:
-        tag_type& tag_object() { return static_cast<tag_type&>(*this); }
-        const tag_type& tag_object() const { return static_cast<const tag_type&>(*this); }
+        constexpr tag_type& tag_object() { return static_cast<tag_type&>(*this); }
+        constexpr const tag_type& tag_object() const { return static_cast<const tag_type&>(*this); }
+        constexpr const value_type& get_value() const { return value_; }
+    private:
         value_type value_;
     };
 
