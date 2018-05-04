@@ -8,7 +8,7 @@ struct length_unit : wit::strong_type<
     float           // underlying type
     , length_unit   // unique tag (thank to CRTP, it is the type itself)
     , wit::comparable
-    , wit::explicitly_convertible_to_value
+    , wit::convertible_to_value
     , wit::self_addable, wit::self_subtractable, wit::unary_sign
     , wit::stringable
     , wit::incrementable, wit::decrementable
