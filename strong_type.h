@@ -31,22 +31,15 @@ namespace wit
 
     namespace detail
     {
-        template <typename U> struct is_equalable : std::conditional_t<std::is_base_of_v<equalable, U>, std::true_type, std::false_type> {};
-        template <typename U> struct is_comparable : std::conditional_t<std::is_base_of_v<comparable, U>, std::true_type, std::false_type> {};
-        template <typename U> struct is_self_addable : std::conditional_t<std::is_base_of_v<self_addable, U>, std::true_type, std::false_type> {};
-        template <typename U> struct is_self_subtractable : std::conditional_t<std::is_base_of_v<self_subtractable, U>, std::true_type, std::false_type> {};
-        template <typename U> struct is_self_multipliable : std::conditional_t<std::is_base_of_v<self_multipliable, U>, std::true_type, std::false_type> {};
-        template <typename U> struct is_self_dividable : std::conditional_t<std::is_base_of_v<self_dividable, U>, std::true_type, std::false_type> {};
-        template <typename U> struct is_incrementable : std::conditional_t<std::is_base_of_v<incrementable, U>, std::true_type, std::false_type> {};
-        template <typename U> struct is_decrementable : std::conditional_t<std::is_base_of_v<decrementable, U>, std::true_type, std::false_type> {};
-        template <typename U> struct is_stringable : std::conditional_t<std::is_base_of_v<stringable, U>, std::true_type, std::false_type> {};
-        template <typename U> struct is_convertible_to_value : std::conditional_t<std::is_base_of_v<convertible_to_value, U>, std::true_type, std::false_type> {};
-        template <typename U> struct is_signable : std::conditional_t<std::is_base_of_v<signable, U>, std::true_type, std::false_type> {};
+        template <typename U, typename... Ts> struct has; // : std::false_type {};
+        template <typename U, typename... Ts> struct has<U, U, Ts...> : std::true_type {};
+        template <typename U, typename T, typename... Ts> struct has<U, T, Ts...> : has<U, Ts...> {};
+        template <typename U> struct has<U> : std::false_type {};
     } // namespace detail
 
     // DERIVED_TYPE = at first it was a unique tag (thank to CRTP) but now we use it to cast the result of some operations into this type
-    template<typename VALUE_TYPE, typename DERIVED_TYPE, typename... MODIFIER_TYPES>
-    struct strong_type : MODIFIER_TYPES...
+    template<typename VALUE_TYPE, typename DERIVED_TYPE, typename... FLAG_TYPES>
+    struct strong_type
     {
         using value_type = VALUE_TYPE;
         using derived_type = DERIVED_TYPE;
@@ -59,11 +52,16 @@ namespace wit
         template<typename... Ts>
         constexpr explicit strong_type(Ts&&... _args) : value_{ std::forward<Ts>(_args)... } {}
 
-// helpers
+    // helpers
     private:
-        template<typename U, template<typename> class... PREDICATES>
-        static constexpr bool any_predicate_of() { return (... || PREDICATES<U>::value); }
-        template<typename U, template<typename> class... PREDICATES> using check = std::enable_if_t<any_predicate_of<U, PREDICATES...>()>;
+        template<typename U, typename>
+        friend std::string std::to_string(const U&);
+        template<typename U>
+        static constexpr bool is = detail::has<U, FLAG_TYPES...>::value;
+
+        template<typename U, typename... PREDICATES>
+        static constexpr bool any_predicate_of() { return (... || is<PREDICATES>); }
+        template<typename U, typename... PREDICATES> using check = std::enable_if_t<any_predicate_of<U, PREDICATES...>()>;
 
     // lexicographically adds/subtracts the values in the tuples/arrays
         template<typename TUPLE, std::size_t... INDICES>
@@ -79,25 +77,25 @@ namespace wit
     public:
 
     // convertion
-        template<typename T, typename U = strong_type, typename = check<U, detail::is_convertible_to_value>, typename = std::enable_if_t<std::is_convertible_v<value_type, T>>>
+        template<typename T, typename U = strong_type, typename = check<U, convertible_to_value>, typename = std::enable_if_t<std::is_convertible_v<value_type, T>>>
         constexpr explicit operator T() const { return T(value_); }
 
     // comparison
-        template<typename U = strong_type, typename = check<U, detail::is_equalable, detail::is_comparable>>
+        template<typename U = strong_type, typename = check<U, equalable, comparable>>
         constexpr bool operator==(const derived_type& _rhs) const { return value_ == _rhs.value_; } // should eventually consider using !(a<b || b<a) to not use operator ==
-        template<typename U = strong_type, typename = check<U, detail::is_equalable, detail::is_comparable>>
+        template<typename U = strong_type, typename = check<U, equalable, comparable>>
         constexpr bool operator!=(const derived_type& _rhs) const { return  !(derived_object() == _rhs); }
-        template<typename U = strong_type, typename = check<U, detail::is_comparable>>
+        template<typename U = strong_type, typename = check<U, comparable>>
         constexpr bool operator<(const derived_type& _rhs) const { return  value_ < _rhs.value_; }
-        template<typename U = strong_type, typename = check<U, detail::is_comparable>>
+        template<typename U = strong_type, typename = check<U, comparable>>
         constexpr bool operator>(const derived_type& _rhs) const { return  _rhs < derived_object(); }
-        template<typename U = strong_type, typename = check<U, detail::is_comparable>>
+        template<typename U = strong_type, typename = check<U, comparable>>
         constexpr bool operator<=(const derived_type& _rhs) const { return  !(derived_object() > _rhs); }
-        template<typename U = strong_type, typename = check<U, detail::is_comparable>>
+        template<typename U = strong_type, typename = check<U, comparable>>
         constexpr bool operator>=(const derived_type& _rhs) const { return  !(derived_object() < _rhs); }
 
     // arithmetic
-        template<typename U = strong_type, typename = check<U, detail::is_self_addable>>
+        template<typename U = strong_type, typename = check<U, self_addable>>
         constexpr auto operator+(const derived_type& _rhs) const
         {
             if constexpr (is_std_array_v<typename U::value_type> || is_std_tuple_v<typename U::value_type>)
@@ -105,7 +103,7 @@ namespace wit
             else
                 return derived_type{ value_ + _rhs.value_ };
         }
-        template<typename U = strong_type, typename = check<U, detail::is_self_subtractable>>
+        template<typename U = strong_type, typename = check<U, self_subtractable>>
         constexpr auto operator-(const derived_type& _rhs) const
         { 
             if constexpr (is_std_array_v<typename U::value_type> || is_std_tuple_v<typename U::value_type>)
@@ -113,34 +111,33 @@ namespace wit
             else
                 return derived_type{ value_ - _rhs.value_ };
         }
-        template<typename U = strong_type, typename = check<U, detail::is_signable>>
+        template<typename U = strong_type, typename = check<U, signable>>
         constexpr auto operator+() const { return derived_object(); }
-        template<typename U = strong_type, typename = check<U, detail::is_signable>>
+        template<typename U = strong_type, typename = check<U, signable>>
         constexpr auto operator-() const { return derived_type{ -value_ }; }
 
-        template<typename U = strong_type, typename = check<U, detail::is_incrementable>>
+        template<typename U = strong_type, typename = check<U, incrementable>>
         constexpr decltype(auto) operator++() { ++value_; return derived_object(); }
-        template<typename U = strong_type, typename = check<U, detail::is_incrementable>>
+        template<typename U = strong_type, typename = check<U, incrementable>>
         constexpr auto operator++(int) { auto res = derived_object(); ++value_; return res; }
-        template<typename U = strong_type, typename = check<U, detail::is_incrementable>>
+        template<typename U = strong_type, typename = check<U, incrementable>>
         constexpr decltype(auto) operator+=(const derived_type& _rhs) { value_ += _rhs.value_; return derived_object(); }
 
-        template<typename U = strong_type, typename = check<U, detail::is_decrementable>>
+        template<typename U = strong_type, typename = check<U, decrementable>>
         constexpr decltype(auto) operator--() { --value_; return derived_object(); }
-        template<typename U = strong_type, typename = check<U, detail::is_decrementable>>
+        template<typename U = strong_type, typename = check<U, decrementable>>
         constexpr auto  operator--(int) { auto res = derived_object(); --value_; return res; }
-        template<typename U = strong_type, typename = check<U, detail::is_decrementable>>
+        template<typename U = strong_type, typename = check<U, decrementable>>
         constexpr decltype(auto) operator-=(const derived_type& _rhs) { value_ -= _rhs.value_; return derived_object(); }
 
-        template<typename U = strong_type, typename = check<U, detail::is_self_multipliable>>
+        template<typename U = strong_type, typename = check<U, self_multipliable>>
         constexpr auto operator*(const derived_type& _rhs) const { return derived_type{ value_ * _rhs.value_ }; }
 
-        template<typename U = strong_type, typename = check<U, detail::is_self_dividable>>
+        template<typename U = strong_type, typename = check<U, self_dividable>>
         constexpr auto operator/(const derived_type& _rhs) const { return derived_type{ value_ / _rhs.value_ }; }
 
-
-// to_string
-        template<typename U = strong_type, typename = check<U, detail::is_stringable>>
+    // to_string
+        template<typename U = strong_type, typename = check<U, stringable>>
         std::string to_string() const { return std::to_string( value_ ); }
 
     protected:
@@ -154,9 +151,9 @@ namespace wit
 
 namespace std
 {
-    template<typename U, std::enable_if_t<wit::detail::is_stringable<U>::value, int> = 0>
-    string to_string(const U& _strongly_typed_object)
+    template<typename U, typename = enable_if_t<U::is<wit::stringable>>>
+    string to_string(const U& _object)
     {
-        return _strongly_typed_object.to_string();
+        return _object.to_string();
     }
 }
