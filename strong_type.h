@@ -2,33 +2,52 @@
 #include <utility>
 #include <string>
 #include <tuple>
+#include <array>
 
 namespace wit
 {
-    template<typename T>     struct is_tuple :                    std::false_type {};
-    template<typename... Ts> struct is_tuple<std::tuple<Ts...>> : std::true_type {};
-    template<typename T> constexpr bool is_tuple_v = is_tuple<T>::value;
+    template<typename T>     struct is_std_tuple :                    std::false_type {};
+    template<typename... Ts> struct is_std_tuple<std::tuple<Ts...>> : std::true_type {};
+    template<typename T> constexpr bool is_std_tuple_v = is_std_tuple<T>::value;
 
-    template<typename Tuple, std::size_t... Ints>
-    constexpr Tuple tuple_add_helper(const Tuple& _lhs, const Tuple& _rhs, std::index_sequence<Ints...>)
+    template<typename TUPLE, std::size_t... INDICES>
+    constexpr TUPLE tuple_add_helper(const TUPLE& _lhs, const TUPLE& _rhs, std::index_sequence<INDICES...>)
     {
-        return std::make_tuple((std::get<Ints>(_lhs) + std::get<Ints>(_rhs))...);
+        return std::make_tuple((std::get<INDICES>(_lhs) + std::get<INDICES>(_rhs))...);
     }
 
-    template<typename Tuple, std::size_t... Ints>
-    constexpr Tuple tuple_sub_helper(const Tuple& _lhs, const Tuple& _rhs, std::index_sequence<Ints...>)
+    template<typename TUPLE, std::size_t... INDICES>
+    constexpr TUPLE tuple_sub_helper(const TUPLE& _lhs, const TUPLE& _rhs, std::index_sequence<INDICES...>)
     {
-        return std::make_tuple((std::get<Ints>(_lhs) - std::get<Ints>(_rhs))...);
+        return std::make_tuple((std::get<INDICES>(_lhs) - std::get<INDICES>(_rhs))...);
+    }
+
+    template<typename T>                struct is_std_array :                   std::false_type {};
+    template<typename T, std::size_t N> struct is_std_array<std::array<T, N>> : std::true_type {};
+    template<typename T> constexpr bool is_std_array_v = is_std_array<T>::value;
+
+    template<typename ARRAY, std::size_t... INDICES>
+    constexpr ARRAY array_add_helper(const ARRAY& _lhs, const ARRAY& _rhs, std::index_sequence<INDICES...>)
+    {
+        return { (_lhs[INDICES] + _rhs[INDICES])... };
     }
 } // namespace wit
 
-template<typename TUPLE, std::enable_if_t<wit::is_tuple_v<TUPLE>, int> = 0>
+template<typename ARRAY, typename = std::enable_if_t<wit::is_std_array_v<ARRAY>>>
+constexpr ARRAY operator+(const ARRAY& _lhs, const ARRAY& _rhs)
+{
+    return wit::array_add_helper(_lhs, _rhs, std::make_index_sequence<std::tuple_size_v<ARRAY>>{});
+}
+
+// lexicographically adds the values in the tuples
+template<typename TUPLE, std::enable_if_t<wit::is_std_tuple_v<TUPLE>, int> = 0>
 constexpr TUPLE operator+(const TUPLE& _lhs, const TUPLE& _rhs)
 {
     return wit::tuple_add_helper(_lhs, _rhs, std::make_index_sequence<std::tuple_size_v<TUPLE>>{});
 }
 
-template<typename TUPLE, std::enable_if_t<wit::is_tuple_v<TUPLE>, int> = 0>
+// lexicographically subtracts the values in the tuples
+template<typename TUPLE, std::enable_if_t<wit::is_std_tuple_v<TUPLE>, int> = 0>
 constexpr TUPLE operator-(const TUPLE& _lhs, const TUPLE& _rhs)
 {
     return wit::tuple_sub_helper(_lhs, _rhs, std::make_index_sequence<std::tuple_size_v<TUPLE>>{});

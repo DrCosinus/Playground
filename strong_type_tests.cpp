@@ -3,6 +3,7 @@
 
 #include "strong_type.h"
 
+#include <array>
 #include <tuple>
 
 TEST_CASE( "Tuple helper", "[Tuple helpers]")
@@ -166,16 +167,22 @@ namespace test_composition
             vector3 operator+(const vector3& _rhs) const { return { x + _rhs.x, y + _rhs.y, z + _rhs.z }; }
             T x, y, z;
         };
+        // deduction guide (supported by MSVC from 19.14)
+        // to be able to use vector3{ 4_m, 5_m, 6_m } instead of vector3<meter>{ 4_m, 5_m, 6_m }
+        #if !defined(_MSC_VER) || _MSC_VER >= 1914
+        template<typename T> vector3(T _x, T _y, T _z) -> vector3<T>;
+        #endif
+        using vec3 = vector3<meter>;
 
         TEST_CASE( "Strong type: vector3<meter>", "[strong_type]" )
         {
-            auto v0 = vector3<meter>{ 1_m, 2_m, 3_m };
-            auto v1 = vector3<meter>{ 1_m, 2_m, 3_m };
-            auto v2 = vector3<meter>{ 4_m, 5_m, 6_m };
+            auto v0 = vec3{ 1_m, 2_m, 3_m };
+            auto v1 = vec3{ 1_m, 2_m, 3_m };
+            auto v2 = vec3{ 4_m, 5_m, 6_m };
 
             REQUIRE(v0==v1);
             REQUIRE(v1!=v2);
-            // REQUIRE(v1+v2 = vector3{ 5_m, 7_m, 9_m } )
+            REQUIRE(v1+v2 == vec3{ 5_m, 7_m, 9_m } );
         }
     }
 
@@ -188,7 +195,7 @@ namespace test_composition
             using wit::strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable, wit::self_addable, wit::self_subtractable>::strong_type;
         };
 
-        TEST_CASE( "Strong type: experimental::vector3<meter>", "[strong_type]" )
+        TEST_CASE( "Strongly typed tuple", "[strong_type]" )
         {
             using vec3 = vector3<meter>;
 
@@ -205,5 +212,24 @@ namespace test_composition
 
     namespace test_strongly_typed_array
     {
+        template<typename T>
+        struct vector3 : wit::strong_type<std::array<T, 3>, vector3<T>, wit::equalable, wit::self_addable, wit::self_subtractable>
+        {
+            using wit::strong_type<std::array<T, 3>, vector3<T>, wit::equalable, wit::self_addable, wit::self_subtractable>::strong_type;
+        };
+
+        TEST_CASE( "Strongly typed array", "[strong_type]" )
+        {
+            using vec3 = vector3<meter>;
+
+            auto v0 = vec3{ 1_m, 2_m, 3_m };
+            auto v1 = vec3{ 1_m, 2_m, 3_m };
+            auto v2 = vec3{ 3_m, 5_m, 7_m };
+
+            REQUIRE( v0==v1 );
+            REQUIRE( v1!=v2 );
+            //REQUIRE( v1+v2 == vec3{ 4_m, 7_m, 10_m });
+            //REQUIRE( v2-v1 == vec3{ 2_m, 3_m, 4_m });
+        }
     } // namespace test_strongly_typed_array
 } // namespace test_composition
