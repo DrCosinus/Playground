@@ -53,14 +53,11 @@ namespace wit
         constexpr explicit strong_type(Ts&&... _args) : value_{ std::forward<Ts>(_args)... } {}
 
     // helpers
-    private:
-        template<typename U, typename>
-        friend std::string std::to_string(const U&);
         template<typename U>
         static constexpr bool is = detail::has<U, FLAG_TYPES...>::value;
-
+    private:
         template<typename U, typename... PREDICATES>
-        static constexpr bool any_predicate_of() { return (... || is<PREDICATES>); }
+        static constexpr bool any_predicate_of() { return (... || U::template is<PREDICATES>); }
         template<typename U, typename... PREDICATES> using check = std::enable_if_t<any_predicate_of<U, PREDICATES...>()>;
 
     // lexicographically adds/subtracts the values in the tuples/arrays
@@ -151,8 +148,8 @@ namespace wit
 
 namespace std
 {
-    template<typename U, typename = enable_if_t<U::is<wit::stringable>>>
-    string to_string(const U& _object)
+    template<typename U, typename = enable_if_t<U::template is<wit::stringable>>>
+    inline string to_string(const U& _object)
     {
         return _object.to_string();
     }
