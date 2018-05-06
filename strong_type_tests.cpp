@@ -6,14 +6,6 @@
 #include <array>
 #include <tuple>
 
-TEST_CASE( "Tuple helper", "[Tuple helpers]")
-{
-    auto sum = std::make_tuple(1,2,3) + std::make_tuple(10,20,30);
-    REQUIRE(std::get<0>(sum)==11);
-    REQUIRE(std::get<1>(sum)==22);
-    REQUIRE(std::get<2>(sum)==33);
-}
-
 namespace test_minimal
 {
     struct minimal : wit::strong_type<unsigned long long, minimal>
@@ -197,7 +189,12 @@ namespace test_composition
 
         TEST_CASE( "Strongly typed tuple", "[strong_type]" )
         {
+            REQUIRE(sizeof(wit::strong_type<float, struct plop, wit::equalable, wit::self_addable, wit::self_subtractable>)==sizeof(float));
+            REQUIRE(sizeof(meter)==sizeof(float));
+
             using vec3 = vector3<meter>;
+
+            REQUIRE(sizeof(vec3)==sizeof(meter[3]));
 
             auto v0 = vec3{ 1_m, 2_m, 3_m };
             auto v1 = vec3{ 1_m, 2_m, 3_m };
@@ -222,14 +219,16 @@ namespace test_composition
         {
             using vec3 = vector3<meter>;
 
+            REQUIRE(sizeof(vec3)==sizeof(meter[3]));
+
             auto v0 = vec3{ 1_m, 2_m, 3_m };
             auto v1 = vec3{ 1_m, 2_m, 3_m };
             auto v2 = vec3{ 3_m, 5_m, 7_m };
 
             REQUIRE( v0==v1 );
             REQUIRE( v1!=v2 );
-            //REQUIRE( v1+v2 == vec3{ 4_m, 7_m, 10_m });
-            //REQUIRE( v2-v1 == vec3{ 2_m, 3_m, 4_m });
+            REQUIRE( v1+v2 == vec3{ 4_m, 7_m, 10_m });
+            REQUIRE( v2-v1 == vec3{ 2_m, 3_m, 4_m });
         }
     } // namespace test_strongly_typed_array
 } // namespace test_composition

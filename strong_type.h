@@ -10,48 +10,10 @@ namespace wit
     template<typename... Ts> struct is_std_tuple<std::tuple<Ts...>> : std::true_type {};
     template<typename T> constexpr bool is_std_tuple_v = is_std_tuple<T>::value;
 
-    template<typename TUPLE, std::size_t... INDICES>
-    constexpr TUPLE tuple_add_helper(const TUPLE& _lhs, const TUPLE& _rhs, std::index_sequence<INDICES...>)
-    {
-        return std::make_tuple((std::get<INDICES>(_lhs) + std::get<INDICES>(_rhs))...);
-    }
-
-    template<typename TUPLE, std::size_t... INDICES>
-    constexpr TUPLE tuple_sub_helper(const TUPLE& _lhs, const TUPLE& _rhs, std::index_sequence<INDICES...>)
-    {
-        return std::make_tuple((std::get<INDICES>(_lhs) - std::get<INDICES>(_rhs))...);
-    }
-
     template<typename T>                struct is_std_array :                   std::false_type {};
     template<typename T, std::size_t N> struct is_std_array<std::array<T, N>> : std::true_type {};
     template<typename T> constexpr bool is_std_array_v = is_std_array<T>::value;
-
-    template<typename ARRAY, std::size_t... INDICES>
-    constexpr ARRAY array_add_helper(const ARRAY& _lhs, const ARRAY& _rhs, std::index_sequence<INDICES...>)
-    {
-        return { (_lhs[INDICES] + _rhs[INDICES])... };
-    }
 } // namespace wit
-
-template<typename ARRAY, typename = std::enable_if_t<wit::is_std_array_v<ARRAY>>>
-constexpr ARRAY operator+(const ARRAY& _lhs, const ARRAY& _rhs)
-{
-    return wit::array_add_helper(_lhs, _rhs, std::make_index_sequence<std::tuple_size_v<ARRAY>>{});
-}
-
-// lexicographically adds the values in the tuples
-template<typename TUPLE, std::enable_if_t<wit::is_std_tuple_v<TUPLE>, int> = 0>
-constexpr TUPLE operator+(const TUPLE& _lhs, const TUPLE& _rhs)
-{
-    return wit::tuple_add_helper(_lhs, _rhs, std::make_index_sequence<std::tuple_size_v<TUPLE>>{});
-}
-
-// lexicographically subtracts the values in the tuples
-template<typename TUPLE, std::enable_if_t<wit::is_std_tuple_v<TUPLE>, int> = 0>
-constexpr TUPLE operator-(const TUPLE& _lhs, const TUPLE& _rhs)
-{
-    return wit::tuple_sub_helper(_lhs, _rhs, std::make_index_sequence<std::tuple_size_v<TUPLE>>{});
-}
 
 namespace wit
 {
@@ -89,7 +51,7 @@ namespace wit
         using value_type = VALUE_TYPE;
         using derived_type = DERIVED_TYPE;
 
-// constructors
+    // constructors
         constexpr explicit strong_type(value_type _value) : value_(std::move(_value)) {}
         template<typename U, std::enable_if_t<std::is_convertible_v<U, value_type>, int> = 0>
         constexpr explicit strong_type(U&& _value) : value_(value_type(_value)) {}
@@ -102,15 +64,25 @@ namespace wit
         template<typename U, template<typename> class... PREDICATES>
         static constexpr bool any_predicate_of() { return (... || PREDICATES<U>::value); }
         template<typename U, template<typename> class... PREDICATES> using check = std::enable_if_t<any_predicate_of<U, PREDICATES...>()>;
+
+    // lexicographically adds/subtracts the values in the tuples/arrays
+        template<typename TUPLE, std::size_t... INDICES>
+        static constexpr TUPLE tuple_add_helper(const TUPLE& _lhs, const TUPLE& _rhs, std::index_sequence<INDICES...>)
+        {
+            return { (std::get<INDICES>(_lhs) + std::get<INDICES>(_rhs))... };
+        }
+        template<typename TUPLE, std::size_t... INDICES>
+        static constexpr TUPLE tuple_subtract_helper(const TUPLE& _lhs, const TUPLE& _rhs, std::index_sequence<INDICES...>)
+        {
+            return { (std::get<INDICES>(_lhs) - std::get<INDICES>(_rhs))... };
+        }
     public:
 
-// convertion
-        // template<typename U = strong_type, typename = check<U, detail::is_convertible_to_value>>
-        // constexpr explicit operator value_type() const { return value_; }
+    // convertion
         template<typename T, typename U = strong_type, typename = check<U, detail::is_convertible_to_value>, typename = std::enable_if_t<std::is_convertible_v<value_type, T>>>
         constexpr explicit operator T() const { return T(value_); }
 
-// comparison
+    // comparison
         template<typename U = strong_type, typename = check<U, detail::is_equalable, detail::is_comparable>>
         constexpr bool operator==(const derived_type& _rhs) const { return value_ == _rhs.value_; } // should eventually consider using !(a<b || b<a) to not use operator ==
         template<typename U = strong_type, typename = check<U, detail::is_equalable, detail::is_comparable>>
@@ -124,11 +96,23 @@ namespace wit
         template<typename U = strong_type, typename = check<U, detail::is_comparable>>
         constexpr bool operator>=(const derived_type& _rhs) const { return  !(derived_object() < _rhs); }
 
-// arithmetic
+    // arithmetic
         template<typename U = strong_type, typename = check<U, detail::is_self_addable>>
-        constexpr auto operator+(const derived_type& _rhs) const { return derived_type{ value_ + _rhs.value_ }; }
+        constexpr auto operator+(const derived_type& _rhs) const
+        {
+            if constexpr (is_std_array_v<typename U::value_type> || is_std_tuple_v<typename U::value_type>)
+                return derived_type{ tuple_add_helper( value_, _rhs.value_, std::make_index_sequence<std::tuple_size_v<typename U::value_type>>{}) };
+            else
+                return derived_type{ value_ + _rhs.value_ };
+        }
         template<typename U = strong_type, typename = check<U, detail::is_self_subtractable>>
-        constexpr auto operator-(const derived_type& _rhs) const { return derived_type{ value_ - _rhs.value_ }; }
+        constexpr auto operator-(const derived_type& _rhs) const
+        { 
+            if constexpr (is_std_array_v<typename U::value_type> || is_std_tuple_v<typename U::value_type>)
+                return derived_type{ tuple_subtract_helper( value_, _rhs.value_, std::make_index_sequence<std::tuple_size_v<typename U::value_type>>{}) };
+            else
+                return derived_type{ value_ - _rhs.value_ };
+        }
         template<typename U = strong_type, typename = check<U, detail::is_signable>>
         constexpr auto operator+() const { return derived_object(); }
         template<typename U = strong_type, typename = check<U, detail::is_signable>>
