@@ -44,6 +44,8 @@ namespace wit
 
 // constructors
         constexpr explicit strong_type(value_type _value) : value_(std::move(_value)) {}
+        template<typename U, std::enable_if_t<std::is_convertible_v<U, value_type>, int> = 0>
+        constexpr explicit strong_type(U&& _value) : value_(value_type(_value)) {}
 
         template<typename... Ts>
         constexpr explicit strong_type(Ts&&... _args) : value_{ std::forward<Ts>(_args)... } {}
@@ -52,9 +54,6 @@ namespace wit
     private:
         template<bool B> using int_if = std::enable_if_t<B, int>;
     public:
-        //template<int dummy = 0> static constexpr bool is_equatable_ = false;
-        //template<typename U> std::enable_if_t<U::is_equalable, bool> is_equatable_<0> = U::is_equatable;
-
 // convertion
         template<typename U = strong_type, int_if<U::is_explicitly_convertible_to_value> = 0>
         constexpr explicit operator value_type() const { return value_; }

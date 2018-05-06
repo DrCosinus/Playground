@@ -3,6 +3,18 @@
 
 #include "strong_type.h"
 
+struct minimal_strong_type : wit::strong_type<unsigned long long, minimal_strong_type>
+{
+    using strong_type::strong_type;
+    using strong_type::get_value;
+};
+
+TEST_CASE( "", "")
+{
+    minimal_strong_type foo{ 1234 };
+    REQUIRE( foo.get_value() == 1234 );
+}
+
 // safe length unit => value is in meter (should be carved in the code, not in a comment)
 struct length_unit : wit::strong_type<
     float           // value type
@@ -25,13 +37,13 @@ TEST_CASE( "Strong type: length_unit", "[strong_type]" )
 {
     SECTION( "Explicit construction from underlying type, unary plus/minus operator and custom literal operators" )
     {
-        REQUIRE( length_unit{ 32.f }.get_value() == 32.f );
-        REQUIRE( length_unit{ 17.f } == 17_m);
-        REQUIRE( 17_m == length_unit{ 17.f });
-        REQUIRE( +17_m == length_unit{ 17.f });
-        REQUIRE( -17_m == -length_unit{ 17.f });
-        REQUIRE( +17_m == length_unit{ 17.f });
-        REQUIRE( -509_m == length_unit{ -509.f });
+        REQUIRE( length_unit{ 32 }.get_value() == 32 );
+        REQUIRE( length_unit{ 17 } == 17_m);
+        REQUIRE( 17_m == length_unit{ 17 });
+        REQUIRE( +17_m == length_unit{ 17 });
+        REQUIRE( -17_m == -length_unit{ 17 });
+        REQUIRE( +17_m == length_unit{ 17 });
+        REQUIRE( -509_m == length_unit{ -509 });
     }
     SECTION( "Comparison operators" )
     {
