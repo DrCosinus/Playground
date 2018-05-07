@@ -6,8 +6,8 @@
         {
             "label": "build release with msvc",
             "type": "shell",
-            "command": "make\\build.cmd",
-            "args": [ "-msvc", "${relativeFile}", "-ndebug", "-output", "bin/${fileBasenameNoExtension}_msvc_r.exe" ],
+            "command": "make\\BuildTask.exe",
+            "args": [ "-msvc", "${relativeFile}", "-ndebug", "-warnings_are_errors", "-output", "bin/${fileBasenameNoExtension}_msvc_r.exe" ],
             "group": "build",
             "presentation": { "reveal": "silent", "focus": false, "panel": "shared" },
             "problemMatcher": "$msCompile"
@@ -15,8 +15,8 @@
         {
             "label": "build debug with msvc",
             "type": "shell",
-            "command": "make\\build.cmd",
-            "args": [ "-msvc", "${relativeFile}", "-debug", "-output", "bin/${fileBasenameNoExtension}_msvc_d.exe" ],
+            "command": "make\\BuildTask.exe",
+            "args": [ "-msvc", "${relativeFile}", "-debug", "-warnings_are_errors", "-output", "bin/${fileBasenameNoExtension}_msvc_d.exe" ],
             "group": "build",
             "presentation": { "reveal": "silent", "focus": false, "panel": "shared" },
             "problemMatcher": "$msCompile"
@@ -24,8 +24,8 @@
         {
             "label": "build release with clang",
             "type": "shell",
-            "command": "make\\build.cmd",
-            "args": [ "-clang", "${relativeFile}", "-ndebug", "-output", "bin/${fileBasenameNoExtension}_clang_r.exe" ],
+            "command": "make\\BuildTask.exe",
+            "args": [ "-clang", "${relativeFile}", "-ndebug", "-warnings_are_errors", "-output", "bin/${fileBasenameNoExtension}_clang_r.exe" ],
             "group": "build",
             "presentation": { "reveal": "silent", "focus": false, "panel": "shared" },
             "problemMatcher": "$gcc"
@@ -33,8 +33,8 @@
         {
             "label": "build debug with clang",
             "type": "shell",
-            "command": "make\\build.cmd",
-            "args": [ "-clang", "${relativeFile}", "-debug", "-output", "bin/${fileBasenameNoExtension}_clang_d.exe" ],
+            "command": "make\\BuildTask.exe",
+            "args": [ "-clang", "${relativeFile}", "-debug", "-warnings_are_errors", "-output", "bin/${fileBasenameNoExtension}_clang_d.exe" ],
             "group": "build",
             "presentation": { "reveal": "silent", "focus": false, "panel": "shared" },
             "problemMatcher": "$gcc"
