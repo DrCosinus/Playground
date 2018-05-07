@@ -59,7 +59,7 @@ abstract class Compiler : ICompiler
 
         var process = new Process();
         process.StartInfo.FileName = ExecutableName;
-        //process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+        process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
         process.StartInfo.UseShellExecute = false;
         process.StartInfo.RedirectStandardOutput = true;
         process.StartInfo.RedirectStandardError = true;
@@ -70,7 +70,6 @@ abstract class Compiler : ICompiler
         process.Start();
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
-        //string output = process.StandardOutput.ReadToEnd();
         process.WaitForExit();
 
         Console.WriteLine(OutputBuilder);
@@ -91,22 +90,48 @@ abstract class Compiler : ICompiler
 
 class MSVC : Compiler
 {
-    private static string MSVCPath(string _flavor) => $@"C:\Program Files (x86)\Microsoft Visual Studio\2017\{_flavor}\VC\Tools\MSVC\14.13.26128"; // should be deduced
+    public MSVC()
+    {
+        string[] vintages = { "Preview", "2017" };
+        string[] flavors = { "Professional", "Community" };
+        foreach(var vintage in vintages)
+        {
+            foreach(var flavor in flavors)
+            {
+                string candidate = $@"C:\Program Files (x86)\Microsoft Visual Studio\{vintage}\{flavor}\VC\Tools\MSVC";
+                if (Directory.Exists(candidate))
+                {
+                    var sub_folders = Directory.GetDirectories($@"C:\Program Files (x86)\Microsoft Visual Studio\{vintage}\{flavor}\VC\Tools\MSVC");
+                    var filtered = sub_folders.Where( path =>
+                        Directory.Exists(Path.Combine(path, @"bin\HostX64\x64"))
+                        && Directory.Exists(Path.Combine(path, @"include"))
+                        && Directory.Exists(Path.Combine(path, @"lib\x64"))
+                        );
+                    if (filtered.Count() == 1 )
+                    {
+                        Console.WriteLine($"Found MSVC \"{candidate}\"...");
+                        MSVCPath = filtered.First();
+                        return;
+                    }
+                }
+            }
+        }
+        throw new Exception("Can not find MSVC!");
+    }
+    private static string MSVCPath;
     private static string WindowsKitPath => @"C:\Program Files (x86)\Windows Kits"; // should be deduced
     private static string Windows10KitPath(string _group) => $@"{WindowsKitPath}\10\{_group}\10.0.16299.0"; // should be deduced
-    private static string DotNetFrameworkPath => $@"{WindowsKitPath}\NETFXSDK\4.6.1"; // should be deduced
+    //private static string DotNetFrameworkPath => $@"{WindowsKitPath}\NETFXSDK\4.6.1"; // should be deduced
 
     protected override void SetupEnvironmentVariables()
     {
         Environment.SetEnvironmentVariable( "PATH", string.Join(";"
-            , $@"{MSVCPath("Community")}\bin\HostX64\x64"
-            , $@"{MSVCPath("Professional")}\bin\HostX64\x64"
+            , $@"{MSVCPath}\bin\HostX64\x64"
             , $"{Environment.GetEnvironmentVariable("PATH")}"
             ));
         Environment.SetEnvironmentVariable( "INCLUDE", string.Join(";"
             //, $@"{MSVCPath}\ATLMFC\include"
-            , $@"{MSVCPath("Community")}\include"
-            , $@"{MSVCPath("Professional")}\include"
+            , $@"{MSVCPath}\include"
             //, $@"{DotNetFrameworkPath}\include\um"
             , $@"{Windows10KitPath("include")}\ucrt"
             , $@"{Windows10KitPath("include")}\shared"
@@ -116,8 +141,7 @@ class MSVC : Compiler
             ));
         Environment.SetEnvironmentVariable( "LIB", string.Join(";"
             //, $@"{MSVCPath}\ATLMFC\lib\x64"
-            , $@"{MSVCPath("Community")}\lib\x64"
-            , $@"{MSVCPath("Professional")}\lib\x64"
+            , $@"{MSVCPath}\lib\x64"
             //, $@"{DotNetFrameworkPath}\lib\um\x64"
             , $@"{Windows10KitPath("lib")}\ucrt\x64"
             , $@"{Windows10KitPath("lib")}\um\x64"
@@ -366,14 +390,14 @@ int Main()
         Console.WriteLine("Bad source files!");
         return 1;
     }
-    //Console.WriteLine("Most recent source file time: {0}", most_recent_source_file_time);
+    Console.WriteLine($"Most recent source file time: {most_recent_source_file_time}");
 
     if (!args.ForceCompilation)
     {
         var outputFileInfo = new FileInfo(args.OutputFilename.Value);
         if (outputFileInfo.Exists)
         {
-            //Console.WriteLine("Output file time: {0}", outputFileInfo.LastWriteTime);
+            Console.WriteLine($"Output file time: {outputFileInfo.LastWriteTime}");
             if (outputFileInfo.LastWriteTime>most_recent_source_file_time)
             {
                 Console.WriteLine("No update needed.");
