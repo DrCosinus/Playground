@@ -78,7 +78,7 @@ namespace wit
         constexpr explicit operator T() const { return T(value_); }
 
     // comparison
-        #if __clang__ || (defined(_MSC_VER) && _MSC_VER >= 1914) // I hope it will be OK with MSVC 15.7, for now it induces an internal compiler error :(
+        #if __clang__ // with MSVC, for now it induces an internal compiler error :(
         template<typename U = strong_type, typename = typename U::template check<equalable, comparable>>
         constexpr bool operator==(const U& _rhs) const
         {
@@ -87,16 +87,13 @@ namespace wit
             else
                 return !(value_ < _rhs.value_ || _rhs.value_ < value_); // using !(a<b || b<a) instead of operator ==
         }
-        #else // __clang__ || (defined(_MSC_VER) && _MSC_VER >= 1914)
+        #else // __clang__
             template<typename U = strong_type, typename = typename U::template check<equalable, comparable>>
             constexpr bool operator==(const U& _rhs) const
             {
-                if (U::template has_flag<equalable>)
-                    return value_ == _rhs.value_;
-                else
-                    return !(value_ < _rhs.value_ || _rhs.value_ < value_); // using !(a<b || b<a) instead of operator ==
+                return value_ == _rhs.value_;
             }
-        #endif // __clang__ || (defined(_MSC_VER) && _MSC_VER >= 1914)
+        #endif // __clang__
         template<typename U = strong_type, typename = typename U::template check<equalable, comparable>>
         constexpr bool operator!=(const derived_type& _rhs) const { return  !(derived_object() == _rhs); }
         template<typename U = strong_type, typename = typename U::template check<comparable>>
