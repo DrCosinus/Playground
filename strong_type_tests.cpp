@@ -3,15 +3,68 @@
 
 #include "strong_type.h"
 
+#include <algorithm>
 #include <array>
+#include <iostream>
 #include <tuple>
+
+template<typename T, std::size_t N>
+std::ostream& operator <<(std::ostream& _os, const std::array<T, N>& _value)
+{
+    _os << "{ ";
+    if constexpr (N>1)
+    {
+        _os << _value[0];
+        for (std::size_t i = 1; i < N; ++i)
+        {
+            _os << ", " << _value[i];
+        }
+    }
+    _os << " }";
+    return _os;
+}
+
+struct print_tuple
+{
+    print_tuple(std::ostream& _os) : os_{_os} {}
+    template<typename T, typename... Ts>
+    void operator()(const T& _value0, const Ts&... _values)
+    { 
+        os_ << "{ " << _value0;
+        (..., [this](const auto& _value)
+        {
+            os_ << ", " << _value;
+        }(_values));
+        os_ << " }";
+    }
+    std::ostream& os_;
+};
+
+template<typename... Ts>
+std::ostream& operator <<(std::ostream& _os, const std::tuple<Ts...>& _value)
+{
+    std::apply(print_tuple{_os}, _value);
+    return _os;
+}
+
+template<typename VALUE_TYPE, typename DERIVED_TYPE, typename... FLAG_TYPES>
+struct testable_strong_type : wit::strong_type<VALUE_TYPE, DERIVED_TYPE, FLAG_TYPES...>
+{
+    using wit::strong_type<VALUE_TYPE, DERIVED_TYPE, FLAG_TYPES...>::strong_type;
+
+    friend std::ostream& operator <<(std::ostream& _os, const testable_strong_type& _value)
+    {
+        _os << _value.get_value();
+        return _os;
+    }
+};
 
 namespace test_minimal
 {
-    struct minimal : wit::strong_type<unsigned long long, minimal>
+    struct minimal : testable_strong_type<unsigned long long, minimal>
     {
-        using strong_type::strong_type;
-        using strong_type::get_value; // for test purpose
+        using testable_strong_type::testable_strong_type;
+        using testable_strong_type::get_value; // for test purpose
     };
 
     TEST_CASE( "Minimal strong type", "[strong type]")
@@ -23,9 +76,9 @@ namespace test_minimal
 
 namespace test_comparable
 {
-    struct foo : wit::strong_type<unsigned long long, foo, wit::comparable>
+    struct foo : testable_strong_type<unsigned long long, foo, wit::comparable>
     {
-        using strong_type::strong_type;
+        using testable_strong_type::testable_strong_type;
     };
 
     TEST_CASE( "Equatable/Comparable", "[strong type]")
@@ -51,14 +104,17 @@ namespace test_comparable
         REQUIRE( c>a );
         REQUIRE_FALSE( c<=a );
         REQUIRE( c>=a );
+
+        //REQUIRE( std::max(a,b,c) == foo{42});
+        //REQUIRE( std::min(a,b,c) == foo{12});
     }
 } // namespace test_comparable
 
 namespace test_self_arithmetic
 {
-    struct scalar : wit::strong_type<int, scalar, wit::signable, wit::self_addable, wit::self_subtractable, wit::self_multipliable, wit::self_dividable, wit::incrementable, wit::decrementable, wit::equalable>
+    struct scalar : testable_strong_type<int, scalar, wit::signable, wit::self_addable, wit::self_subtractable, wit::self_multipliable, wit::self_dividable, wit::incrementable, wit::decrementable, wit::equalable>
     {
-        using strong_type::strong_type;
+        using testable_strong_type::testable_strong_type;
     };
 
     scalar operator""_z(unsigned long long _value) { return scalar{_value}; }
@@ -103,9 +159,9 @@ namespace test_self_arithmetic
 
 namespace test_stringable
 {
-    struct stringable : wit::strong_type<unsigned long long, stringable, wit::stringable>
+    struct stringable : testable_strong_type<unsigned long long, stringable, wit::stringable>
     {
-        using strong_type::strong_type;
+        using testable_strong_type::testable_strong_type;
     };
 
     TEST_CASE( "Stringable strong type", "[strong type]")
@@ -118,9 +174,9 @@ namespace test_stringable
 
 namespace test_convertible
 {
-    struct convertible : wit::strong_type<unsigned long long, convertible, wit::convertible_to_value>
+    struct convertible : testable_strong_type<unsigned long long, convertible, wit::convertible_to_value>
     {
-        using strong_type::strong_type;
+        using testable_strong_type::testable_strong_type;
     };
 
     TEST_CASE( "Convertible to value strong type", "[strong type]")
@@ -133,7 +189,7 @@ namespace test_convertible
 namespace test_composition
 {
     // safe length unit => value is in meter
-    struct meter : wit::strong_type<
+    struct meter : testable_strong_type<
         float           // value type
         , meter
         , wit::comparable
@@ -141,7 +197,7 @@ namespace test_composition
         , wit::incrementable, wit::decrementable
         >
     {
-        using strong_type::strong_type;
+        using testable_strong_type::testable_strong_type;
     };
 
     meter operator""_m(long double _meters) { return meter{float(_meters)}; }
@@ -163,8 +219,10 @@ namespace test_composition
         // to be able to use vector3{ 4_m, 5_m, 6_m } instead of vector3<meter>{ 4_m, 5_m, 6_m }
         #if !defined(_MSC_VER) || _MSC_VER >= 1914
         template<typename T> vector3(T _x, T _y, T _z) -> vector3<T>;
-        #endif
         using vec3 = vector3<meter>;
+        #else
+        template<typename T> using vec3 = vector3<T>;
+        #endif
 
         TEST_CASE( "Strong type: vector3<meter>", "[strong_type]" )
         {
@@ -182,14 +240,14 @@ namespace test_composition
     namespace test_strongly_typed_tuple
     {
         template<typename T>
-        struct vector3 : wit::strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable, wit::self_addable, wit::self_subtractable>
+        struct vector3 : testable_strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable, wit::self_addable, wit::self_subtractable>
         {
-            using wit::strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable, wit::self_addable, wit::self_subtractable>::strong_type;
+            using testable_strong_type<std::tuple<T, T, T>, vector3<T>, wit::equalable, wit::self_addable, wit::self_subtractable>::testable_strong_type;
         };
 
         TEST_CASE( "Strongly typed tuple", "[strong_type]" )
         {
-            REQUIRE(sizeof(wit::strong_type<float, struct plop, wit::equalable, wit::self_addable, wit::self_subtractable>)==sizeof(float));
+            REQUIRE(sizeof(testable_strong_type<float, struct plop, wit::equalable, wit::self_addable, wit::self_subtractable>)==sizeof(float));
             REQUIRE(sizeof(meter)==sizeof(float));
 
             using vec3 = vector3<meter>;
@@ -210,9 +268,9 @@ namespace test_composition
     namespace test_strongly_typed_array
     {
         template<typename T>
-        struct vector3 : wit::strong_type<std::array<T, 3>, vector3<T>, wit::equalable, wit::self_addable, wit::self_subtractable>
+        struct vector3 : testable_strong_type<std::array<T, 3>, vector3<T>, wit::equalable, wit::self_addable, wit::self_subtractable>
         {
-            using wit::strong_type<std::array<T, 3>, vector3<T>, wit::equalable, wit::self_addable, wit::self_subtractable>::strong_type;
+            using testable_strong_type<std::array<T, 3>, vector3<T>, wit::equalable, wit::self_addable, wit::self_subtractable>::testable_strong_type;
         };
 
         TEST_CASE( "Strongly typed array", "[strong_type]" )
