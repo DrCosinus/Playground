@@ -16,6 +16,8 @@ namespace wit
             bool operator==(const crtp&) const { return true;}
             template<typename T>
             bool operator==(const T&) const { return false; }
+            template<typename T>
+            bool operator!=(const T& _value) const { return !(*this==_value); }
         };
 
         template<typename crtp>
@@ -60,7 +62,7 @@ struct test_enum : model<test_enum>
     test_enum(const ValueTypeA&) : value_{ ID<ValueTypeA>() } {};
     test_enum(const ValueTypeB&) : value_{ ID<ValueTypeB>() } {};
     test_enum(const ValueTypeC&) : value_{ ID<ValueTypeC>() } {};
-    test_enum(const ValueTypeD&) : value_{ ID<ValueTypeC>() } {};
+    test_enum(const ValueTypeD&) : value_{ ID<ValueTypeD>() } {};
 
     bool operator==(const test_enum& _other) const { return value_==_other.value_; }
     bool operator!=(const test_enum& _other) const { return !(*this==_other); }
@@ -173,6 +175,17 @@ int main(void)
             }
         });
     }
+    // {
+    //     CHECK_NE(test_enum::Invalid, test_enum::Invalid);
+    //     CHECK_NE(test_enum::Invalid, test_enum::ValueTypeA);
+    //     CHECK_NE(test_enum::Invalid, test_enum::ValueTypeB);
+    //     CHECK_NE(test_enum::Invalid, test_enum::ValueTypeC);
+    //     CHECK_NE(test_enum::Invalid, test_enum::ValueTypeD);
+    // }
+    cout << test_enum::ValueA << endl;
+    cout << test_enum::ValueB << endl;
+    cout << test_enum::ValueC << endl;
+    cout << test_enum::ValueD << endl;
 
     cout << "Tests: " << (CheckCount-FailureCount) << "/" << CheckCount << endl;
 }
