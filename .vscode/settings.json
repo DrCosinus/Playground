@@ -64,7 +64,8 @@
         "xloctime": "cpp",
         "xtree": "cpp",
         "array": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "typeindex": "cpp"
     },
     "markdownlint.config": {
         "MD013": false,
