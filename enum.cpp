@@ -1,5 +1,6 @@
 #include "tdd/simple_tests.hpp"
 
+#include <iostream>
 #include <utility>
 #include <typeinfo>
 #include <tuple>
@@ -245,5 +246,5 @@ int main(void)
         test_enum foo = test_enum::ValueA{};
         CHECK_EQ(foo.c_str(), std::string{"test_enum::ValueA"});
     }
-    PRINT_TEST_RESULTS();
+    tdd::PrintTestResults([](const char* line){ std::cout << line << std::endl; } );
 }
