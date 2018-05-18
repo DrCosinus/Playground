@@ -59,8 +59,13 @@ namespace tdd
     template<typename T1, typename T2>
     auto OpFailure(const char* _file, size_t _line, const char* expr1, const char* expr2, const T1& val1, const T2& val2, const char* op)
     {
-        return AssertionFailure() << _file << "(" << _line << "): " << "Expected: (" << expr1 << ") " << op << " (" << expr2 << "), actual: " << val1 << op << val2; // << "\n";
+        return AssertionFailure() << _file << "(" << _line << "): " << "Expected: (" << expr1 << ") " << op << " (" << expr2 << "), actual: " << val1 << op << val2;
     }
+    auto OpFailure(const char* _file, size_t _line, const char* _message)
+    {
+        return AssertionFailure() << _file << "(" << _line << "): " << _message;
+    }
+
     inline std::size_t FailureCount = 0;
     inline std::size_t CheckCount = 0;
     inline std::vector<AssertionResult> Results;
@@ -78,10 +83,19 @@ namespace tdd
         _writeline_callback("========================================================================");
         _writeline_callback((tdd::Message() << "Tests: " << (CheckCount-FailureCount) << "/" << CheckCount).GetString().c_str());
     }
+
+    void CheckUnaryPostOperator(bool condition, const char* condition_text, const char* filename, std::size_t lineindex)
+    {
+        ++tdd::CheckCount;
+        if (!condition)
+        {
+            Results.emplace_back(OpFailure(filename, lineindex, condition_text));
+            ++FailureCount;
+        }
+    }
 } // namespace tdd
 
-
-#define __CHECK_OP(__E,__V,__OP,__FILE,__LINE) \
+#define __CHECK_BINARY_OP(__E,__V,__OP,__FILE,__LINE) \
 { \
     ++tdd::CheckCount; \
     if (!(__E __OP __V)) \
@@ -90,6 +104,12 @@ namespace tdd
     } \
 }
 
-#define CHECK_EQ(__E,__V) __CHECK_OP(__E,__V,== ,__FILE__,__LINE__)
-#define CHECK_NE(__E,__V) __CHECK_OP(__E,__V,!= ,__FILE__,__LINE__)
-#define FAIL() cout << __FILE__ << '(' << __LINE__ << "): FAILURE: always" << endl;
+#define CHECK_EQ(__E,__V) __CHECK_BINARY_OP(__E,__V, == ,__FILE__,__LINE__)
+#define CHECK_NE(__E,__V) __CHECK_BINARY_OP(__E,__V, != ,__FILE__,__LINE__)
+#define CHECK_LT(__E,__V) __CHECK_BINARY_OP(__E,__V, < ,__FILE__,__LINE__)
+#define CHECK_GT(__E,__V) __CHECK_BINARY_OP(__E,__V, > ,__FILE__,__LINE__)
+#define CHECK_LE(__E,__V) __CHECK_BINARY_OP(__E,__V, <= ,__FILE__,__LINE__)
+#define CHECK_GE(__E,__V) __CHECK_BINARY_OP(__E,__V, >= ,__FILE__,__LINE__)
+#define CHECK_TRUE(__C) tdd::CheckUnaryPostOperator((__C), "Expected: " #__C " == true", __FILE__,__LINE__)
+#define CHECK_FALSE(__C) tdd::CheckUnaryPostOperator(!(__C), "Expected: " #__C " == false", __FILE__,__LINE__)
+#define FAIL(__MESSAGE) tdd::Results.emplace_back(tdd::OpFailure(__FILE__, __LINE__, #__MESSAGE));

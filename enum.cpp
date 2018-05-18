@@ -174,9 +174,18 @@ namespace N
     };
 }
 
+#if defined(_MSC_VER)
+//#pragma warning (push)
+#pragma warning (disable : 4127)
+#endif //  defined(_MSC_VER)
+
 int main(void)
 {
-    using namespace std;
+    {
+        CHECK_LE(sizeof(test_enum), sizeof(std::intptr_t));
+        CHECK_LE(sizeof(test_enum::Invalid), sizeof(char));
+        CHECK_LE(sizeof(test_enum::ValueA), sizeof(char));
+    }
     {
         test_enum foo;
         CHECK_EQ( foo, test_enum::Invalid{} );
@@ -199,6 +208,10 @@ int main(void)
     {
         test_enum foo = test_enum::ValueC{};
         CHECK_EQ( foo, test_enum::ValueC{} );
+    }
+    {
+        auto foo = test_enum::ValueD{};
+        CHECK_EQ( foo, test_enum::ValueD{} );
     }
     {
         test_enum foo1{ test_enum::ValueA{} }, foo2{ test_enum::ValueA{} }, foo3{ test_enum::ValueB{} };
@@ -226,7 +239,7 @@ int main(void)
             case 1: CHECK_EQ(_value, test_enum::ValueB{}); break;
             case 2: CHECK_EQ(_value, test_enum::ValueC{}); break;
             case 3: CHECK_EQ(_value, test_enum::ValueD{}); break;
-            default: FAIL(); break;
+            default: FAIL("Unknow value"); break;
             }
         });
     }
@@ -250,5 +263,6 @@ int main(void)
         test_enum foo = test_enum::ValueA{};
         CHECK_EQ(foo.c_str(), std::string{"test_enum::ValueA"});
     }
+
     tdd::PrintTestResults([](const char* line){ std::cout << line << std::endl; } );
 }
