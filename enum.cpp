@@ -48,7 +48,7 @@ namespace wit
         };
 
         template<typename CRTP>
-        struct model
+        struct nonintegral_enum
         {
             struct Invalid
             {
@@ -67,9 +67,9 @@ namespace wit
                 }
             };
 
-            model() : value_{ ID<Invalid>() } {}
+            nonintegral_enum() : value_{ ID<Invalid>() } {}
             template<typename T>
-            model(const T&) : value_{ ID<T>() }
+            nonintegral_enum(const T&) : value_{ ID<T>() }
             {
                 static_assert(detail::tuple_search_v<T, typename CRTP::values_type>, "unexpected value");
             };
@@ -144,28 +144,32 @@ namespace wit
     } // namespace experimental
 } // namespace wit
 
-using wit::model;
+using wit::nonintegral_enum;
+using wit::value;
 
-struct test_enum : model<test_enum>
+struct test_enum : nonintegral_enum<test_enum>
 {
-    struct ValueA : wit::value<ValueA> { };
-    struct ValueB : wit::value<ValueB> { };
-    struct ValueC : wit::value<ValueC> { };
-    struct ValueD : wit::value<ValueD> { };
+    struct ValueA : value<ValueA> { };
+    struct ValueB : value<ValueB> { };
+    struct ValueC : value<ValueC> { };
+    struct ValueD : value<ValueD> { };
 
     using values_type = std::tuple<ValueA, ValueB, ValueC, ValueD>;
 
-    using model::model;
+    using nonintegral_enum::nonintegral_enum;
 };
 
 namespace N
 {
     struct S
     {
-        struct E : model<E>
+        struct E : nonintegral_enum<E>
         {
-            struct V : wit::value<V> {};
+            struct V : value<V> {};
+
             using values_type = std::tuple<V>;
+
+            using nonintegral_enum::nonintegral_enum;
         };
     };
 }
