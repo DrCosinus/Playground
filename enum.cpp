@@ -26,30 +26,31 @@ namespace wit
 
             inline constexpr std::size_t magic_length_of_struct = 7; // 7 is length of "struct "
         }
-        // all values of the same type are equalivent, identical, equal.
-        // all values of any other types are different
-        template<typename CRTP>
-        struct value
-        {
-            bool operator==(const value&) const { return true;}
-            bool operator==(const CRTP&) const { return true;}
-            template<typename T>
-            bool operator==(const T&) const { return false; }
-            template<typename T>
-            bool operator!=(const T& _value) const { return !(*this==_value); }
-
-            static const char* c_str() { return typeid(CRTP).name() + detail::magic_length_of_struct; }
-
-            friend std::ostream& operator<<(std::ostream& _os, const CRTP&)
-            {
-                _os << c_str();
-                return _os;
-            }
-        };
 
         template<typename CRTP>
         struct nonintegral_enum
         {
+            // all values of the same type are equalivent, identical, equal.
+            // all values of any other types are different
+            template<typename DERIVED_VALUE_TYPE>
+            struct value
+            {
+                bool operator==(const value&) const { return true;}
+                bool operator==(const DERIVED_VALUE_TYPE&) const { return true;}
+                template<typename T>
+                bool operator==(const T&) const { return false; }
+                template<typename T>
+                bool operator!=(const T& _value) const { return !(*this==_value); }
+
+                static const char* c_str() { return typeid(DERIVED_VALUE_TYPE).name() + detail::magic_length_of_struct; }
+
+                friend std::ostream& operator<<(std::ostream& _os, const DERIVED_VALUE_TYPE&)
+                {
+                    _os << c_str();
+                    return _os;
+                }
+            };
+
             struct Invalid
             {
                 bool operator==(const Invalid&) { return true; }
@@ -145,7 +146,6 @@ namespace wit
 } // namespace wit
 
 using wit::nonintegral_enum;
-using wit::value;
 
 struct test_enum : nonintegral_enum<test_enum>
 {
