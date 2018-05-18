@@ -8,6 +8,20 @@ namespace wit
 {
     inline namespace experimental
     {
+        namespace detail
+        {
+            template<typename TYPE, typename TUPLE>
+            struct tuple_search : std::false_type {};
+
+            template<typename TYPE, typename HEAD, typename... TAIL>
+            struct tuple_search<TYPE, std::tuple<HEAD, TAIL...>> : std::conditional_t<(sizeof...(TAIL)>0), tuple_search<TYPE, std::tuple<TAIL...>>, std::false_type>
+            {};
+            template<typename TYPE, typename... TAIL>
+            struct tuple_search<TYPE, std::tuple<TYPE, TAIL...>> : std::true_type
+            {};
+            template<typename TYPE, typename TUPLE>
+            inline constexpr bool tuple_search_v = tuple_search<TYPE, TUPLE>::value;
+        }
         // all values of the same type are equalivent, identical, equal.
         // all values of any other types are different
         template<typename crtp>
@@ -20,13 +34,13 @@ namespace wit
             bool operator!=(const T& _value) const { return !(*this==_value); }
         };
 
-        template<typename crtp>
+        template<typename CRTP>
         struct model
         {
             template<typename F>
             static void forEach(F f)
             {
-                forEach(f, std::make_index_sequence<std::tuple_size_v<typename crtp::values_type>>{});
+                forEach(f, std::make_index_sequence<std::tuple_size_v<typename CRTP::values_type>>{});
             }
         protected:
             template<typename T>
@@ -35,7 +49,7 @@ namespace wit
             template<typename F, std::size_t... INDICES>
             static constexpr void forEach(F f, std::index_sequence<INDICES...>)
             {
-                ( f(std::tuple_element_t<INDICES, typename crtp::values_type>{}), ... );
+                ( f(std::tuple_element_t<INDICES, typename CRTP::values_type>{}), ... );
             }
         };
     } // namespace experimental
