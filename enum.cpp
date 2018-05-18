@@ -24,27 +24,79 @@ namespace wit
         }
         // all values of the same type are equalivent, identical, equal.
         // all values of any other types are different
-        template<typename crtp>
+        template<typename CRTP>
         struct value
         {
-            bool operator==(const crtp&) const { return true;}
+            bool operator==(const CRTP&) const { return true;}
             template<typename T>
             bool operator==(const T&) const { return false; }
             template<typename T>
             bool operator!=(const T& _value) const { return !(*this==_value); }
+
+            friend std::ostream& operator<<(std::ostream& _os, const CRTP&)
+            {
+                _os << typeid(CRTP).name();
+                return _os;
+            }
         };
 
         template<typename CRTP>
         struct model
         {
+            struct Invalid : value<Invalid> { };
+
+            model() : value_{ ID<Invalid>() } {}
+            template<typename T>
+            model(const T&) : value_{ ID<T>() }
+            {
+                static_assert(detail::tuple_search_v<T, typename CRTP::values_type>, "unexpected value");
+            };
+
+            bool operator==(const CRTP& _other) const
+            {
+                return value_==_other.value_;
+            }
+            bool operator!=(const CRTP& _other) const
+            {
+                return !(*this==_other);
+            }
+
+            template<typename T>
+            bool operator==(const T&) const
+            {
+                static_assert(detail::tuple_search_v<T, typename CRTP::values_type>, "unexpected value");
+                return value_==ID<T>(); 
+            }
+            template<typename T>
+            bool operator!=(const T& _value) const
+            {
+                static_assert(detail::tuple_search_v<T, typename CRTP::values_type>, "unexpected value");
+                return !(*this==_value);
+            }
+
             template<typename F>
             static void forEach(F f)
             {
                 forEach(f, std::make_index_sequence<std::tuple_size_v<typename CRTP::values_type>>{});
             }
+
+            friend std::ostream& operator<<(std::ostream& _os, const CRTP& _enum)
+            {
+                _os << _enum.value_->name();
+                return _os;
+            }
+            template<typename T>
+            friend std::ostream& operator<<(std::ostream& _os, const T&)
+            {
+                static_assert(detail::tuple_search_v<T, typename CRTP::values_type>, "unexpected value");
+                _os << typeid(T).name();
+                return _os;
+            }
         protected:
             template<typename T>
             static constexpr auto ID() { return &typeid(T); } // typeid does not return a constant expression with MSVC
+
+            const std::type_info* value_;
         private:
             template<typename F, std::size_t... INDICES>
             static constexpr void forEach(F f, std::index_sequence<INDICES...>)
@@ -59,7 +111,6 @@ using wit::model;
 
 struct test_enum : model<test_enum>
 {
-    struct Invalid : wit::value<Invalid> { };
     struct ValueTypeA : wit::value<ValueTypeA> { };
     struct ValueTypeB : wit::value<ValueTypeB> { };
     struct ValueTypeC : wit::value<ValueTypeC> { };
@@ -72,46 +123,9 @@ struct test_enum : model<test_enum>
     static constexpr ValueTypeC ValueC = {};
     static constexpr ValueTypeD ValueD = {};
 
-    test_enum() : value_{ ID<Invalid>() } {}
-    test_enum(const ValueTypeA&) : value_{ ID<ValueTypeA>() } {};
-    test_enum(const ValueTypeB&) : value_{ ID<ValueTypeB>() } {};
-    test_enum(const ValueTypeC&) : value_{ ID<ValueTypeC>() } {};
-    test_enum(const ValueTypeD&) : value_{ ID<ValueTypeD>() } {};
+    using model::model;
 
-    bool operator==(const test_enum& _other) const { return value_==_other.value_; }
-    bool operator!=(const test_enum& _other) const { return !(*this==_other); }
-    bool operator==(const ValueTypeA&) const { return value_==ID<ValueTypeA>(); }
-    bool operator==(const ValueTypeB&) const { return value_==ID<ValueTypeB>(); }
-    bool operator==(const ValueTypeC&) const { return value_==ID<ValueTypeC>(); }
-    bool operator==(const ValueTypeD&) const { return value_==ID<ValueTypeD>(); }
-    bool operator!=(const ValueTypeA& _value) const { return !(*this==_value); }
-    bool operator!=(const ValueTypeB& _value) const { return !(*this==_value); }
-    bool operator!=(const ValueTypeC& _value) const { return !(*this==_value); }
-    bool operator!=(const ValueTypeD& _value) const { return !(*this==_value); }
 
-    friend std::ostream& operator<<(std::ostream& _os, const test_enum& _enum)
-    {
-        _os << _enum.value_->name();
-        return _os;
-    }
-
-    friend std::ostream& operator<<(std::ostream& _os, const ValueTypeA&)
-    {
-        _os << typeid(ValueTypeA).name();
-        return _os;
-    }
-    friend std::ostream& operator<<(std::ostream& _os, const ValueTypeB&)
-    {
-        _os << typeid(ValueTypeB).name();
-        return _os;
-    }
-    friend std::ostream& operator<<(std::ostream& _os, const ValueTypeC&)
-    {
-        _os << typeid(ValueTypeC).name();
-        return _os;
-    }
-private:
-    const std::type_info* value_;
 };
 
 std::size_t FailureCount = 0;
