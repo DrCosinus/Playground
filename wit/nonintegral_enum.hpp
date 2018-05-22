@@ -69,7 +69,7 @@ namespace wit
         nonintegral_enum(const T&) : value_{ ID<T>() }
         {
             static_assert(detail::tuple_search_v<T, typename CRTP::values_type>, "unexpected value");
-        };
+        }
 
         bool operator==(const CRTP& _other) const
         {
