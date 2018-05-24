@@ -28,8 +28,8 @@ namespace grammar
     };
 
 // terminals
-    template<char C>
-    struct chr
+    template<char C, char... Cs>
+    struct chars
     {
         result_t operator()(std::string_view _sview) const
         {
@@ -39,7 +39,12 @@ namespace grammar
                 return { { _sview } };
             }
             else
-                return { { } };
+            {
+                if constexpr (sizeof...(Cs)==0)
+                    return { { } };
+                else
+                    return chars<Cs...>{}(_sview);
+            }
         }
     };
 
@@ -164,14 +169,14 @@ namespace grammar
 int main(void)
 {
     using grammar::any_of;
-    using grammar::chr;
+    using grammar::chars;
     using grammar::whitespace;
     using grammar::is_not;
     using grammar::at_least;
     using grammar::sequence;
 
-    using gr_path_allowed_character = is_not<any_of<chr<'\\'>,chr<'/'>,chr<'*'>,chr<'\"'>,chr<'*'>,chr<':'>,chr<'<'>,chr<'>'>,chr<'|'>,chr<'?'>,whitespace>>;
-    using gr_filename = sequence<at_least<1, gr_path_allowed_character>, chr<'.'>, at_least<1, gr_path_allowed_character>, whitespace>;
+    using gr_path_allowed_character = is_not< any_of <chars<'\\','/','*','\"','*',':','<','>','|','?'>, whitespace>>;
+    using gr_filename = sequence<at_least<1, gr_path_allowed_character>, chars<'.'>, at_least<1, gr_path_allowed_character>, whitespace>;
 
     gr_filename checker{};
     CHECK_TRUE(checker("allo.wed.ext")); // OK: dots in filename allowed, extension should be "d"
