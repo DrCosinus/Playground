@@ -21,12 +21,15 @@ namespace grammar
         decltype(string_views.size()) size() const { return string_views.size(); }
         decltype(string_views.empty()) empty() const { return string_views.empty(); }
         std::string_view& operator[](std::size_t _index) { return string_views[_index]; }
+        auto begin() const { return string_views.begin(); }
+        auto end() const { return string_views.end(); }
 
         operator bool() const { return !string_views.empty(); }
     };
+
 // terminals
     template<char C>
-    struct is_char
+    struct chr
     {
         result_t operator()(std::string_view _sview) const
         {
@@ -40,7 +43,7 @@ namespace grammar
         }
     };
 
-    struct is_space
+    struct whitespace
     {
         result_t operator()(std::string_view _sview) const
         {
@@ -104,10 +107,10 @@ namespace grammar
                     break;
                 ++matches_count;
                 {
-                    if (result.string_views.size()!=1)
+                    if (result.size()!=1)
                         std::cout << "Toh!!" <<std::endl;
                 }
-                work_sview = result.string_views[0];
+                work_sview = result[0];
                 if (matches_count>=N)
                 {
                     candidates.push_back(work_sview);
@@ -131,24 +134,24 @@ namespace grammar
         {
             if(auto results = HEAD{}(_sview))
             {
-                std::cout << "(" << results.string_views.size() << ")" << std::endl;
+                // std::cout << "(" << results.size() << ")" << std::endl;
                 if constexpr(sizeof...(TAIL) == 0)
                 {
                     return results;
                 }
-                else if (!results.string_views.empty())
+                else if (!results.empty())
                 {
                     // in fact, we want to filter results
                     std::vector<std::string_view> candidates;
-                    for(auto& result_view: results.string_views)
+                    for(auto& result_view: results)
                     {
-                        std::cout << "-> " << result_view << std::endl;
+                        // std::cout << "-> " << result_view << std::endl;
                         if (sequence<TAIL...>{}(result_view))
                         {
                             candidates.push_back(result_view);
                         }
                     }
-                    std::cout << "-> (" << candidates.size() << ")" << std::endl;
+                    // std::cout << "-> (" << candidates.size() << ")" << std::endl;
                     return { std::move(candidates) };
                 }
             }
@@ -161,23 +164,27 @@ namespace grammar
 int main(void)
 {
     using grammar::any_of;
-    using grammar::is_char;
-    using grammar::is_space;
+    using grammar::chr;
+    using grammar::whitespace;
     using grammar::is_not;
     using grammar::at_least;
     using grammar::sequence;
 
-    using filename_allowed_characters_t = is_not<any_of<is_char<'\\'>,is_char<'/'>,is_char<'*'>,is_char<'\"'>,is_char<'*'>,is_char<':'>,is_char<'<'>,is_char<'>'>,is_char<'|'>,is_char<'?'>,is_space>>;
-    using filename_t = sequence<at_least<1, filename_allowed_characters_t>, is_char<'.'>, at_least<1, filename_allowed_characters_t>>;
+    using gr_path_allowed_character = is_not<any_of<chr<'\\'>,chr<'/'>,chr<'*'>,chr<'\"'>,chr<'*'>,chr<':'>,chr<'<'>,chr<'>'>,chr<'|'>,chr<'?'>,whitespace>>;
+    using gr_filename = sequence<at_least<1, gr_path_allowed_character>, chr<'.'>, at_least<1, gr_path_allowed_character>, whitespace>;
 
-    filename_t checker{};
-    // CHECK_TRUE(checker("allowed&.-_=.")); // NOT OK: trailing dot not allowed
+    gr_filename checker{};
+    CHECK_TRUE(checker("allo.wed.ext")); // OK: dots in filename allowed, extension should be "d"
+    CHECK_FALSE(checker("allowed&.-_=.")); // NOT OK: trailing dot not allowed (no extension)
     CHECK_TRUE(checker("allowed.cpp")); // OK
-    //CHECK_TRUE(checker("allowed")); // OK no extension
-    // CHECK_FALSE(checker(".ext")); // NOT OK: extension only not allowed for filenames (OK for folder names)
-    // CHECK_FALSE(checker("")); // NOT OK: empty
-    // CHECK_FALSE(checker("<notallowed")); // NOT OK, leading and trailing forbidden characters
-    // CHECK_FALSE(checker("notallowed>")); // NOT OK, leading and trailing forbidden characters
-    // CHECK_TRUE(checker("seperated. names")); // OK: matches "seperated"
+    CHECK_FALSE(checker("notallowed.ext>")); // NOT OK, leading and trailing forbidden characters
+    CHECK_TRUE(checker("allowed")); // OK no extension is allowed
+    CHECK_FALSE(checker("notallowed.")); // NOT OK: final dot without extension is not allowed
+    CHECK_FALSE(checker(".ext")); // NOT OK: extension only not allowed for filenames (OK for folder names)
+    CHECK_FALSE(checker("")); // NOT OK: empty
+    CHECK_FALSE(checker("<notallowed")); // NOT OK, leading and trailing forbidden characters
+    CHECK_FALSE(checker("notallowed>")); // NOT OK, leading and trailing forbidden characters
+    CHECK_TRUE(checker("seperated.cpp names")); // OK: matches "seperated"
+
     tdd::PrintTestResults([](const char* line){ std::cout << line << std::endl; } );
 }
