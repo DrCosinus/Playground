@@ -7,6 +7,7 @@
 // for lib
 #include <cstddef>
 #include <string_view>
+#include <vector>
 
 // some references
 // https://swtch.com/~rsc/regexp/               (Implementing Regular Expressions)
@@ -16,99 +17,109 @@ namespace grammar
 {
     struct result_t
     {
-        bool                success;
-        std::string_view    string_view;
+        std::vector<std::string_view>   string_views;
+        decltype(string_views.size()) size() const { return string_views.size(); }
+        decltype(string_views.empty()) empty() const { return string_views.empty(); }
+        std::string_view& operator[](std::size_t _index) { return string_views[_index]; }
 
-        constexpr operator bool() const { return success; }
+        operator bool() const { return !string_views.empty(); }
     };
 // terminals
     template<char C>
     struct is_char
     {
-        constexpr result_t operator()(std::string_view _sview) const
+        result_t operator()(std::string_view _sview) const
         {
             if (_sview.front() == C)
             {
                 _sview.remove_prefix(1);
-                return { true,  _sview };
+                return { { _sview } };
             }
             else
-                return { false, _sview };
+                return { { } };
         }
     };
 
     struct is_space
     {
-        constexpr result_t operator()(std::string_view _sview) const
+        result_t operator()(std::string_view _sview) const
         {
             char c = _sview.front();
             if (c==' ' || c=='\t' || c=='\r' || c=='\n' || c=='\0')
             {
                 _sview.remove_prefix(1);
-                return { true, _sview };
+                return { { _sview } };
             }
             else
-                return { false, _sview };
+                return { { } };
         }
     };
 // compositors
     template<typename HEAD, typename... TAIL>
     struct any_of
     {
-        constexpr result_t operator()(std::string_view _sview) const
+        result_t operator()(std::string_view _sview) const
         {
             auto result = HEAD{}(_sview);
-            if (result.success)
+            if (result)
                 return result;
             if constexpr (sizeof...(TAIL)==0)
-                return { false, _sview };
+                return { { } };
             else
                 return any_of<TAIL...>{}(_sview);
         }
     };
 
-    template<typename T>
+    template<typename PREDICATE>
     struct is_not
     {
-        constexpr result_t operator()(std::string_view _sview) const
+        result_t operator()(std::string_view _sview) const
         {
-            auto result = T{}(_sview);
-            if (result.success)
-                return { false, _sview };
+            auto result = PREDICATE{}(_sview);
+            if (result)
+                return { { } };
             else
             {
                 _sview.remove_prefix(1); // the HARDCODED count 1 should depend on the underlying operators
-                return { true, _sview };
+                return { { _sview } };
             }
         }
     };
 
-    template<std::size_t N, typename T>
+    template<std::size_t N, typename PREDICATE>
     struct at_least
     {
-        constexpr result_t operator()(std::string_view _sview) const
+        result_t operator()(std::string_view _sview) const
         {
-            T checker{};
+            PREDICATE checker{};
             std::size_t matches_count = 0;
             auto work_sview = _sview;
+            std::vector<std::string_view> candidates;
             while(true)
             {
                 if (work_sview.empty())
                     break;
                 auto result = checker(work_sview);
-                if (!result.success)
+                if (!result)
                     break;
                 ++matches_count;
-                //std::cout << work_sview << std::endl;
-                work_sview = result.string_view;
+                {
+                    if (result.string_views.size()!=1)
+                        std::cout << "Toh!!" <<std::endl;
+                }
+                work_sview = result.string_views[0];
+                if (matches_count>=N)
+                {
+                    candidates.push_back(work_sview);
+                }
             }
             if (matches_count < N)
             {
-                return { false, _sview };
+                return { { } };
             }
             else
             {
-                return { true, work_sview };
+                return { std::move(candidates) };
             }
         }
     };
@@ -116,21 +127,33 @@ namespace grammar
     template<typename HEAD, typename... TAIL>
     struct sequence // aka concatenate
     {
-        constexpr result_t operator()(const std::string_view _sview) const
+        result_t operator()(const std::string_view _sview) const
         {
-            if(auto result = HEAD{}(_sview); result.success)
+            if(auto results = HEAD{}(_sview))
             {
+                std::cout << "(" << results.string_views.size() << ")" << std::endl;
                 if constexpr(sizeof...(TAIL) == 0)
                 {
-                    return result;
+                    return results;
                 }
-                else if (!result.string_view.empty())
+                else if (!results.string_views.empty())
                 {
-                    return sequence<TAIL...>{}(result.string_view);
+                    // in fact, we want to filter results
+                    std::vector<std::string_view> candidates;
+                    for(auto& result_view: results.string_views)
+                    {
+                        std::cout << "-> " << result_view << std::endl;
+                        if (sequence<TAIL...>{}(result_view))
+                        {
+                            candidates.push_back(result_view);
+                        }
+                    }
+                    std::cout << "-> (" << candidates.size() << ")" << std::endl;
+                    return { std::move(candidates) };
                 }
             }
             // if it fails we should try other matching results of the 
-            return { false, _sview };
+            return { { } };
         }
     };
 }
@@ -145,16 +168,16 @@ int main(void)
     using grammar::sequence;
 
     using filename_allowed_characters_t = is_not<any_of<is_char<'\\'>,is_char<'/'>,is_char<'*'>,is_char<'\"'>,is_char<'*'>,is_char<':'>,is_char<'<'>,is_char<'>'>,is_char<'|'>,is_char<'?'>,is_space>>;
-    using filename_t = sequence<at_least<1, filename_allowed_characters_t>, is_char<'.'>>;
+    using filename_t = sequence<at_least<1, filename_allowed_characters_t>, is_char<'.'>, at_least<1, filename_allowed_characters_t>>;
 
     filename_t checker{};
-    CHECK_FALSE(checker("allowed&.-_=.")); // NOT OK: trailing dot not allowed
+    // CHECK_TRUE(checker("allowed&.-_=.")); // NOT OK: trailing dot not allowed
     CHECK_TRUE(checker("allowed.cpp")); // OK
-    CHECK_TRUE(checker("allowed")); // OK no extension
-    CHECK_FALSE(checker(".ext")); // NOT OK: extension only not allowed for filenames (OK for folder names)
-    CHECK_FALSE(checker("")); // NOT OK: empty
-    CHECK_FALSE(checker("<notallowed")); // NOT OK, leading and trailing forbidden characters
-    CHECK_FALSE(checker("notallowed>")); // NOT OK, leading and trailing forbidden characters
-    CHECK_TRUE(checker("seperated. names")); // OK: matches "seperated"
+    //CHECK_TRUE(checker("allowed")); // OK no extension
+    // CHECK_FALSE(checker(".ext")); // NOT OK: extension only not allowed for filenames (OK for folder names)
+    // CHECK_FALSE(checker("")); // NOT OK: empty
+    // CHECK_FALSE(checker("<notallowed")); // NOT OK, leading and trailing forbidden characters
+    // CHECK_FALSE(checker("notallowed>")); // NOT OK, leading and trailing forbidden characters
+    // CHECK_TRUE(checker("seperated. names")); // OK: matches "seperated"
     tdd::PrintTestResults([](const char* line){ std::cout << line << std::endl; } );
 }
