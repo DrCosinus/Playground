@@ -8,6 +8,10 @@
 #include <cstddef>
 #include <string_view>
 
+// some references
+// https://swtch.com/~rsc/regexp/               (Implementing Regular Expressions)
+// https://swtch.com/~rsc/regexp/regexp1.html   (Regular Expression Matching Can Be Simple And Fast)
+
 namespace grammar
 {
     struct result_t
@@ -110,7 +114,7 @@ namespace grammar
     };
 
     template<typename HEAD, typename... TAIL>
-    struct sequence
+    struct sequence // aka concatenate
     {
         constexpr result_t operator()(const std::string_view _sview) const
         {
@@ -125,6 +129,7 @@ namespace grammar
                     return sequence<TAIL...>{}(result.string_view);
                 }
             }
+            // if it fails we should try other matching results of the 
             return { false, _sview };
         }
     };
@@ -150,7 +155,6 @@ int main(void)
     CHECK_FALSE(checker("")); // NOT OK: empty
     CHECK_FALSE(checker("<notallowed")); // NOT OK, leading and trailing forbidden characters
     CHECK_FALSE(checker("notallowed>")); // NOT OK, leading and trailing forbidden characters
-    CHECK_TRUE(checker("seperated names")); // OK: matches "seperated"
-
+    CHECK_TRUE(checker("seperated. names")); // OK: matches "seperated"
     tdd::PrintTestResults([](const char* line){ std::cout << line << std::endl; } );
 }
