@@ -210,6 +210,7 @@ int main(void)
     CHECK_TRUE(search<gr_filename>("allo.wed.ext")); // OK: dots in filename allowed, extension should be "d"
     CHECK_FALSE(search<gr_filename>("allowed&.-_=.")); // NOT OK: trailing dot not allowed (no extension)
     CHECK_TRUE(search<gr_filename>("allowed.cpp")); // OK
+    CHECK_TRUE(search<gr_filename>("allowed..cpp")); // OK
     CHECK_FALSE(search<gr_filename>("notallowed.ext>")); // NOT OK, leading and trailing forbidden characters
     CHECK_TRUE(search<gr_filename>("allowed")); // OK no extension is allowed
     CHECK_FALSE(search<gr_filename>("notallowed.")); // NOT OK: final dot without extension is not allowed
