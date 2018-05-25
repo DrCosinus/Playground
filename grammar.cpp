@@ -278,13 +278,20 @@ int main(void)
                 whitespace
             >
         >;
+    using gr_extension_allowed_character =
+        is_not<
+            any_of<
+                char_among<'\\','/','*','\"',':','<','>','|','?', '.'>,
+                whitespace
+            >
+        >;
     using gr_filename =
         sequence<
             at_least<1, gr_path_allowed_character>,
             optional<
                 sequence<
                     char_among<'.'>,
-                    at_least<1, gr_path_allowed_character>
+                    at_least<1, gr_extension_allowed_character>
                 >
             >,
             whitespace
