@@ -20,12 +20,13 @@ namespace grammar
     struct char_among
     {
         template<typename FUNCTOR>
-        constexpr bool operator()(std::string_view _sview, FUNCTOR yield_return) const
+        constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
         {
             if (_sview.front() == C)
             {
-                _sview.remove_prefix(1);
-                yield_return( _sview );
+                auto view_copy = _sview;
+                view_copy.remove_prefix(1);
+                yield_return( view_copy );
                 return true;
             }
             else
@@ -38,18 +39,47 @@ namespace grammar
         }
     };
 
-    struct any_char
+    template<char... Cs>
+    struct char_among<'\0', Cs...>
     {
         template<typename FUNCTOR>
-        constexpr bool operator()(std::string_view _sview, FUNCTOR yield_return) const
-        {
-            _sview.remove_prefix(1);
-            yield_return( _sview );
-            return true;
+        constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
+        { // special handling for empty view
+            if (_sview.empty())
+            {
+                yield_return( _sview );
+                return true;
+            }
+            if (_sview.front() == '\0')
+            {
+                auto view_copy = _sview;
+                view_copy.remove_prefix(1);
+                yield_return( view_copy );
+                return true;
+            }
+            else
+            {
+                if constexpr (sizeof...(Cs)!=0)
+                    return char_among<Cs...>{}(_sview, yield_return);
+                else
+                    return false;
+            }
         }
     };
 
     using whitespace = char_among<' ', '\t', '\r', '\n', '\0'>;
+
+    struct any_char
+    {
+        template<typename FUNCTOR>
+        constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
+        {
+            auto view_copy = _sview;
+            view_copy.remove_prefix(1);
+            yield_return( view_copy );
+            return true;
+        }
+    };
 
     // some classical terminals to be considered
     // - digit
@@ -65,7 +95,7 @@ namespace grammar
     struct any_of
     {
         template<typename FUNCTOR>
-        constexpr bool operator()(std::string_view _sview, FUNCTOR yield_return) const
+        constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
         {
             if (HEAD{}(_sview, [&yield_return](const auto& _trailing_sview){ return yield_return(_trailing_sview); } ))
             {
@@ -85,7 +115,7 @@ namespace grammar
     struct is_not
     {
         template<typename FUNCTOR>
-        constexpr bool operator()(std::string_view _sview, FUNCTOR yield_return) const
+        constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
         {
             if (PREDICATE{}(_sview, [](const auto&){ return false; }))
             {
@@ -93,8 +123,9 @@ namespace grammar
             }
             else
             {
-                _sview.remove_prefix(1); // the HARDCODED count 1 should depend on the underlying operators
-                yield_return(_sview);
+                auto view_copy = _sview;
+                view_copy.remove_prefix(1); // the HARDCODED count 1 should depend on the underlying operators
+                yield_return(view_copy);
                 return true;
             }
         }
@@ -104,7 +135,7 @@ namespace grammar
     struct at_least
     {
         template<typename FUNCTOR>
-        constexpr bool operator()(std::string_view _sview, FUNCTOR yield_return) const
+        constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
         {
             PREDICATE checker{};
 
@@ -131,7 +162,7 @@ namespace grammar
     struct sequence // aka concatenate
     {
         template<typename FUNCTOR>
-        constexpr bool operator()(const std::string_view _sview, FUNCTOR yield_return) const
+        constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
         {
             auto success = false;
             HEAD{}(_sview, [&success, &yield_return](const auto& _trailing_view)
@@ -154,7 +185,7 @@ namespace grammar
     struct optional // aka one_or_zero
     {
         template<typename FUNCTOR>
-        constexpr bool operator()(const std::string_view _sview, FUNCTOR yield_return) const
+        constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
         {
             PREDICATE{}(_sview, [&yield_return](const auto& trailing_view)
             {
@@ -183,7 +214,7 @@ namespace grammar
             {
                 (void)_trailing_view;
                 // There is a bug if we display the trailing view :-/
-                //std::cout << "--> \"" << _trailing_view << "\"" << std::endl;
+                std::cout << "--> (" << _trailing_view.size() << ")\"" << _trailing_view << "\"" << std::endl;
             }
         };
 
@@ -240,7 +271,6 @@ int main(void)
     CHECK_FALSE(search<gr_ABC>("D"));
     CHECK_FALSE(search<gr_ABC>(""));
 
-
     using gr_path_allowed_character =
         is_not<
             any_of<
@@ -272,7 +302,6 @@ int main(void)
     CHECK_FALSE(search<gr_filename>("<notallowed")); // NOT OK, leading and trailing forbidden characters
     CHECK_FALSE(search<gr_filename>("notallowed>")); // NOT OK, leading and trailing forbidden characters
     CHECK_TRUE(search<gr_filename>("seperated.cpp names")); // OK: matches "seperated"
-
 
     tdd::PrintTestResults([](const char* line){ std::cout << line << std::endl; } );
 }
