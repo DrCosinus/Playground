@@ -15,70 +15,87 @@
 
 namespace grammar
 {
-    struct result_t
-    {
-        std::vector<std::string_view>   string_views;
-
-        auto size() const { return string_views.size(); }
-        auto empty() const { return string_views.empty(); }
-        decltype(auto) operator[](std::size_t _index) { return string_views[_index]; }
-        auto begin() const { return string_views.begin(); }
-        auto end() const { return string_views.end(); }
-
-        operator bool() const { return !string_views.empty(); }
-    };
-
 // terminals
     template<char C, char... Cs>
     struct char_among
     {
-        result_t operator()(std::string_view _sview) const
+        template<typename FUNCTOR>
+        constexpr bool operator()(std::string_view _sview, FUNCTOR yield_return) const
         {
             if (_sview.front() == C)
             {
                 _sview.remove_prefix(1);
-                return { { _sview } };
+                yield_return( _sview );
+                return true;
             }
             else
             {
-                if constexpr (sizeof...(Cs)==0)
-                    return { { } };
+                if constexpr (sizeof...(Cs)!=0)
+                    return char_among<Cs...>{}(_sview, yield_return);
                 else
-                    return char_among<Cs...>{}(_sview);
+                    return false;
             }
+        }
+    };
+
+    struct any_char
+    {
+        template<typename FUNCTOR>
+        constexpr bool operator()(std::string_view _sview, FUNCTOR yield_return) const
+        {
+            _sview.remove_prefix(1);
+            yield_return( _sview );
+            return true;
         }
     };
 
     using whitespace = char_among<' ', '\t', '\r', '\n', '\0'>;
 
+    // some classical terminals to be considered
+    // - digit
+    // - alpha
+    // - alphanum
+    // - start of line
+    // - end of line
+    // - start of file
+    // - end of file
+
 // compositors
     template<typename HEAD, typename... TAIL>
     struct any_of
     {
-        result_t operator()(std::string_view _sview) const
+        template<typename FUNCTOR>
+        constexpr bool operator()(std::string_view _sview, FUNCTOR yield_return) const
         {
-            auto result = HEAD{}(_sview);
-            if (result)
-                return result;
-            if constexpr (sizeof...(TAIL)==0)
-                return { { } };
+            if (HEAD{}(_sview, [&yield_return](const auto& _trailing_sview){ return yield_return(_trailing_sview); } ))
+            {
+                return true;
+            }
             else
-                return any_of<TAIL...>{}(_sview);
+            {
+                if constexpr (sizeof...(TAIL)==0)
+                    return false;
+                else
+                    return any_of<TAIL...>{}(_sview, yield_return);
+            }
         }
     };
 
     template<typename PREDICATE>
     struct is_not
     {
-        result_t operator()(std::string_view _sview) const
+        template<typename FUNCTOR>
+        constexpr bool operator()(std::string_view _sview, FUNCTOR yield_return) const
         {
-            auto result = PREDICATE{}(_sview);
-            if (result)
-                return { { } };
+            if (PREDICATE{}(_sview, [](const auto&){ return false; }))
+            {
+                return false;
+            }
             else
             {
                 _sview.remove_prefix(1); // the HARDCODED count 1 should depend on the underlying operators
-                return { { _sview } };
+                yield_return(_sview);
+                return true;
             }
         }
     };
@@ -86,93 +103,97 @@ namespace grammar
     template<std::size_t N, typename PREDICATE>
     struct at_least
     {
-        result_t operator()(std::string_view _sview) const
+        template<typename FUNCTOR>
+        constexpr bool operator()(std::string_view _sview, FUNCTOR yield_return) const
         {
             PREDICATE checker{};
-            std::size_t matches_count = 0;
-            auto work_sview = _sview;
-            std::vector<std::string_view> candidates;
-            while(true)
+
+            if (!_sview.empty())
             {
-                if (work_sview.empty())
-                    break;
-                auto result = checker(work_sview);
-                if (!result)
-                    break;
-                ++matches_count;
+                return checker(_sview, [&yield_return](const auto& trailing_view)
                 {
-                    if (result.size()!=1)
-                        std::cout << "Toh!!" <<std::endl;
-                }
-                work_sview = result[0];
-                if (matches_count>=N)
-                {
-                    candidates.push_back(work_sview);
-                }
+                    if constexpr(N <= 1)
+                    {
+                        yield_return(trailing_view);
+                        at_least<0, PREDICATE>{}(trailing_view, yield_return);
+                    }
+                    else
+                    {
+                        at_least<N-1, PREDICATE>{}(trailing_view, yield_return);
+                    }
+                });
             }
-            if (matches_count < N)
-            {
-                return { { } };
-            }
-            else
-            {
-                return { std::move(candidates) };
-            }
+            return N == 0;
         }
     };
 
     template<typename HEAD, typename... TAIL>
     struct sequence // aka concatenate
     {
-        result_t operator()(const std::string_view _sview) const
+        template<typename FUNCTOR>
+        constexpr bool operator()(const std::string_view _sview, FUNCTOR yield_return) const
         {
-            if(auto results = HEAD{}(_sview))
+            auto success = false;
+            HEAD{}(_sview, [&success, &yield_return](const auto& _trailing_view)
             {
-                // std::cout << "(" << results.size() << ")" << std::endl;
                 if constexpr(sizeof...(TAIL) == 0)
                 {
-                    return results;
+                    yield_return(_trailing_view);
+                    success = true;
                 }
-                else if (!results.empty())
+                else
                 {
-                    // in fact, we want to filter results
-                    std::vector<std::string_view> candidates;
-                    for(auto& result_view: results)
-                    {
-                        // std::cout << "-> " << result_view << std::endl;
-                        if (sequence<TAIL...>{}(result_view))
-                        {
-                            candidates.push_back(result_view);
-                        }
-                    }
-                    // std::cout << "-> (" << candidates.size() << ")" << std::endl;
-                    return { std::move(candidates) };
+                    success = sequence<TAIL...>{}(_trailing_view, yield_return);
                 }
-            }
-            // if it fails we should try other matching results of the 
-            return { { } };
+            });
+            return success;
         }
     };
+
     template<typename PREDICATE>
     struct optional // aka one_or_zero
     {
-        result_t operator()(const std::string_view _sview) const
+        template<typename FUNCTOR>
+        constexpr bool operator()(const std::string_view _sview, FUNCTOR yield_return) const
         {
-            std::vector<std::string_view> candidates{ _sview };
-            if(auto results = PREDICATE{}(_sview))
+            PREDICATE{}(_sview, [&yield_return](const auto& trailing_view)
             {
-                candidates.insert(candidates.end(), results.begin(), results.end());
-            }
-            // if it fails we should try other matching results of the 
-            return { std::move(candidates) };
+                yield_return(trailing_view);
+            });
+            yield_return(_sview);
+            return true;
         }
     };
 
 // algorithm
+    enum class Verboseness { Silent, Verbose };
     template<typename PATTERN>
-    auto search(std::string_view _sview)
+    auto search(std::string_view _sview, Verboseness _verboseness = Verboseness::Silent)
     {
-        return PATTERN{}(_sview);
+        // maybe yield_callback could return YIELD_CONTINUE or YIELD_BREAK
+        std::size_t match_count = 0;
+        if (_verboseness==Verboseness::Verbose)
+        {
+            std::cout << "grammar::search in \"" << _sview << "\":" << std::endl;
+        }
+        auto yield_callback = [&match_count, &_verboseness](const auto& _trailing_view)
+        {
+            ++match_count;
+            if (_verboseness==Verboseness::Verbose)
+            {
+                (void)_trailing_view;
+                // There is a bug if we display the trailing view :-/
+                //std::cout << "--> \"" << _trailing_view << "\"" << std::endl;
+            }
+        };
+
+        PATTERN{}(_sview, yield_callback);
+
+        if (_verboseness==Verboseness::Verbose)
+        {
+            std::cout << "... " << match_count << " " << ( match_count > 1 ?"matches":"match") << std::endl;
+        }
+        return match_count != 0;
     }
 }
 
@@ -185,8 +206,40 @@ int main(void)
     using grammar::at_least;
     using grammar::sequence;
     using grammar::optional;
+    using grammar::any_char;
+    using grammar::Verboseness;
 
     using grammar::search;
+
+    using gr_ABC =
+        sequence<
+            at_least<0, any_char>,
+            at_least<
+                3,
+                is_not<
+                    any_of<
+                        char_among<'E', 'F', 'G'>,
+                        char_among<'I', 'J', 'K'>
+                    >
+                >
+            >,
+            any_of<char_among<'H'>,whitespace>
+        >;
+
+    CHECK_TRUE(search<gr_ABC>("CplusHminus")); // 3 matches: "Cpl" "Cplu" "Cplus"
+    CHECK_FALSE(search<gr_ABC>("CJus"));
+    CHECK_FALSE(search<gr_ABC>("CpKu"));
+    CHECK_TRUE(search<gr_ABC>("Auto"));
+    CHECK_TRUE(search<gr_ABC>("Main"));
+    CHECK_FALSE(search<gr_ABC>("Enu"));
+    CHECK_FALSE(search<gr_ABC>("Kod"));
+    CHECK_TRUE(search<gr_ABC>("Enum"));
+    CHECK_TRUE(search<gr_ABC>("Goto"));
+    CHECK_TRUE(search<gr_ABC>("Kode"));
+    CHECK_TRUE(search<gr_ABC>("DCBA"));
+    CHECK_FALSE(search<gr_ABC>("D"));
+    CHECK_FALSE(search<gr_ABC>(""));
+
 
     using gr_path_allowed_character =
         is_not<
@@ -207,7 +260,7 @@ int main(void)
             whitespace
         >;
 
-    CHECK_TRUE(search<gr_filename>("allo.wed.ext")); // OK: dots in filename allowed, extension should be "d"
+    CHECK_TRUE(search<gr_filename>("allo.wed.ext", Verboseness::Verbose)); // OK: dots in filename allowed, extension should be "d"
     CHECK_FALSE(search<gr_filename>("allowed&.-_=.")); // NOT OK: trailing dot not allowed (no extension)
     CHECK_TRUE(search<gr_filename>("allowed.cpp")); // OK
     CHECK_TRUE(search<gr_filename>("allowed..cpp")); // OK
@@ -219,6 +272,7 @@ int main(void)
     CHECK_FALSE(search<gr_filename>("<notallowed")); // NOT OK, leading and trailing forbidden characters
     CHECK_FALSE(search<gr_filename>("notallowed>")); // NOT OK, leading and trailing forbidden characters
     CHECK_TRUE(search<gr_filename>("seperated.cpp names")); // OK: matches "seperated"
+
 
     tdd::PrintTestResults([](const char* line){ std::cout << line << std::endl; } );
 }
