@@ -7,7 +7,6 @@
 // for lib
 #include <cstddef>
 #include <string_view>
-#include <vector>
 
 // some references
 // https://swtch.com/~rsc/regexp/               (Implementing Regular Expressions)
@@ -22,6 +21,14 @@ namespace grammar
         template<typename FUNCTOR>
         constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
         {
+            if constexpr(C=='\0')
+            {
+                if (_sview.empty())
+                {   // special handling for empty view when C is '\0'
+                    yield_return( _sview );
+                    return true;
+                }
+            }
             if (_sview.front() == C)
             {
                 auto view_copy = _sview;
@@ -29,41 +36,10 @@ namespace grammar
                 yield_return( view_copy );
                 return true;
             }
+            if constexpr (sizeof...(Cs)!=0)
+                return char_among<Cs...>{}(_sview, yield_return);
             else
-            {
-                if constexpr (sizeof...(Cs)!=0)
-                    return char_among<Cs...>{}(_sview, yield_return);
-                else
-                    return false;
-            }
-        }
-    };
-
-    template<char... Cs>
-    struct char_among<'\0', Cs...>
-    {
-        template<typename FUNCTOR>
-        constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
-        { // special handling for empty view
-            if (_sview.empty())
-            {
-                yield_return( _sview );
-                return true;
-            }
-            if (_sview.front() == '\0')
-            {
-                auto view_copy = _sview;
-                view_copy.remove_prefix(1);
-                yield_return( view_copy );
-                return true;
-            }
-            else
-            {
-                if constexpr (sizeof...(Cs)!=0)
-                    return char_among<Cs...>{}(_sview, yield_return);
-                else
-                    return false;
-            }
+                return false;
         }
     };
 
