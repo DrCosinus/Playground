@@ -18,9 +18,10 @@ namespace grammar
     struct result_t
     {
         std::vector<std::string_view>   string_views;
-        decltype(string_views.size()) size() const { return string_views.size(); }
-        decltype(string_views.empty()) empty() const { return string_views.empty(); }
-        std::string_view& operator[](std::size_t _index) { return string_views[_index]; }
+
+        auto size() const { return string_views.size(); }
+        auto empty() const { return string_views.empty(); }
+        decltype(auto) operator[](std::size_t _index) { return string_views[_index]; }
         auto begin() const { return string_views.begin(); }
         auto end() const { return string_views.end(); }
 
@@ -29,7 +30,7 @@ namespace grammar
 
 // terminals
     template<char C, char... Cs>
-    struct chars
+    struct char_among
     {
         result_t operator()(std::string_view _sview) const
         {
@@ -43,25 +44,13 @@ namespace grammar
                 if constexpr (sizeof...(Cs)==0)
                     return { { } };
                 else
-                    return chars<Cs...>{}(_sview);
+                    return char_among<Cs...>{}(_sview);
             }
         }
     };
 
-    struct whitespace
-    {
-        result_t operator()(std::string_view _sview) const
-        {
-            char c = _sview.front();
-            if (c==' ' || c=='\t' || c=='\r' || c=='\n' || c=='\0')
-            {
-                _sview.remove_prefix(1);
-                return { { _sview } };
-            }
-            else
-                return { { } };
-        }
-    };
+    using whitespace = char_among<' ', '\t', '\r', '\n', '\0'>;
+
 // compositors
     template<typename HEAD, typename... TAIL>
     struct any_of
@@ -164,32 +153,71 @@ namespace grammar
             return { { } };
         }
     };
+    template<typename PREDICATE>
+    struct optional // aka one_or_zero
+    {
+        result_t operator()(const std::string_view _sview) const
+        {
+            std::vector<std::string_view> candidates{ _sview };
+            if(auto results = PREDICATE{}(_sview))
+            {
+                candidates.insert(candidates.end(), results.begin(), results.end());
+            }
+            // if it fails we should try other matching results of the 
+            return { std::move(candidates) };
+        }
+    };
+
+// algorithm
+    template<typename PATTERN>
+    auto search(std::string_view _sview)
+    {
+        return PATTERN{}(_sview);
+    }
 }
 
 int main(void)
 {
     using grammar::any_of;
-    using grammar::chars;
+    using grammar::char_among;
     using grammar::whitespace;
     using grammar::is_not;
     using grammar::at_least;
     using grammar::sequence;
+    using grammar::optional;
 
-    using gr_path_allowed_character = is_not< any_of <chars<'\\','/','*','\"','*',':','<','>','|','?'>, whitespace>>;
-    using gr_filename = sequence<at_least<1, gr_path_allowed_character>, chars<'.'>, at_least<1, gr_path_allowed_character>, whitespace>;
+    using grammar::search;
 
-    gr_filename checker{};
-    CHECK_TRUE(checker("allo.wed.ext")); // OK: dots in filename allowed, extension should be "d"
-    CHECK_FALSE(checker("allowed&.-_=.")); // NOT OK: trailing dot not allowed (no extension)
-    CHECK_TRUE(checker("allowed.cpp")); // OK
-    CHECK_FALSE(checker("notallowed.ext>")); // NOT OK, leading and trailing forbidden characters
-    CHECK_TRUE(checker("allowed")); // OK no extension is allowed
-    CHECK_FALSE(checker("notallowed.")); // NOT OK: final dot without extension is not allowed
-    CHECK_FALSE(checker(".ext")); // NOT OK: extension only not allowed for filenames (OK for folder names)
-    CHECK_FALSE(checker("")); // NOT OK: empty
-    CHECK_FALSE(checker("<notallowed")); // NOT OK, leading and trailing forbidden characters
-    CHECK_FALSE(checker("notallowed>")); // NOT OK, leading and trailing forbidden characters
-    CHECK_TRUE(checker("seperated.cpp names")); // OK: matches "seperated"
+    using gr_path_allowed_character =
+        is_not<
+            any_of<
+                char_among<'\\','/','*','\"',':','<','>','|','?'>,
+                whitespace
+            >
+        >;
+    using gr_filename =
+        sequence<
+            at_least<1, gr_path_allowed_character>,
+            optional<
+                sequence<
+                    char_among<'.'>,
+                    at_least<1, gr_path_allowed_character>
+                >
+            >,
+            whitespace
+        >;
+
+    CHECK_TRUE(search<gr_filename>("allo.wed.ext")); // OK: dots in filename allowed, extension should be "d"
+    CHECK_FALSE(search<gr_filename>("allowed&.-_=.")); // NOT OK: trailing dot not allowed (no extension)
+    CHECK_TRUE(search<gr_filename>("allowed.cpp")); // OK
+    CHECK_FALSE(search<gr_filename>("notallowed.ext>")); // NOT OK, leading and trailing forbidden characters
+    CHECK_TRUE(search<gr_filename>("allowed")); // OK no extension is allowed
+    CHECK_FALSE(search<gr_filename>("notallowed.")); // NOT OK: final dot without extension is not allowed
+    CHECK_FALSE(search<gr_filename>(".ext")); // NOT OK: extension only not allowed for filenames (OK for folder names)
+    CHECK_FALSE(search<gr_filename>("")); // NOT OK: empty
+    CHECK_FALSE(search<gr_filename>("<notallowed")); // NOT OK, leading and trailing forbidden characters
+    CHECK_FALSE(search<gr_filename>("notallowed>")); // NOT OK, leading and trailing forbidden characters
+    CHECK_TRUE(search<gr_filename>("seperated.cpp names")); // OK: matches "seperated"
 
     tdd::PrintTestResults([](const char* line){ std::cout << line << std::endl; } );
 }
