@@ -174,23 +174,24 @@ namespace grammar
 
 // algorithm
     enum class Verboseness { Silent, Verbose };
+
+    // check for an exact match (nor leading neither trailing characters)
     template<typename PATTERN>
-    auto search(std::string_view _sview, Verboseness _verboseness = Verboseness::Silent)
+    auto match(std::string_view _sview, Verboseness _verboseness = Verboseness::Silent)
     {
         // maybe yield_callback could return YIELD_CONTINUE or YIELD_BREAK
         std::size_t match_count = 0;
         if (_verboseness==Verboseness::Verbose)
         {
-            std::cout << "grammar::search in \"" << _sview << "\":" << std::endl;
+            std::cout << "grammar::match in \"" << _sview << "\":" << std::endl;
         }
         auto yield_callback = [&match_count, &_verboseness](const auto& _trailing_view)
         {
-            ++match_count;
+            if (_trailing_view.empty())
+                ++match_count;
             if (_verboseness==Verboseness::Verbose)
             {
-                (void)_trailing_view;
-                // There is a bug if we display the trailing view :-/
-                std::cout << "--> (" << _trailing_view.size() << ")\"" << _trailing_view << "\"" << std::endl;
+                std::cout << "--> \"" << _trailing_view << "\"" << std::endl;
             }
         };
 
@@ -201,6 +202,42 @@ namespace grammar
             std::cout << "... " << match_count << " " << ( match_count > 1 ?"matches":"match") << std::endl;
         }
         return match_count != 0;
+    }
+
+    // search the pattern anywhere in the string
+    template<typename PATTERN>
+    auto search(std::string_view _sview, Verboseness _verboseness = Verboseness::Silent)
+    {
+        while(!_sview.empty())
+        {
+            // maybe yield_callback could return YIELD_CONTINUE or YIELD_BREAK
+            std::size_t match_count = 0;
+            if (_verboseness==Verboseness::Verbose)
+            {
+                std::cout << "grammar::search in \"" << _sview << "\":" << std::endl;
+            }
+            auto yield_callback = [&match_count, &_verboseness](const auto& _trailing_view)
+            {
+                ++match_count;
+                if (_verboseness==Verboseness::Verbose)
+                {
+                    std::cout << "--> \"" << _trailing_view << "\"" << std::endl;
+                }
+            };
+
+            PATTERN{}(_sview, yield_callback);
+
+            if (_verboseness==Verboseness::Verbose)
+            {
+                std::cout << "... " << match_count << " " << ( match_count > 1 ?"matches":"match") << std::endl;
+            }
+            if (match_count!=0)
+            {
+                return true; // early exit
+            }
+            _sview.remove_prefix(1); // no match: we should remove the first character and retry
+        }
+        return false;
     }
 }
 
@@ -217,35 +254,26 @@ int main(void)
     using grammar::Verboseness;
 
     using grammar::search;
+    using grammar::match;
 
-    using gr_ABC =
+    using gr_blood_group =
         sequence<
-            at_least<0, any_char>,
-            at_least<
-                3,
-                is_not<
-                    any_of<
-                        char_among<'E', 'F', 'G'>,
-                        char_among<'I', 'J', 'K'>
-                    >
-                >
+            any_of<
+                sequence< char_among<'A'>, optional< char_among<'B'> > >,
+                char_among< 'B' >,
+                char_among< 'O' >
             >,
-            any_of<char_among<'H'>,whitespace>
+            any_of<char_among<'+'>,char_among<'-'>>
         >;
 
-    CHECK_TRUE(search<gr_ABC>("CplusHminus")); // 3 matches: "Cpl" "Cplu" "Cplus"
-    CHECK_FALSE(search<gr_ABC>("CJus"));
-    CHECK_FALSE(search<gr_ABC>("CpKu"));
-    CHECK_TRUE(search<gr_ABC>("Auto"));
-    CHECK_TRUE(search<gr_ABC>("Main"));
-    CHECK_FALSE(search<gr_ABC>("Enu"));
-    CHECK_FALSE(search<gr_ABC>("Kod"));
-    CHECK_TRUE(search<gr_ABC>("Enum"));
-    CHECK_TRUE(search<gr_ABC>("Goto"));
-    CHECK_TRUE(search<gr_ABC>("Kode"));
-    CHECK_TRUE(search<gr_ABC>("DCBA"));
-    CHECK_FALSE(search<gr_ABC>("D"));
-    CHECK_FALSE(search<gr_ABC>(""));
+    CHECK_TRUE(search<gr_blood_group>("AB+")); // match AB+ or B+
+    CHECK_TRUE(search<gr_blood_group>("A+"));
+    CHECK_TRUE(search<gr_blood_group>("O- ")); // trailing characters should not interfere the search result
+    CHECK_FALSE(match<gr_blood_group>("O- ")); // trailing characters not match exactly the pattern
+    CHECK_TRUE(search<gr_blood_group>("AAA+++")); // search should search the pattern anywhere in the string
+    CHECK_FALSE(search<gr_blood_group>("BC+"));
+    CHECK_TRUE(search<gr_blood_group>("BA+")); // match A+ (leading B is OK with search algorithm)
+    CHECK_FALSE(match<gr_blood_group>("BA+"));
 
     using gr_path_allowed_character =
         is_not<
