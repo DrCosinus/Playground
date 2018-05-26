@@ -14,12 +14,36 @@
 
 namespace grammar
 {
+    // a string_view for search with cursors retrieve string_view of matches
+    struct search_view
+    {
+        using size_type = std::string_view::size_type;
+        template<std::size_t N>
+        constexpr search_view(const char (&_literal)[N]) : view_{ _literal, N-1 } {}
+        constexpr bool empty() const { return match_start_index_+match_lenght_>=view_.size(); }
+        constexpr auto front() const { return view_[match_start_index_+match_lenght_]; }
+        constexpr void absorb() { ++match_lenght_; }
+        constexpr void advance_start() { ++match_start_index_; match_lenght_ = 0; }
+        constexpr auto match() const { return view_.substr(match_start_index_, match_lenght_); }
+
+        template<typename OUTPUT_STREAM_TYPE>
+        friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, search_view _sv)
+        {
+            _os << _sv.view_;
+            return _os;
+        }
+    private:
+        const std::string_view view_;
+        size_type match_start_index_ = 0;
+        size_type match_lenght_ = 0;
+    };
+
 // terminals
     template<char C, char... Cs>
     struct char_among
     {
         template<typename FUNCTOR>
-        constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
+        constexpr bool operator()(const search_view& _sview, FUNCTOR yield_return) const
         {
             if constexpr(C=='\0')
             {
@@ -32,7 +56,7 @@ namespace grammar
             if (_sview.front() == C)
             {
                 auto view_copy = _sview;
-                view_copy.remove_prefix(1);
+                view_copy.absorb();
                 yield_return( view_copy );
                 return true;
             }
@@ -48,10 +72,10 @@ namespace grammar
     struct any_char
     {
         template<typename FUNCTOR>
-        constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
+        constexpr bool operator()(const search_view& _sview, FUNCTOR yield_return) const
         {
             auto view_copy = _sview;
-            view_copy.remove_prefix(1);
+            view_copy.absorb();
             yield_return( view_copy );
             return true;
         }
@@ -71,7 +95,7 @@ namespace grammar
     struct any_of
     {
         template<typename FUNCTOR>
-        constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
+        constexpr bool operator()(const search_view& _sview, FUNCTOR yield_return) const
         {
             if (HEAD{}(_sview, [&yield_return](const auto& _trailing_sview){ return yield_return(_trailing_sview); } ))
             {
@@ -91,7 +115,7 @@ namespace grammar
     struct is_not
     {
         template<typename FUNCTOR>
-        constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
+        constexpr bool operator()(const search_view& _sview, FUNCTOR yield_return) const
         {
             if (PREDICATE{}(_sview, [](const auto&){ return false; }))
             {
@@ -100,7 +124,7 @@ namespace grammar
             else
             {
                 auto view_copy = _sview;
-                view_copy.remove_prefix(1); // the HARDCODED count 1 should depend on the underlying operators
+                view_copy.absorb();
                 yield_return(view_copy);
                 return true;
             }
@@ -111,7 +135,7 @@ namespace grammar
     struct at_least
     {
         template<typename FUNCTOR>
-        constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
+        constexpr bool operator()(const search_view& _sview, FUNCTOR yield_return) const
         {
             PREDICATE checker{};
 
@@ -138,7 +162,7 @@ namespace grammar
     struct sequence // aka concatenate
     {
         template<typename FUNCTOR>
-        constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
+        constexpr bool operator()(const search_view& _sview, FUNCTOR yield_return) const
         {
             auto success = false;
             HEAD{}(_sview, [&success, &yield_return](const auto& _trailing_view)
@@ -161,7 +185,7 @@ namespace grammar
     struct optional // aka one_or_zero
     {
         template<typename FUNCTOR>
-        constexpr bool operator()(const std::string_view& _sview, FUNCTOR yield_return) const
+        constexpr bool operator()(const search_view& _sview, FUNCTOR yield_return) const
         {
             PREDICATE{}(_sview, [&yield_return](const auto& trailing_view)
             {
@@ -177,7 +201,7 @@ namespace grammar
 
     // check for an exact match (nor leading neither trailing characters)
     template<typename PATTERN>
-    auto match(std::string_view _sview, Verboseness _verboseness = Verboseness::Silent)
+    auto match(search_view _sview, Verboseness _verboseness = Verboseness::Silent)
     {
         // maybe yield_callback could return YIELD_CONTINUE or YIELD_BREAK
         std::size_t match_count = 0;
@@ -191,7 +215,7 @@ namespace grammar
                 ++match_count;
             if (_verboseness==Verboseness::Verbose)
             {
-                std::cout << "--> \"" << _trailing_view << "\"" << std::endl;
+                std::cout << "--> \"" << _trailing_view.match() << "\"" << std::endl;
             }
         };
 
@@ -206,38 +230,35 @@ namespace grammar
 
     // search the pattern anywhere in the string
     template<typename PATTERN>
-    auto search(std::string_view _sview, Verboseness _verboseness = Verboseness::Silent)
+    auto search(search_view _sview, Verboseness _verboseness = Verboseness::Silent)
     {
+        if (_verboseness==Verboseness::Verbose)
+        {
+            std::cout << "grammar::search in \"" << _sview << "\":" << std::endl;
+        }
+        std::size_t match_count = 0;
+
         while(!_sview.empty())
         {
             // maybe yield_callback could return YIELD_CONTINUE or YIELD_BREAK
-            std::size_t match_count = 0;
-            if (_verboseness==Verboseness::Verbose)
-            {
-                std::cout << "grammar::search in \"" << _sview << "\":" << std::endl;
-            }
             auto yield_callback = [&match_count, &_verboseness](const auto& _trailing_view)
             {
                 ++match_count;
                 if (_verboseness==Verboseness::Verbose)
                 {
-                    std::cout << "--> \"" << _trailing_view << "\"" << std::endl;
+                    std::cout << "--> \"" << _trailing_view.match() << "\"" << std::endl;
                 }
             };
 
             PATTERN{}(_sview, yield_callback);
 
-            if (_verboseness==Verboseness::Verbose)
-            {
-                std::cout << "... " << match_count << " " << ( match_count > 1 ?"matches":"match") << std::endl;
-            }
-            if (match_count!=0)
-            {
-                return true; // early exit
-            }
-            _sview.remove_prefix(1); // no match: we should remove the first character and retry
+            _sview.advance_start(); // remove the first character and retry
         }
-        return false;
+        if (_verboseness==Verboseness::Verbose)
+        {
+            std::cout << "... " << match_count << " " << ( match_count > 1 ?"matches":"match") << std::endl;
+        }
+        return match_count!=0;
     }
 }
 
@@ -266,11 +287,11 @@ int main(void)
             any_of<char_among<'+'>,char_among<'-'>>
         >;
 
-    CHECK_TRUE(search<gr_blood_group>("AB+")); // match AB+ or B+
+    CHECK_TRUE(search<gr_blood_group>("AB+", Verboseness::Verbose)); // match AB+ or B+
     CHECK_TRUE(search<gr_blood_group>("A+"));
     CHECK_TRUE(search<gr_blood_group>("O- ")); // trailing characters should not interfere the search result
     CHECK_FALSE(match<gr_blood_group>("O- ")); // trailing characters not match exactly the pattern
-    CHECK_TRUE(search<gr_blood_group>("AAA+++")); // search should search the pattern anywhere in the string
+    CHECK_TRUE(search<gr_blood_group>("AAA+++", Verboseness::Verbose)); // search should search the pattern anywhere in the string
     CHECK_FALSE(search<gr_blood_group>("BC+"));
     CHECK_TRUE(search<gr_blood_group>("BA+")); // match A+ (leading B is OK with search algorithm)
     CHECK_FALSE(match<gr_blood_group>("BA+"));
@@ -301,7 +322,7 @@ int main(void)
             whitespace
         >;
 
-    CHECK_TRUE(search<gr_filename>("allo.wed.ext", Verboseness::Verbose)); // OK: dots in filename allowed, extension should be "d"
+    CHECK_TRUE(search<gr_filename>("allo.wed.ext")); // OK: dots in filename allowed, extension should be "d"
     CHECK_FALSE(search<gr_filename>("allowed&.-_=.")); // NOT OK: trailing dot not allowed (no extension)
     CHECK_TRUE(search<gr_filename>("allowed.cpp")); // OK
     CHECK_TRUE(search<gr_filename>("allowed..cpp")); // OK
