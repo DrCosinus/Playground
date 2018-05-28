@@ -262,8 +262,6 @@ namespace grammar
     }
 }
 
-int main(void)
-{
     using grammar::any_of;
     using grammar::char_among;
     using grammar::whitespace;
@@ -272,10 +270,39 @@ int main(void)
     using grammar::sequence;
     using grammar::optional;
     using grammar::any_char;
+
     using grammar::Verboseness;
 
     using grammar::search;
     using grammar::match;
+
+template<std::size_t N>
+using gr_perf =
+    sequence<
+        at_least< N, optional< char_among<'a'> > >
+        //, at_least< N, char_among<'a'>>
+    >;
+
+int main(void)
+{
+    // CHECK_TRUE(search<gr_perf<29>>("aaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+    // CHECK_TRUE(search<gr_perf<9>>("aaaaaaaaa"));
+    CHECK_TRUE(search<gr_perf<5>>("aaaaa"));
+    //CHECK_TRUE(search<gr_perf<2>>("aa"));
+    using gr_perf_x =
+        sequence<
+            optional< char_among<'a'> >
+            , optional< char_among<'a'> >
+            , optional< char_among<'a'> >
+            , optional< char_among<'a'> >
+            , optional< char_among<'a'> >
+            , char_among<'a'>
+            , char_among<'a'>
+            , char_among<'a'>
+            , char_among<'a'>
+            , char_among<'a'>
+        >;
+    CHECK_TRUE(search<gr_perf_x>("aaaaa", Verboseness::Verbose));
 
     using gr_blood_group =
         sequence<
@@ -287,11 +314,11 @@ int main(void)
             any_of<char_among<'+'>,char_among<'-'>>
         >;
 
-    CHECK_TRUE(search<gr_blood_group>("AB+", Verboseness::Verbose)); // match AB+ or B+
+    CHECK_TRUE(search<gr_blood_group>("AB+")); // match AB+ or B+
     CHECK_TRUE(search<gr_blood_group>("A+"));
     CHECK_TRUE(search<gr_blood_group>("O- ")); // trailing characters should not interfere the search result
     CHECK_FALSE(match<gr_blood_group>("O- ")); // trailing characters not match exactly the pattern
-    CHECK_TRUE(search<gr_blood_group>("AAA+++", Verboseness::Verbose)); // search should search the pattern anywhere in the string
+    CHECK_TRUE(search<gr_blood_group>("AAA+++")); // search should search the pattern anywhere in the string
     CHECK_FALSE(search<gr_blood_group>("BC+"));
     CHECK_TRUE(search<gr_blood_group>("BA+")); // match A+ (leading B is OK with search algorithm)
     CHECK_FALSE(match<gr_blood_group>("BA+"));
