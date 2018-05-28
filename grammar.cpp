@@ -137,24 +137,26 @@ namespace grammar
         template<typename FUNCTOR>
         constexpr bool operator()(const search_view& _sview, FUNCTOR yield_return) const
         {
-            PREDICATE checker{};
-
             if (!_sview.empty())
             {
-                return checker(_sview, [&yield_return](const auto& trailing_view)
+                if constexpr(N <= 1)
                 {
-                    if constexpr(N <= 1)
+                    return PREDICATE{}(_sview, [&yield_return](const auto& trailing_view)
                     {
                         yield_return(trailing_view);
                         at_least<0, PREDICATE>{}(trailing_view, yield_return);
-                    }
-                    else
+                    }) || ( N == 0 );
+                }
+                else
+                {
+                    PREDICATE{}(_sview, [&yield_return](const auto& trailing_view)
                     {
                         at_least<N-1, PREDICATE>{}(trailing_view, yield_return);
-                    }
-                });
+                    });
+                    return false;
+                }
             }
-            return N == 0;
+            return (N == 0);
         }
     };
 
@@ -262,19 +264,19 @@ namespace grammar
     }
 }
 
-    using grammar::any_of;
-    using grammar::char_among;
-    using grammar::whitespace;
-    using grammar::is_not;
-    using grammar::at_least;
-    using grammar::sequence;
-    using grammar::optional;
-    using grammar::any_char;
+using grammar::any_of;
+using grammar::char_among;
+using grammar::whitespace;
+using grammar::is_not;
+using grammar::at_least;
+using grammar::sequence;
+using grammar::optional;
+using grammar::any_char;
 
-    using grammar::Verboseness;
+using grammar::Verboseness;
 
-    using grammar::search;
-    using grammar::match;
+using grammar::search;
+using grammar::match;
 
 template<std::size_t N>
 using gr_perf =
