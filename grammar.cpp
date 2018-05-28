@@ -7,6 +7,7 @@
 // for lib
 #include <cstddef>
 #include <string_view>
+#include <algorithm>
 
 // some references
 // https://swtch.com/~rsc/regexp/               (Implementing Regular Expressions)
@@ -41,9 +42,9 @@ namespace grammar
         constexpr void advance_start() { ++match_start_index_; match_lenght_ = 0; }
         constexpr auto match() const { return view_.substr(match_start_index_, match_lenght_); }
 
-        constexpr auto get_length() const { return match_lenght_; }
-        constexpr auto store_lenght() { if (match_lenght_stored_ != size_type{-1}) throw; match_lenght_stored_ = match_lenght_; }
-        constexpr auto restore_lenght() { if (match_lenght_stored_ == size_type{-1}) throw; match_lenght_ = match_lenght_stored_; match_lenght_stored_ = size_type{-1}; }
+        // constexpr auto get_length() const { return match_lenght_; }
+        // constexpr auto store_lenght() { if (match_lenght_stored_ != invalid_match_length_) throw; match_lenght_stored_ = match_lenght_; }
+        // constexpr auto restore_lenght() { if (match_lenght_stored_ == invalid_match_length_) throw; match_lenght_ = match_lenght_stored_; match_lenght_stored_ = invalid_match_length_; }
 
         template<typename OUTPUT_STREAM_TYPE>
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, search_view _sv)
@@ -55,7 +56,8 @@ namespace grammar
         const std::string_view view_;
         size_type match_start_index_ = 0;
         size_type match_lenght_ = 0;
-        size_type match_lenght_stored_ = size_type{-1};
+        //static constexpr size_type invalid_match_length_ = std::numeric_limits<size_type>::max();
+        //size_type match_lenght_stored_ = invalid_match_length_;
     };
 
 // terminals
@@ -85,9 +87,33 @@ namespace grammar
             else
                 return false;
         }
+
+        static const char* name()
+        {
+            if constexpr (sizeof...(Cs))
+            {
+                static const char _name_[]= { '[', C, Cs..., ']', '\0' };
+                return _name_;
+            }
+            else
+            {
+                static const char _name_[]= { C, '\0' };
+                return _name_;
+            }
+        }
+
+        static constexpr std::size_t min_size()
+        {
+            return 1;
+        }
     };
 
-    using whitespace = char_among<' ', '\t', '\r', '\n', '\0'>;
+    using whitespace = char_among<' ', '\t', '\r', '\n'>;
+
+    // question:
+    // - min_size of '\0' should be 0
+    // - but size of not '\0' should be 1, not 0
+    // - should '\0' be a whitespace...
 
     struct any_char
     {
@@ -98,6 +124,16 @@ namespace grammar
             view_copy.absorb();
             yield_return( view_copy );
             return true;
+        }
+
+        static const char* name()
+        {
+            return ".";
+        }
+
+        static constexpr std::size_t min_size()
+        {
+            return 1;
         }
     };
 
@@ -129,6 +165,11 @@ namespace grammar
                     return any_of<TAIL...>{}(_sview, yield_return, _logger);
             }
         }
+
+        static constexpr std::size_t min_size()
+        {
+            return std::min({ HEAD::min_size(), TAIL::min_size()... });
+        }
     };
 
     template<typename PREDICATE>
@@ -148,6 +189,11 @@ namespace grammar
                 yield_return(view_copy);
                 return true;
             }
+        }
+
+        static constexpr std::size_t min_size()
+        {
+            return PREDICATE::min_size();
         }
     };
 
@@ -178,6 +224,11 @@ namespace grammar
             }
             return (N == 0);
         }
+
+        static constexpr std::size_t min_size()
+        {
+            return PREDICATE::min_size() * N;
+        }
     };
 
     template<typename HEAD, typename... TAIL>
@@ -202,6 +253,11 @@ namespace grammar
             }, _logger);
             return success;
         }
+
+        static constexpr std::size_t min_size()
+        {
+            return HEAD::min_size() + (... + TAIL::min_size());
+        }
     };
 
     template<typename PREDICATE>
@@ -219,6 +275,11 @@ namespace grammar
             yield_return(_sview);
             _logger << std::endl;
             return true;
+        }
+
+        static constexpr std::size_t min_size()
+        {
+            return 0;
         }
     };
 
@@ -333,6 +394,7 @@ int main(void)
             , char_among<'a'>
             , char_among<'a'>
         >;
+    CHECK_EQ(gr_perf_x::min_size(),2);
     CHECK_TRUE(search<gr_perf_x>("aa", std::cout));
 
     using gr_blood_group =
@@ -344,7 +406,7 @@ int main(void)
             >,
             any_of<char_among<'+'>,char_among<'-'>>
         >;
-
+    CHECK_EQ(gr_blood_group::min_size(),2);
     CHECK_TRUE(search<gr_blood_group>("AB+")); // match AB+ or B+
     CHECK_TRUE(search<gr_blood_group>("A+"));
     CHECK_TRUE(search<gr_blood_group>("O- ")); // trailing characters should not interfere the search result
@@ -376,10 +438,10 @@ int main(void)
                     char_among<'.'>,
                     at_least<1, gr_extension_allowed_character>
                 >
-            >,
-            whitespace
+            >
         >;
 
+    CHECK_EQ(gr_filename::min_size(),1);
     CHECK_TRUE(search<gr_filename>("allo.wed.ext")); // OK: dots in filename allowed, extension should be "d"
     CHECK_FALSE(search<gr_filename>("allowed&.-_=.")); // NOT OK: trailing dot not allowed (no extension)
     CHECK_TRUE(search<gr_filename>("allowed.cpp")); // OK
