@@ -16,19 +16,19 @@
 namespace grammar
 {
     struct search_view;
-    struct Silent
+    struct silent_logger
     {
         // T should not match 'search_view' to avoid ambiguity
         template<typename T, typename = std::enable_if_t<!std::is_same_v<T, search_view>> >
-        Silent& operator<<(const T&)
+        silent_logger& operator<<(const T&)
         {
             return *this;
         }
-        Silent& operator<<(std::ostream& (*)(std::ostream&))
+        silent_logger& operator<<(std::ostream& (*)(std::ostream&))
         {
             return *this;
         }
-    } Silence;
+    };
 
     // a string_view for search with cursors retrieve string_view of matches
     struct search_view
@@ -65,7 +65,7 @@ namespace grammar
     struct char_among
     {
         template<typename FUNCTOR, typename LOGGER>
-        constexpr bool operator()(const search_view& _sview, FUNCTOR yield_return, [[maybe_unused]] LOGGER& _logger) const
+        static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, [[maybe_unused]] LOGGER& _logger)
         {
             if constexpr(C=='\0')
             {
@@ -83,22 +83,21 @@ namespace grammar
                 return true;
             }
             if constexpr (sizeof...(Cs)!=0)
-                return char_among<Cs...>{}(_sview, yield_return, _logger);
+                return char_among<Cs...>::parse(_sview, yield_return, _logger);
             else
                 return false;
         }
 
-        static const char* name()
+        static constexpr const char _name_[] = { '[', C, Cs..., ']', '\0' };
+        static constexpr std::string_view name()
         {
             if constexpr (sizeof...(Cs))
             {
-                static const char _name_[]= { '[', C, Cs..., ']', '\0' };
-                return _name_;
+                return { _name_ };
             }
             else
             {
-                static const char _name_[]= { C, '\0' };
-                return _name_;
+                return { _name_+1, 1 };
             }
         }
 
@@ -110,15 +109,10 @@ namespace grammar
 
     using whitespace = char_among<' ', '\t', '\r', '\n'>;
 
-    // question:
-    // - min_size of '\0' should be 0
-    // - but size of not '\0' should be 1, not 0
-    // - should '\0' be a whitespace...
-
     struct any_char
     {
         template<typename FUNCTOR, typename LOGGER>
-        constexpr bool operator()(const search_view& _sview, FUNCTOR yield_return, LOGGER& /*_logger*/) const
+        static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, [[maybe_unused]]LOGGER& _logger)
         {
             auto view_copy = _sview;
             view_copy.absorb();
@@ -146,14 +140,16 @@ namespace grammar
     // - start of file
     // - end of file
 
+    // boundary aka \b
+
 // compositors
     template<typename HEAD, typename... TAIL>
     struct any_of
     {
         template<typename FUNCTOR, typename LOGGER>
-        constexpr bool operator()(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger) const
+        static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
-            if (HEAD{}(_sview, [&yield_return](const auto& _trailing_sview){ return yield_return(_trailing_sview); }, _logger ))
+            if (HEAD::parse(_sview, [&yield_return](const auto& _trailing_sview){ return yield_return(_trailing_sview); }, _logger ))
             {
                 return true;
             }
@@ -162,7 +158,7 @@ namespace grammar
                 if constexpr (sizeof...(TAIL)==0)
                     return false;
                 else
-                    return any_of<TAIL...>{}(_sview, yield_return, _logger);
+                    return any_of<TAIL...>::parse(_sview, yield_return, _logger);
             }
         }
 
@@ -176,9 +172,9 @@ namespace grammar
     struct is_not
     {
         template<typename FUNCTOR, typename LOGGER>
-        constexpr bool operator()(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger) const
+        static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
-            if (PREDICATE{}(_sview, [](const auto&){ return false; }, _logger))
+            if (PREDICATE::parse(_sview, [](const auto&){ return false; }, _logger))
             {
                 return false;
             }
@@ -201,23 +197,23 @@ namespace grammar
     struct at_least
     {
         template<typename FUNCTOR, typename LOGGER>
-        constexpr bool operator()(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger) const
+        static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
             if (!_sview.empty())
             {
                 if constexpr(N <= 1)
                 {
-                    return PREDICATE{}(_sview, [&yield_return, &_logger](const auto& trailing_view)
+                    return PREDICATE::parse(_sview, [&yield_return, &_logger](const auto& trailing_view)
                     {
                         yield_return(trailing_view);
-                        at_least<0, PREDICATE>{}(trailing_view, yield_return, _logger);
+                        at_least<0, PREDICATE>::parse(trailing_view, yield_return, _logger);
                     }, _logger) || ( N == 0 );
                 }
                 else
                 {
-                    PREDICATE{}(_sview, [&yield_return, &_logger](const auto& trailing_view)
+                    PREDICATE::parse(_sview, [&yield_return, &_logger](const auto& trailing_view)
                     {
-                        at_least<N-1, PREDICATE>{}(trailing_view, yield_return, _logger);
+                        at_least<N-1, PREDICATE>::parse(trailing_view, yield_return, _logger);
                     });
                     return false;
                 }
@@ -235,10 +231,10 @@ namespace grammar
     struct sequence // aka concatenate
     {
         template<typename FUNCTOR, typename LOGGER>
-        constexpr bool operator()(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger) const
+        static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
             auto success = false;
-            HEAD{}(_sview, [&success, &yield_return, &_logger](auto _trailing_view) // intentional copy (test purpose for now)
+            HEAD::parse(_sview, [&success, &yield_return, &_logger](auto _trailing_view) // intentional copy (test purpose for now)
             {
                 if constexpr(sizeof...(TAIL) == 0)
                 {
@@ -248,7 +244,7 @@ namespace grammar
                 }
                 else
                 {
-                    success = sequence<TAIL...>{}(_trailing_view, yield_return, _logger);
+                    success = sequence<TAIL...>::parse(_trailing_view, yield_return, _logger);
                 }
             }, _logger);
             return success;
@@ -264,10 +260,10 @@ namespace grammar
     struct optional // aka one_or_zero
     {
         template<typename FUNCTOR, typename LOGGER>
-        constexpr bool operator()(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger) const
+        static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
             _logger << "optional..." << std::endl;
-            PREDICATE{}(_sview, [&yield_return, &_logger](const auto& trailing_view)
+            PREDICATE::parse(_sview, [&yield_return, &_logger](const auto& trailing_view)
             {
                 _logger << "- match: \"" << trailing_view.match() << "\"" << std::endl;
                 yield_return(trailing_view);
@@ -300,7 +296,7 @@ namespace grammar
             _logger << "--> \"" << _trailing_view.match() << "\"" << std::endl;
         };
 
-        PATTERN{}(_sview, yield_callback, _logger);
+        PATTERN::parse(_sview, yield_callback, _logger);
 
         _logger << "... " << match_count << " " << ( match_count > 1 ?"matches":"match") << std::endl;
         return match_count != 0;
@@ -309,7 +305,8 @@ namespace grammar
     template<typename PATTERN>
     auto match(search_view _sview)
     {
-        return match<PATTERN>(_sview, Silence);
+        auto logger = silent_logger{};
+        return match<PATTERN>(_sview, logger);
     }
 
     // search the pattern anywhere in the string
@@ -330,7 +327,7 @@ namespace grammar
                 _logger << "--> \"" << _trailing_view.match() << "\"" << std::endl;
             };
 
-            PATTERN{}(_sview, yield_callback, _logger);
+            PATTERN::parse(_sview, yield_callback, _logger);
 
             _sview.advance_start(); // remove the first character and retry
         }
@@ -341,7 +338,8 @@ namespace grammar
     template<typename PATTERN>
     auto search(search_view _sview)
     {
-        return search<PATTERN>(_sview, Silence);
+        auto logger = silent_logger{};
+        return search<PATTERN>(_sview, logger);
     }
 }
 
