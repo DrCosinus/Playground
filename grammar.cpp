@@ -13,6 +13,8 @@
 // https://swtch.com/~rsc/regexp/               (Implementing Regular Expressions)
 // https://swtch.com/~rsc/regexp/regexp1.html   (Regular Expression Matching Can Be Simple And Fast)
 
+// lazy vs greedy
+
 namespace grammar
 {
     namespace detail
@@ -24,7 +26,7 @@ namespace grammar
             , R"(\x10)", R"(\x11)", R"(\x12)", R"(\x13)", R"(\x14)", R"(\x15)", R"(\x16)", R"(\x17)"
             , R"(\x18)", R"(\x19)", R"(\x1a)", R"(\x1b)", R"(\x1c)", R"(\x1d)", R"(\x1e)", R"(\x1f)"
             , " ", "!", R"('\")", "#", "$", "%", "&", "'"
-            , "(", ")", "*", "+", ",", "-", R"(\.)", "/"
+            , "(", ")", "*", R"(\+)", ",", R"(\-)", R"(\.)", "/"
             , "0", "1", "2", "3", "4", "5", "6", "7"
             , "8", "9", ":", ";", "<", "=", ">", R"(\?)"
             , "@", "A", "B", "C", "D", "E", "F", "G"
@@ -195,9 +197,8 @@ namespace grammar
         template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, any_of)
         {
-            // ((_os << '(' << HEAD{}) << ... << ('|' << TAIL{})) << ')';
             _os << '(' << HEAD{};
-             (..., [&_os](const auto& arg){ _os << '|' << arg; }(TAIL{}) ) ;
+            (..., [&_os](const auto& arg){ _os << '|' << arg; }(TAIL{}) ) ;
             _os << ')';
             return _os;
         }
@@ -288,12 +289,17 @@ namespace grammar
         }
     };
 
+    // TODO: at_most<N, PREDICATE> =>  (0 to N) repititions
+
+    // TODO: times<N, PREDICATE> => (exactly N ) repititions
+
     template<typename HEAD, typename... TAIL>
     struct sequence // aka concatenate
     {
         template<typename FUNCTOR, typename LOGGER>
         static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
+            _logger << "regex = \"" << sequence{} << "\", string = \"" << _sview << "\", check: \"" << HEAD{} << "\"" << std::endl;
             auto success = false;
             HEAD::parse(_sview, [&success, &yield_return, &_logger](auto _trailing_view) // intentional copy (test purpose for now)
             {
@@ -326,7 +332,7 @@ namespace grammar
     };
 
     template<typename PREDICATE>
-    struct optional // aka one_or_zero
+    struct optional // aka one_or_zero aka at_most<1, PREDICATE>   x{,1}
     {
         template<typename FUNCTOR, typename LOGGER>
         static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
