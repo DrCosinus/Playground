@@ -15,11 +15,37 @@
 
 namespace grammar
 {
+    namespace detail
+    {
+        static constexpr std::string_view _escaped_names_[] =
+        {
+            R"(\0)", R"(\x01)", R"(\x02)", R"(\x03)", R"(\x04)", R"(\x05)", R"(\x06)", R"(\a)"
+            , R"(\b)", R"(\t)", R"(\n)", R"(\v)", R"(\f)", R"(\r)", R"(\x0E)", R"(\x0F)"
+            , R"(\x10)", R"(\x11)", R"(\x12)", R"(\x13)", R"(\x14)", R"(\x15)", R"(\x16)", R"(\x17)"
+            , R"(\x18)", R"(\x19)", R"(\x1a)", R"(\x1b)", R"(\x1c)", R"(\x1d)", R"(\x1e)", R"(\x1f)"
+            , " ", "!", R"('\")", "#", "$", "%", "&", "'"
+            , "(", ")", "*", "+", ",", "-", R"(\.)", "/"
+            , "0", "1", "2", "3", "4", "5", "6", "7"
+            , "8", "9", ":", ";", "<", "=", ">", R"(\?)"
+            , "@", "A", "B", "C", "D", "E", "F", "G"
+            , "H", "I", "J", "K", "L", "M", "N", "O"
+            , "P", "Q", "R", "S", "T", "U", "V", "W"
+            , "X", "Y", "Z", "[", R"(\\)", R"(\])", R"(\^)", "_"
+            , "`", "a", "b", "c", "d", "e", "f", "g"
+            , "h", "i", "j", "k", "l", "m", "n", "o"
+            , "p", "q", "r", "s", "t", "u", "v", "w"
+            , "x", "y", "z", "{", "|", "}", "~", R"(\x7F)"
+        };
+        static constexpr std::string_view _escaped_names_unknown = { "■", 1 };
+        static constexpr auto to_escaped(char _c) { return (((unsigned char)_c)<128) ? _escaped_names_[((unsigned char)_c)] : _escaped_names_unknown; }
+    }
+
     struct search_view;
+
     struct silent_logger
     {
         // T should not match 'search_view' to avoid ambiguity
-        template<typename T, typename = std::enable_if_t<!std::is_same_v<T, search_view>> >
+        template<typename T>
         silent_logger& operator<<(const T&)
         {
             return *this;
@@ -46,7 +72,7 @@ namespace grammar
         // constexpr auto store_lenght() { if (match_lenght_stored_ != invalid_match_length_) throw; match_lenght_stored_ = match_lenght_; }
         // constexpr auto restore_lenght() { if (match_lenght_stored_ == invalid_match_length_) throw; match_lenght_ = match_lenght_stored_; match_lenght_stored_ = invalid_match_length_; }
 
-        template<typename OUTPUT_STREAM_TYPE>
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, search_view _sv)
         {
             _os << _sv.view_;
@@ -88,17 +114,19 @@ namespace grammar
                 return false;
         }
 
-        static constexpr const char _name_[] = { '[', C, Cs..., ']', '\0' };
-        static constexpr std::string_view name()
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
+        friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, char_among)
         {
-            if constexpr (sizeof...(Cs))
+            if constexpr (sizeof...(Cs)!=0)
             {
-                return { _name_ };
+                _os << '[' << detail::to_escaped(C);
+                (_os << ... << detail::to_escaped(Cs)) << ']';
             }
             else
             {
-                return { _name_+1, 1 };
+                _os << detail::to_escaped(C);
             }
+            return _os;
         }
 
         static constexpr std::size_t min_size()
@@ -120,9 +148,11 @@ namespace grammar
             return true;
         }
 
-        static const char* name()
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
+        friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, any_char)
         {
-            return ".";
+            _os << '.';
+            return _os;
         }
 
         static constexpr std::size_t min_size()
@@ -162,12 +192,23 @@ namespace grammar
             }
         }
 
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
+        friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, any_of)
+        {
+            // ((_os << '(' << HEAD{}) << ... << ('|' << TAIL{})) << ')';
+            _os << '(' << HEAD{};
+             (..., [&_os](const auto& arg){ _os << '|' << arg; }(TAIL{}) ) ;
+            _os << ')';
+            return _os;
+        }
+
         static constexpr std::size_t min_size()
         {
             return std::min({ HEAD::min_size(), TAIL::min_size()... });
         }
     };
 
+    // TODO: should I replace the generic "is_not" unary by the specific "char_not_among" terminal
     template<typename PREDICATE>
     struct is_not
     {
@@ -185,6 +226,13 @@ namespace grammar
                 yield_return(view_copy);
                 return true;
             }
+        }
+
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
+        friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, is_not)
+        {
+            _os << '^' << PREDICATE{};
+            return _os;
         }
 
         static constexpr std::size_t min_size()
@@ -221,6 +269,19 @@ namespace grammar
             return (N == 0);
         }
 
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
+        friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, at_least)
+        {
+            _os << PREDICATE{};
+            if constexpr(N==0)
+                _os << '*';
+            else if constexpr(N==1)
+                _os << '+';
+            else
+                _os << '{' << N << ",}";
+            return _os;
+        }
+
         static constexpr std::size_t min_size()
         {
             return PREDICATE::min_size() * N;
@@ -250,6 +311,14 @@ namespace grammar
             return success;
         }
 
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
+        friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, sequence)
+        {
+            _os << '(' << HEAD{};
+            (_os << ... << TAIL{}) << ')';
+            return _os;
+        }
+
         static constexpr std::size_t min_size()
         {
             return HEAD::min_size() + (... + TAIL::min_size());
@@ -271,6 +340,14 @@ namespace grammar
             yield_return(_sview);
             _logger << std::endl;
             return true;
+        }
+
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
+        friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, optional)
+        {
+            _os << PREDICATE{};
+            _os << '?';
+            return _os;
         }
 
         static constexpr std::size_t min_size()
@@ -313,7 +390,7 @@ namespace grammar
     template<typename PATTERN, typename LOGGER>
     bool search(search_view _sview, LOGGER& _logger)
     {
-        _logger << "grammar::search in \"" << _sview << "\":" << std::endl;
+        _logger << "grammar::search \"" << PATTERN{} << "\" in \"" << _sview << "\":" << std::endl;
 
         std::size_t match_count = 0;
 
@@ -392,6 +469,7 @@ int main(void)
             , char_among<'a'>
             , char_among<'a'>
         >;
+
     CHECK_EQ(gr_perf_x::min_size(),2);
     CHECK_TRUE(search<gr_perf_x>("aa", std::cout));
 
@@ -452,6 +530,11 @@ int main(void)
     CHECK_FALSE(search<gr_filename>("<notallowed")); // NOT OK, leading and trailing forbidden characters
     CHECK_FALSE(search<gr_filename>("notallowed>")); // NOT OK, leading and trailing forbidden characters
     CHECK_TRUE(search<gr_filename>("seperated.cpp names")); // OK: matches "seperated"
+
+    std::cout << "gr_blood_group: \"" << gr_blood_group{} << "\"" << std::endl;
+    std::cout << "gr_filename: \"" << gr_filename{} << "\"" << std::endl;
+    std::cout << "gr_perf_x: \"" << gr_perf_x{} << "\"" << std::endl;
+    std::cout << "gr_perf<5>: \"" << gr_perf<5>{} << "\"" << std::endl;
 
     tdd::PrintTestResults([](const char* line){ std::cout << line << std::endl; } );
 }
