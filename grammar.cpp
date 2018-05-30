@@ -44,19 +44,77 @@ namespace grammar
 
     struct search_view;
 
-    struct silent_logger
+    enum class verboseness { silent, verbose };
+
+    template<verboseness V>
+    struct line_logger
     {
-        // T should not match 'search_view' to avoid ambiguity
-        template<typename T>
-        silent_logger& operator<<(const T&)
+        using write_line_delegate = void(*)(std::string_view);
+        line_logger(write_line_delegate _write_line_delegate) : write_line_delegate_{_write_line_delegate} { }
+        line_logger(const line_logger&) = delete; // a priori not desirable
+        line_logger(line_logger&&) = delete;      // a priori not desirable
+
+        template <typename T> auto& operator<<(T&& _value) { ss_ << _value; return *this; }
+
+        auto& operator<<(const std::nullptr_t&) { ss_ << "(null)"; return *this; }
+
+        auto& operator<<(bool _boolean) { ss_ << (_boolean ? "true" : "false"); return *this; }
+
+        auto& operator<<(line_logger&(*manipulator)(line_logger&)) { return manipulator(*this); }
+
+        auto flush_line() { ss_.flush(); write_line_delegate_(ss_.get_view()); ss_.str(""); }
+    private:
+        struct viewable_output_stringstream : std::stringstream
         {
-            return *this;
-        }
-        silent_logger& operator<<(std::ostream& (*)(std::ostream&))
-        {
-            return *this;
-        }
+            viewable_output_stringstream() : std::stringstream{ std::ios_base::out | std::ios_base::ate } {}
+            auto get_view() const
+            {
+                return std::stringstream::str();
+                //return std::string_view{ s/*pbase(), pptr() - pbase()*/ };
+            }
+            using std::stringstream::str;
+            std::string str() const = delete; // this stringstream not meant to be converted to std::string
+        };
+        viewable_output_stringstream    ss_;
+        write_line_delegate             write_line_delegate_;
     };
+
+    template<verboseness V>
+    line_logger<V>& push_line(line_logger<V>& _logger)
+    {
+        _logger.flush_line();
+        return _logger;
+    }
+
+    template<typename T>
+    inline constexpr bool is_logger_v = false;
+
+    template<verboseness V>
+    inline constexpr bool is_logger_v<line_logger<V>> = true;
+
+    template<>
+    struct line_logger<verboseness::silent>
+    {
+        //template <typename T> auto operator<<(T) { return *this; }
+        template <typename T> auto operator<<(T&&) { return *this; }
+        template <typename T, std::size_t N> auto operator<<(T(&)[N]) { return *this; }
+        auto& operator<<(line_logger&(*)(line_logger&)) { return *this; }
+        auto flush_line() const {}
+    };
+
+    // struct silent_logger
+    // {
+    //     // T should not match 'search_view' to avoid ambiguity
+    //     template<typename T>
+    //     silent_logger& operator<<(const T&)
+    //     {
+    //         return *this;
+    //     }
+    //     silent_logger& operator<<(std::ostream& (*)(std::ostream&))
+    //     {
+    //         return *this;
+    //     }
+    // };
 
     // a string_view for search with cursors retrieve string_view of matches
     struct search_view
@@ -64,28 +122,30 @@ namespace grammar
         using size_type = std::string_view::size_type;
         template<std::size_t N>
         constexpr search_view(const char (&_literal)[N]) : view_{ _literal, N-1 } {}
-        constexpr bool empty() const { return match_start_index_+match_lenght_>=view_.size(); }
-        constexpr auto front() const { return view_[match_start_index_+match_lenght_]; }
-        constexpr void absorb() { ++match_lenght_; }
-        constexpr void advance_start() { ++match_start_index_; match_lenght_ = 0; }
-        constexpr auto match() const { return view_.substr(match_start_index_, match_lenght_); }
+        constexpr bool empty() const { return match_start_index_+match_length_>=view_.size(); }
+        constexpr auto front() const { return view_[match_start_index_+match_length_]; }
+        constexpr void absorb() { ++match_length_; }
+        constexpr void advance_start() { ++match_start_index_; match_length_ = 0; }
+        constexpr auto match() const { return view_.substr(match_start_index_, match_length_); }
 
-        // constexpr auto get_length() const { return match_lenght_; }
-        // constexpr auto store_lenght() { if (match_lenght_stored_ != invalid_match_length_) throw; match_lenght_stored_ = match_lenght_; }
-        // constexpr auto restore_lenght() { if (match_lenght_stored_ == invalid_match_length_) throw; match_lenght_ = match_lenght_stored_; match_lenght_stored_ = invalid_match_length_; }
+        // constexpr auto get_length() const { return match_length_; }
+        // constexpr auto store_lenght() { if (match_length_stored_ != invalid_match_length_) throw; match_length_stored_ = match_length_; }
+        // constexpr auto restore_lenght() { if (match_length_stored_ == invalid_match_length_) throw; match_length_ = match_length_stored_; match_length_stored_ = invalid_match_length_; }
 
-        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, search_view _sv)
         {
-            _os << _sv.view_;
+            _os //<< _sv.view_.substr(0, _sv.match_start_index_) << "…"
+                << _sv.view_.substr(_sv.match_start_index_, _sv.match_length_)
+                << "•" << _sv.view_.substr(_sv.match_start_index_+_sv.match_length_);
             return _os;
         }
     private:
         const std::string_view view_;
         size_type match_start_index_ = 0;
-        size_type match_lenght_ = 0;
+        size_type match_length_ = 0;
         //static constexpr size_type invalid_match_length_ = std::numeric_limits<size_type>::max();
-        //size_type match_lenght_stored_ = invalid_match_length_;
+        //size_type match_length_stored_ = invalid_match_length_;
     };
 
 // terminals
@@ -99,6 +159,7 @@ namespace grammar
             {
                 if (_sview.empty())
                 {   // special handling for empty view when C is '\0'
+                    _logger << "\"" << char_among{} << "\" matches(cumulative) \"" << detail::to_escaped(C) << "\", string=\"" << _sview << "\"" << push_line;
                     yield_return( _sview );
                     return true;
                 }
@@ -107,6 +168,7 @@ namespace grammar
             {
                 auto view_copy = _sview;
                 view_copy.absorb();
+                _logger << "\"" << char_among{} << "\" matches(cumulative) \"" << detail::to_escaped(C) << "\", string=\"" << view_copy << "\"" << push_line;
                 yield_return( view_copy );
                 return true;
             }
@@ -116,7 +178,7 @@ namespace grammar
                 return false;
         }
 
-        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, char_among)
         {
             if constexpr (sizeof...(Cs)!=0)
@@ -150,7 +212,7 @@ namespace grammar
             return true;
         }
 
-        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, any_char)
         {
             _os << '.';
@@ -194,7 +256,7 @@ namespace grammar
             }
         }
 
-        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, any_of)
         {
             _os << '(' << HEAD{};
@@ -229,7 +291,7 @@ namespace grammar
             }
         }
 
-        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, is_not)
         {
             _os << '^' << PREDICATE{};
@@ -270,7 +332,7 @@ namespace grammar
             return (N == 0);
         }
 
-        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, at_least)
         {
             _os << PREDICATE{};
@@ -299,7 +361,7 @@ namespace grammar
         template<typename FUNCTOR, typename LOGGER>
         static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
-            _logger << "regex = \"" << sequence{} << "\", string = \"" << _sview << "\", check: \"" << HEAD{} << "\"" << std::endl;
+            _logger << "regex = \"" << sequence{} << "\", string = \"" << _sview << "\", check: \"" << HEAD{} << "\"" << push_line;
             auto success = false;
             HEAD::parse(_sview, [&success, &yield_return, &_logger](auto _trailing_view) // intentional copy (test purpose for now)
             {
@@ -317,7 +379,7 @@ namespace grammar
             return success;
         }
 
-        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, sequence)
         {
             _os << '(' << HEAD{};
@@ -337,18 +399,18 @@ namespace grammar
         template<typename FUNCTOR, typename LOGGER>
         static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
-            _logger << "optional..." << std::endl;
             PREDICATE::parse(_sview, [&yield_return, &_logger](const auto& trailing_view)
             {
-                _logger << "- match: \"" << trailing_view.match() << "\"" << std::endl;
+                _logger << "\"" << optional<PREDICATE>{} << "\" matches(cumulative) \"" << trailing_view.match() << "\", string=\"" << trailing_view << "\"" << push_line;
                 yield_return(trailing_view);
             }, _logger);
+            _logger << "\"" << optional<PREDICATE>{} << "\" continues, string=\"" << _sview << "\"" << push_line;
             yield_return(_sview);
-            _logger << std::endl;
+            _logger << push_line;
             return true;
         }
 
-        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!std::is_same_v<OUTPUT_STREAM_TYPE, silent_logger>>>
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, optional)
         {
             _os << PREDICATE{};
@@ -369,26 +431,26 @@ namespace grammar
     auto match(search_view _sview, LOGGER& _logger)
     {
         std::size_t match_count = 0;
-        _logger << "grammar::match in \"" << _sview << "\":" << std::endl;
+        _logger << "grammar::match in \"" << _sview << "\":" << push_line;
 
         // maybe yield_callback could return YIELD_CONTINUE or YIELD_BREAK
         auto yield_callback = [&match_count, &_logger](const auto& _trailing_view)
         {
             if (_trailing_view.empty())
                 ++match_count;
-            _logger << "--> \"" << _trailing_view.match() << "\"" << std::endl;
+            _logger << "--> \"" << _trailing_view.match() << "\"" << push_line;
         };
 
         PATTERN::parse(_sview, yield_callback, _logger);
 
-        _logger << "... " << match_count << " " << ( match_count > 1 ?"matches":"match") << std::endl;
+        _logger << "... " << match_count << " " << ( match_count > 1 ?"matches":"match") << push_line;
         return match_count != 0;
     }
 
     template<typename PATTERN>
     auto match(search_view _sview)
     {
-        auto logger = silent_logger{};
+        auto logger = line_logger<verboseness::silent>{};
         return match<PATTERN>(_sview, logger);
     }
 
@@ -396,32 +458,32 @@ namespace grammar
     template<typename PATTERN, typename LOGGER>
     bool search(search_view _sview, LOGGER& _logger)
     {
-        _logger << "grammar::search \"" << PATTERN{} << "\" in \"" << _sview << "\":" << std::endl;
+        _logger << "grammar::search \"" << PATTERN{} << "\" in \"" << _sview << "\":" << push_line;
 
         std::size_t match_count = 0;
 
         while(!_sview.empty())
         {
-            _logger << "- sub-search in \"" << _sview << "\":" << std::endl;
+            _logger << "- sub-search in \"" << _sview << "\":" << push_line;
             // maybe yield_callback could return YIELD_CONTINUE or YIELD_BREAK
             auto yield_callback = [&match_count, &_logger](const auto& _trailing_view)
             {
                 ++match_count;
-                _logger << "--> \"" << _trailing_view.match() << "\"" << std::endl;
+                _logger << "--> \"" << _trailing_view.match() << "\"" << push_line;
             };
 
             PATTERN::parse(_sview, yield_callback, _logger);
 
             _sview.advance_start(); // remove the first character and retry
         }
-        _logger << "... " << match_count << " " << ( match_count > 1 ?"matches":"match") << std::endl;
+        _logger << "... " << match_count << " " << ( match_count > 1 ?"matches":"match") << push_line;
         return match_count!=0;
     }
 
     template<typename PATTERN>
     auto search(search_view _sview)
     {
-        auto logger = silent_logger{};
+        auto logger = line_logger<verboseness::silent>{};
         return search<PATTERN>(_sview, logger);
     }
 }
@@ -477,7 +539,8 @@ int main(void)
         >;
 
     CHECK_EQ(gr_perf_x::min_size(),2);
-    CHECK_TRUE(search<gr_perf_x>("aa", std::cout));
+    auto verbose = grammar::line_logger<grammar::verboseness::verbose>{ [](auto _view) { std::cout << _view << std::endl; } };
+    CHECK_TRUE(search<gr_perf_x>("aa", verbose));
 
     using gr_blood_group =
         sequence<
