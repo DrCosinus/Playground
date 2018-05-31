@@ -124,27 +124,10 @@ namespace grammar
         template <typename T, std::size_t N> auto operator<<(T(&)[N]) { return *this; }
         auto& operator<<(line_logger&(*)(line_logger&)) { return *this; }
         auto flush_line() const {}
-        // auto push_indent() {}
-        // auto pop_indent() {}
-        // std::size_t get_indent() const { return 0; }
         struct scoped_indent final
         { ~scoped_indent() {} }; // explicit non trivial destructor to avoir unused variable warning
         scoped_indent make_scoped_indent() { return {}; }
     };
-
-    // struct silent_logger
-    // {
-    //     // T should not match 'search_view' to avoid ambiguity
-    //     template<typename T>
-    //     silent_logger& operator<<(const T&)
-    //     {
-    //         return *this;
-    //     }
-    //     silent_logger& operator<<(std::ostream& (*)(std::ostream&))
-    //     {
-    //         return *this;
-    //     }
-    // };
 
     // a string_view for search with cursors retrieve string_view of matches
     struct search_view
@@ -158,10 +141,6 @@ namespace grammar
         constexpr void advance_start() { ++match_start_index_; match_length_ = 0; }
         constexpr auto match() const { return view_.substr(match_start_index_, match_length_); }
 
-        // constexpr auto get_length() const { return match_length_; }
-        // constexpr auto store_lenght() { if (match_length_stored_ != invalid_match_length_) throw; match_length_stored_ = match_length_; }
-        // constexpr auto restore_lenght() { if (match_length_stored_ == invalid_match_length_) throw; match_length_ = match_length_stored_; match_length_stored_ = invalid_match_length_; }
-
         template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, search_view _sv)
         {
@@ -174,8 +153,6 @@ namespace grammar
         const std::string_view view_;
         size_type match_start_index_ = 0;
         size_type match_length_ = 0;
-        //static constexpr size_type invalid_match_length_ = std::numeric_limits<size_type>::max();
-        //size_type match_length_stored_ = invalid_match_length_;
     };
 
 // terminals
