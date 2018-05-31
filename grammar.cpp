@@ -49,7 +49,19 @@ namespace grammar
     template<verboseness V>
     struct line_logger
     {
-        using write_line_delegate = void(*)(std::string_view);
+        struct scoped_indent final
+        {
+            explicit scoped_indent(line_logger& _logger)
+            : logger_{_logger}
+            {
+                logger_.push_indent();
+            }
+            ~scoped_indent() { logger_.pop_indent(); }
+            line_logger& logger_;
+        };
+        auto make_scoped_indent() { return scoped_indent{ *this }; }
+
+        using write_line_delegate = void(*)(std::size_t, std::string_view);
         line_logger(write_line_delegate _write_line_delegate) : write_line_delegate_{_write_line_delegate} { }
         line_logger(const line_logger&) = delete; // a priori not desirable
         line_logger(line_logger&&) = delete;      // a priori not desirable
@@ -62,19 +74,31 @@ namespace grammar
 
         auto& operator<<(line_logger&(*manipulator)(line_logger&)) { return manipulator(*this); }
 
-        auto flush_line() { ss_.flush(); write_line_delegate_(ss_.get_view()); ss_.str(""); }
+        auto flush_line()
+        {
+            ss_.flush();
+            write_line_delegate_(get_indent(), ss_.get_view());
+            ss_.reset();
+        }
+
+        auto push_indent() { ++indent_; }
+        auto pop_indent() { --indent_; }
+        auto get_indent() const { return indent_; }
     private:
         struct viewable_output_stringstream : std::stringstream
         {
-            viewable_output_stringstream() : std::stringstream{ std::ios_base::out | std::ios_base::ate } {}
-            auto get_view() const
+            struct viewable_output_stringbuf : std::stringbuf
             {
-                return std::stringstream::str();
-                //return std::string_view{ s/*pbase(), pptr() - pbase()*/ };
-            }
-            using std::stringstream::str;
-            std::string str() const = delete; // this stringstream not meant to be converted to std::string
+                viewable_output_stringbuf() : std::stringbuf{ std::ios_base::out } {}
+                auto get_view() const { return std::string_view{ pbase(), pptr() - pbase() }; }
+            };
+            viewable_output_stringstream() { set_rdbuf(&buff_); }
+            auto get_view() const { return buff_.get_view(); }
+            void reset() { buff_.str(""); }
+
+            viewable_output_stringbuf buff_;
         };
+        std::size_t indent_ = 0;
         viewable_output_stringstream    ss_;
         write_line_delegate             write_line_delegate_;
     };
@@ -100,6 +124,12 @@ namespace grammar
         template <typename T, std::size_t N> auto operator<<(T(&)[N]) { return *this; }
         auto& operator<<(line_logger&(*)(line_logger&)) { return *this; }
         auto flush_line() const {}
+        // auto push_indent() {}
+        // auto pop_indent() {}
+        // std::size_t get_indent() const { return 0; }
+        struct scoped_indent final
+        { ~scoped_indent() {} }; // explicit non trivial destructor to avoir unused variable warning
+        scoped_indent make_scoped_indent() { return {}; }
     };
 
     // struct silent_logger
@@ -155,6 +185,10 @@ namespace grammar
         template<typename FUNCTOR, typename LOGGER>
         static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, [[maybe_unused]] LOGGER& _logger)
         {
+            // TODO: loop instead of recursion
+            _logger << "regex = \"" << char_among{} << "\", string = \"" << _sview << "\", check: \"" << detail::to_escaped(C) << "\"" << push_line;
+            auto scoped_indent = _logger.make_scoped_indent();
+
             if constexpr(C=='\0')
             {
                 if (_sview.empty())
@@ -362,6 +396,7 @@ namespace grammar
         static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
             _logger << "regex = \"" << sequence{} << "\", string = \"" << _sview << "\", check: \"" << HEAD{} << "\"" << push_line;
+            auto scoped_indent = _logger.make_scoped_indent();
             auto success = false;
             HEAD::parse(_sview, [&success, &yield_return, &_logger](auto _trailing_view) // intentional copy (test purpose for now)
             {
@@ -399,6 +434,9 @@ namespace grammar
         template<typename FUNCTOR, typename LOGGER>
         static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
+            _logger << "regex = \"" << optional{} << "\", string = \"" << _sview << "\", check: \"" << PREDICATE{} << "\"" << push_line;
+            auto scoped_indent = _logger.make_scoped_indent();
+
             PREDICATE::parse(_sview, [&yield_return, &_logger](const auto& trailing_view)
             {
                 _logger << "\"" << optional<PREDICATE>{} << "\" matches(cumulative) \"" << trailing_view.match() << "\", string=\"" << trailing_view << "\"" << push_line;
@@ -539,7 +577,12 @@ int main(void)
         >;
 
     CHECK_EQ(gr_perf_x::min_size(),2);
-    auto verbose = grammar::line_logger<grammar::verboseness::verbose>{ [](auto _view) { std::cout << _view << std::endl; } };
+    auto verbose = grammar::line_logger<grammar::verboseness::verbose>{ [](auto indent_count, auto _view)
+    {
+        for (std::size_t i = 0; i<indent_count; ++i)
+            std::cout << "    ";
+        std::cout << _view << std::endl;
+    } };
     CHECK_TRUE(search<gr_perf_x>("aa", verbose));
 
     using gr_blood_group =
