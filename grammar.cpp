@@ -77,20 +77,20 @@ namespace grammar
         auto flush_line()
         {
             ss_.flush();
-            write_line_delegate_(get_indent(), ss_.get_view());
+            write_line_delegate_(indent_, ss_.get_view());
             ss_.reset();
         }
 
+    private:
         auto push_indent() { ++indent_; }
         auto pop_indent() { --indent_; }
-        auto get_indent() const { return indent_; }
-    private:
+
         struct viewable_output_stringstream : std::stringstream
         {
             struct viewable_output_stringbuf : std::stringbuf
             {
                 viewable_output_stringbuf() : std::stringbuf{ std::ios_base::out } {}
-                auto get_view() const { return std::string_view{ pbase(), pptr() - pbase() }; }
+                auto get_view() const { return std::string_view{ pbase(), static_cast<std::size_t>(pptr() - pbase()) }; }
             };
             viewable_output_stringstream() { set_rdbuf(&buff_); }
             auto get_view() const { return buff_.get_view(); }
@@ -119,7 +119,6 @@ namespace grammar
     template<>
     struct line_logger<verboseness::silent>
     {
-        //template <typename T> auto operator<<(T) { return *this; }
         template <typename T> auto operator<<(T&&) { return *this; }
         template <typename T, std::size_t N> auto operator<<(T(&)[N]) { return *this; }
         auto& operator<<(line_logger&(*)(line_logger&)) { return *this; }
@@ -133,8 +132,12 @@ namespace grammar
     struct search_view
     {
         using size_type = std::string_view::size_type;
+        constexpr search_view() = default;
         template<std::size_t N>
         constexpr search_view(const char (&_literal)[N]) : view_{ _literal, N-1 } {}
+
+        constexpr search_view& operator=(const search_view&) = default;
+
         constexpr bool empty() const { return match_start_index_+match_length_>=view_.size(); }
         constexpr auto front() const { return view_[match_start_index_+match_length_]; }
         constexpr void absorb() { ++match_length_; }
@@ -150,56 +153,60 @@ namespace grammar
             return _os;
         }
     private:
-        const std::string_view view_;
+        std::string_view view_;
         size_type match_start_index_ = 0;
         size_type match_length_ = 0;
     };
 
 // terminals
-    template<char C, char... Cs>
+    template<char... Cs>
     struct char_among
     {
+        static_assert(sizeof...(Cs)>0);
+
         template<typename FUNCTOR, typename LOGGER>
         static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, [[maybe_unused]] LOGGER& _logger)
         {
-            // TODO: loop instead of recursion
-            _logger << "regex = \"" << char_among{} << "\", string = \"" << _sview << "\", check: \"" << detail::to_escaped(C) << "\"" << push_line;
-            auto scoped_indent = _logger.make_scoped_indent();
+            _logger << "char_among = \"" << char_among{} << "\", string = \"" << _sview << "\"" << push_line;
 
-            if constexpr(C=='\0')
+            bool success = false;
+            (..., [&success, &_sview, &yield_return](char _c)
             {
-                if (_sview.empty())
-                {   // special handling for empty view when C is '\0'
-                    _logger << "\"" << char_among{} << "\" matches(cumulative) \"" << detail::to_escaped(C) << "\", string=\"" << _sview << "\"" << push_line;
-                    yield_return( _sview );
-                    return true;
+                if (!success)
+                {
+                    if (_c=='\0')
+                    {
+                        if (_sview.empty())
+                        {   // special handling for empty view when _c is '\0'
+                            yield_return( _sview );
+                            success = true;
+                        }
+                    }
+                    if (!_sview.empty() && _sview.front() == _c)
+                    {
+                        auto view_copy = _sview;
+                        view_copy.absorb();
+                        yield_return( view_copy );
+                        success = true;
+                    }
                 }
-            }
-            if (_sview.front() == C)
-            {
-                auto view_copy = _sview;
-                view_copy.absorb();
-                _logger << "\"" << char_among{} << "\" matches(cumulative) \"" << detail::to_escaped(C) << "\", string=\"" << view_copy << "\"" << push_line;
-                yield_return( view_copy );
-                return true;
-            }
-            if constexpr (sizeof...(Cs)!=0)
-                return char_among<Cs...>::parse(_sview, yield_return, _logger);
-            else
-                return false;
+            }(Cs));
+            if (!success)
+                _logger << "->  FAIL" << push_line;
+            return success;
         }
 
         template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, char_among)
         {
-            if constexpr (sizeof...(Cs)!=0)
+            if constexpr (sizeof...(Cs)!=1)
             {
-                _os << '[' << detail::to_escaped(C);
+                _os << '[';
                 (_os << ... << detail::to_escaped(Cs)) << ']';
             }
             else
             {
-                _os << detail::to_escaped(C);
+                _os << detail::to_escaped(Cs...);
             }
             return _os;
         }
@@ -215,12 +222,21 @@ namespace grammar
     struct any_char
     {
         template<typename FUNCTOR, typename LOGGER>
-        static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, [[maybe_unused]]LOGGER& _logger)
+        static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
-            auto view_copy = _sview;
-            view_copy.absorb();
-            yield_return( view_copy );
-            return true;
+            _logger << "any_char = \"" << any_char{} << "\", string = \"" << _sview << "\"" << push_line;
+            if (!_sview.empty() && _sview.front()!='\0')
+            {
+                auto view_copy = _sview;
+                view_copy.absorb();
+                yield_return( view_copy );
+                return true;
+            }
+            else
+            {
+                _logger << "->  FAIL" << push_line;
+                return false;
+            }
         }
 
         template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
@@ -248,37 +264,47 @@ namespace grammar
     // boundary aka \b
 
 // compositors
-    template<typename HEAD, typename... TAIL>
+    template<typename... PREDICATES>
     struct any_of
     {
+        static_assert(sizeof...(PREDICATES)>0);
+
         template<typename FUNCTOR, typename LOGGER>
         static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
-            if (HEAD::parse(_sview, [&yield_return](const auto& _trailing_sview){ return yield_return(_trailing_sview); }, _logger ))
+            _logger << "any_of = \"" << any_of{} << "\", string = \"" << _sview << "\"" << push_line;
+            auto scoped_indent = _logger.make_scoped_indent();
+
+            bool success = false;
+            (..., [&success, &_sview, &yield_return, &_logger](auto _predicate)
             {
-                return true;
-            }
-            else
-            {
-                if constexpr (sizeof...(TAIL)==0)
-                    return false;
-                else
-                    return any_of<TAIL...>::parse(_sview, yield_return, _logger);
-            }
+                if (!success)
+                {
+                    if (_predicate.parse(_sview, [&yield_return](const auto& _trailing_sview){ return yield_return(_trailing_sview); }, _logger ))
+                    {
+                        success = true;
+                    }
+                }
+            }(PREDICATES{}));
+            if (!success)
+                _logger << "->  FAIL" << push_line;
+            return success;
         }
 
         template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, any_of)
         {
-            _os << '(' << HEAD{};
-            (..., [&_os](const auto& arg){ _os << '|' << arg; }(TAIL{}) ) ;
+            _os << '(';
+            // cannot inline the lambda in the fold expression because it expand each parameter independently, so first would not.
+            auto lambda = [&_os, first = true](const auto& arg) mutable { if (first) { first = false; } else { _os << '|'; } _os << arg; };
+            (..., lambda(PREDICATES{}) ) ;
             _os << ')';
             return _os;
         }
 
         static constexpr std::size_t min_size()
         {
-            return std::min({ HEAD::min_size(), TAIL::min_size()... });
+            return std::min({ PREDICATES::min_size()... });
         }
     };
 
@@ -321,26 +347,26 @@ namespace grammar
         template<typename FUNCTOR, typename LOGGER>
         static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
-            if (!_sview.empty())
+            std::size_t occurence_count = 0;
+            auto view = _sview;
+            while(true)
             {
-                if constexpr(N <= 1)
+                if (view.empty())
+                    break;
+                if (search_view trailing_view; PREDICATE::parse(view, [&trailing_view](const auto& _trailing_view)
                 {
-                    return PREDICATE::parse(_sview, [&yield_return, &_logger](const auto& trailing_view)
-                    {
-                        yield_return(trailing_view);
-                        at_least<0, PREDICATE>::parse(trailing_view, yield_return, _logger);
-                    }, _logger) || ( N == 0 );
+                    trailing_view = _trailing_view;
+                }, _logger))
+                {
+                    view = trailing_view;
+                    ++occurence_count;
+                    if (occurence_count>=N)
+                        yield_return(view);
                 }
                 else
-                {
-                    PREDICATE::parse(_sview, [&yield_return, &_logger](const auto& trailing_view)
-                    {
-                        at_least<N-1, PREDICATE>::parse(trailing_view, yield_return, _logger);
-                    });
-                    return false;
-                }
+                    break;
             }
-            return (N == 0);
+            return occurence_count>=N;
         }
 
         template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
@@ -366,13 +392,55 @@ namespace grammar
 
     // TODO: times<N, PREDICATE> => (exactly N ) repititions
 
+#define NEW_SEQUENCE_IMPLEMENTATION 0
+#if NEW_SEQUENCE_IMPLEMENTATION
+    template<typename... PREDICATES>
+    struct sequence // aka concatenate
+    {
+        template<typename FUNCTOR, typename LOGGER>
+        static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
+        {
+            _logger << "sequence = \"" << sequence{} << "\", string = \"" << _sview << "\"" << push_line;
+            auto scoped_indent = _logger.make_scoped_indent();
+            auto view = _sview;
+            auto lambda = [success = true, &view, &_logger](auto _predicate) mutable
+            {
+                if (success)
+                {
+                    success = _predicate.parse(view, [&view](auto _trailing_view)
+                    {
+                        view = _trailing_view;
+                    }, _logger);
+                }
+                return success;
+            };
+            auto success = (..., lambda(PREDICATES{}));
+            if (success)
+                yield_return(view);
+            return success;
+        }
+
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
+        friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, sequence)
+        {
+            _os << '(';
+            (_os << ... << PREDICATES{}) << ')';
+            return _os;
+        }
+
+        static constexpr std::size_t min_size()
+        {
+            return (... + PREDICATES::min_size());
+        }
+    };
+#else
     template<typename HEAD, typename... TAIL>
     struct sequence // aka concatenate
     {
         template<typename FUNCTOR, typename LOGGER>
         static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
-            _logger << "regex = \"" << sequence{} << "\", string = \"" << _sview << "\", check: \"" << HEAD{} << "\"" << push_line;
+            _logger << "sequence = \"" << sequence{} << "\", string = \"" << _sview << "\"" << push_line;
             auto scoped_indent = _logger.make_scoped_indent();
             auto success = false;
             HEAD::parse(_sview, [&success, &yield_return, &_logger](auto _trailing_view) // intentional copy (test purpose for now)
@@ -404,6 +472,7 @@ namespace grammar
             return HEAD::min_size() + (... + TAIL::min_size());
         }
     };
+#endif
 
     template<typename PREDICATE>
     struct optional // aka one_or_zero aka at_most<1, PREDICATE>   x{,1}
@@ -411,17 +480,16 @@ namespace grammar
         template<typename FUNCTOR, typename LOGGER>
         static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
-            _logger << "regex = \"" << optional{} << "\", string = \"" << _sview << "\", check: \"" << PREDICATE{} << "\"" << push_line;
-            auto scoped_indent = _logger.make_scoped_indent();
+            _logger << "optional = \"" << optional{} << "\", string = \"" << _sview << "\"" << push_line;
 
-            PREDICATE::parse(_sview, [&yield_return, &_logger](const auto& trailing_view)
             {
-                _logger << "\"" << optional<PREDICATE>{} << "\" matches(cumulative) \"" << trailing_view.match() << "\", string=\"" << trailing_view << "\"" << push_line;
-                yield_return(trailing_view);
-            }, _logger);
-            _logger << "\"" << optional<PREDICATE>{} << "\" continues, string=\"" << _sview << "\"" << push_line;
+                auto scoped_indent = _logger.make_scoped_indent();
+                PREDICATE::parse(_sview, [&yield_return](const auto& trailing_view)
+                {
+                    yield_return(trailing_view);
+                }, _logger);
+            }
             yield_return(_sview);
-            _logger << push_line;
             return true;
         }
 
@@ -484,7 +552,7 @@ namespace grammar
             auto yield_callback = [&match_count, &_logger](const auto& _trailing_view)
             {
                 ++match_count;
-                _logger << "--> \"" << _trailing_view.match() << "\"" << push_line;
+                _logger << "->  MATCH FOUND \"" << _trailing_view.match() << "\"" << push_line;
             };
 
             PATTERN::parse(_sview, yield_callback, _logger);
@@ -549,12 +617,12 @@ int main(void)
         sequence<
             optional< char_among<'a'> >
             , optional< char_among<'a'> >
-            , char_among<'a'>
+            , char_among<'b','a'>
             , char_among<'a'>
         >;
 
     CHECK_EQ(gr_perf_x::min_size(),2);
-    auto verbose = grammar::line_logger<grammar::verboseness::verbose>{ [](auto indent_count, auto _view)
+    grammar::line_logger<grammar::verboseness::verbose> verbose{ [](auto indent_count, auto _view)
     {
         for (std::size_t i = 0; i<indent_count; ++i)
             std::cout << "    ";
