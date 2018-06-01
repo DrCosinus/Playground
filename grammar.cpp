@@ -132,8 +132,12 @@ namespace grammar
     struct search_view
     {
         using size_type = std::string_view::size_type;
+        constexpr search_view() = default;
         template<std::size_t N>
         constexpr search_view(const char (&_literal)[N]) : view_{ _literal, N-1 } {}
+
+        constexpr search_view& operator=(const search_view&) = default;
+
         constexpr bool empty() const { return match_start_index_+match_length_>=view_.size(); }
         constexpr auto front() const { return view_[match_start_index_+match_length_]; }
         constexpr void absorb() { ++match_length_; }
@@ -149,7 +153,7 @@ namespace grammar
             return _os;
         }
     private:
-        const std::string_view view_;
+        std::string_view view_;
         size_type match_start_index_ = 0;
         size_type match_length_ = 0;
     };
@@ -342,26 +346,26 @@ namespace grammar
         template<typename FUNCTOR, typename LOGGER>
         static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
-            if (!_sview.empty())
+            std::size_t occurence_count = 0;
+            auto view = _sview;
+            while(true)
             {
-                if constexpr(N <= 1)
+                if (view.empty())
+                    break;
+                if (search_view trailing_view; PREDICATE::parse(view, [&trailing_view](const auto& _trailing_view)
                 {
-                    return PREDICATE::parse(_sview, [&yield_return, &_logger](const auto& trailing_view)
-                    {
-                        yield_return(trailing_view);
-                        at_least<0, PREDICATE>::parse(trailing_view, yield_return, _logger);
-                    }, _logger) || ( N == 0 );
+                    trailing_view = _trailing_view;
+                }, _logger))
+                {
+                    view = trailing_view;
+                    ++occurence_count;
+                    if (occurence_count>=N)
+                        yield_return(view);
                 }
                 else
-                {
-                    PREDICATE::parse(_sview, [&yield_return, &_logger](const auto& trailing_view)
-                    {
-                        at_least<N-1, PREDICATE>::parse(trailing_view, yield_return, _logger);
-                    });
-                    return false;
-                }
+                    break;
             }
-            return (N == 0);
+            return occurence_count>=N;
         }
 
         template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
