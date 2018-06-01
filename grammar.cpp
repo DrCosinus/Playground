@@ -260,39 +260,46 @@ namespace grammar
     // boundary aka \b
 
 // compositors
-    template<typename HEAD, typename... TAIL>
+    template<typename... PREDICATES>
     struct any_of
     {
+        static_assert(sizeof...(PREDICATES)>0);
+
         template<typename FUNCTOR, typename LOGGER>
         static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
             _logger << "any_of = \"" << any_of{} << "\", string = \"" << _sview << "\"" << push_line;
             auto scoped_indent = _logger.make_scoped_indent();
-            if (HEAD::parse(_sview, [&yield_return](const auto& _trailing_sview){ return yield_return(_trailing_sview); }, _logger ))
+
+            bool success = false;
+            (..., [&success, &_sview, &yield_return, &_logger](auto _predicate)
             {
-                return true;
-            }
-            else
-            {
-                if constexpr (sizeof...(TAIL)==0)
-                    return false;
-                else
-                    return any_of<TAIL...>::parse(_sview, yield_return, _logger);
-            }
+                if (!success)
+                {
+                    if (_predicate.parse(_sview, [&yield_return](const auto& _trailing_sview){ return yield_return(_trailing_sview); }, _logger ))
+                    {
+                        success = true;
+                    }
+                }
+            }(PREDICATES{}));
+            if (!success)
+                _logger << "->  FAIL" << push_line;
+            return success;
         }
 
         template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, any_of)
         {
-            _os << '(' << HEAD{};
-            (..., [&_os](const auto& arg){ _os << '|' << arg; }(TAIL{}) ) ;
+            _os << '(';
+            bool first = true;
+            (..., [&_os, &first](const auto& arg){ if (first) { first = false; } else { _os << '|'; } _os << arg; }(PREDICATES{}) ) ;
             _os << ')';
             return _os;
         }
 
         static constexpr std::size_t min_size()
         {
-            return std::min({ HEAD::min_size(), TAIL::min_size()... });
+            return std::min({ PREDICATES::min_size()... });
         }
     };
 
