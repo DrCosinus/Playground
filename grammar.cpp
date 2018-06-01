@@ -392,6 +392,48 @@ namespace grammar
 
     // TODO: times<N, PREDICATE> => (exactly N ) repititions
 
+#define NEW_SEQUENCE_IMPLEMENTATION 0
+#if NEW_SEQUENCE_IMPLEMENTATION
+    template<typename... PREDICATES>
+    struct sequence // aka concatenate
+    {
+        template<typename FUNCTOR, typename LOGGER>
+        static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
+        {
+            _logger << "sequence = \"" << sequence{} << "\", string = \"" << _sview << "\"" << push_line;
+            auto scoped_indent = _logger.make_scoped_indent();
+            auto view = _sview;
+            auto lambda = [success = true, &view, &_logger](auto _predicate) mutable
+            {
+                if (success)
+                {
+                    success = _predicate.parse(view, [&view](auto _trailing_view)
+                    {
+                        view = _trailing_view;
+                    }, _logger);
+                }
+                return success;
+            };
+            auto success = (..., lambda(PREDICATES{}));
+            if (success)
+                yield_return(view);
+            return success;
+        }
+
+        template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
+        friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, sequence)
+        {
+            _os << '(';
+            (_os << ... << PREDICATES{}) << ')';
+            return _os;
+        }
+
+        static constexpr std::size_t min_size()
+        {
+            return (... + PREDICATES::min_size());
+        }
+    };
+#else
     template<typename HEAD, typename... TAIL>
     struct sequence // aka concatenate
     {
@@ -430,6 +472,7 @@ namespace grammar
             return HEAD::min_size() + (... + TAIL::min_size());
         }
     };
+#endif
 
     template<typename PREDICATE>
     struct optional // aka one_or_zero aka at_most<1, PREDICATE>   x{,1}
