@@ -77,20 +77,19 @@ namespace grammar
         auto flush_line()
         {
             ss_.flush();
-            write_line_delegate_(get_indent(), ss_.get_view());
+            write_line_delegate_(indent_, ss_.get_view());
             ss_.reset();
         }
-
+    private:
         auto push_indent() { ++indent_; }
         auto pop_indent() { --indent_; }
-        auto get_indent() const { return indent_; }
-    private:
+
         struct viewable_output_stringstream : std::stringstream
         {
             struct viewable_output_stringbuf : std::stringbuf
             {
                 viewable_output_stringbuf() : std::stringbuf{ std::ios_base::out } {}
-                auto get_view() const { return std::string_view{ pbase(), pptr() - pbase() }; }
+                auto get_view() const { return std::string_view{ pbase(), static_cast<std::size_t>( pptr() - pbase() ) }; }
             };
             viewable_output_stringstream() { set_rdbuf(&buff_); }
             auto get_view() const { return buff_.get_view(); }
@@ -554,7 +553,7 @@ int main(void)
         >;
 
     CHECK_EQ(gr_perf_x::min_size(),2);
-    auto verbose = grammar::line_logger<grammar::verboseness::verbose>{ [](auto indent_count, auto _view)
+    grammar::line_logger<grammar::verboseness::verbose> verbose { [](auto indent_count, auto _view)
     {
         for (std::size_t i = 0; i<indent_count; ++i)
             std::cout << "    ";
