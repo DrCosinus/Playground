@@ -119,7 +119,6 @@ namespace grammar
     template<>
     struct line_logger<verboseness::silent>
     {
-        //template <typename T> auto operator<<(T) { return *this; }
         template <typename T> auto operator<<(T&&) { return *this; }
         template <typename T, std::size_t N> auto operator<<(T(&)[N]) { return *this; }
         auto& operator<<(line_logger&(*)(line_logger&)) { return *this; }
@@ -156,50 +155,54 @@ namespace grammar
     };
 
 // terminals
-    template<char C, char... Cs>
+    template<char... Cs>
     struct char_among
     {
+        static_assert(sizeof...(Cs)>0);
+
         template<typename FUNCTOR, typename LOGGER>
         static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, [[maybe_unused]] LOGGER& _logger)
         {
-            // TODO: loop instead of recursion
             _logger << "char_among = \"" << char_among{} << "\", string = \"" << _sview << "\"" << push_line;
 
-            if constexpr(C=='\0')
+            bool success = false;
+            (..., [&success, &_sview, &yield_return](char _c)
             {
-                if (_sview.empty())
-                {   // special handling for empty view when C is '\0'
-                    yield_return( _sview );
-                    return true;
+                if (!success)
+                {
+                    if (_c=='\0')
+                    {
+                        if (_sview.empty())
+                        {   // special handling for empty view when _c is '\0'
+                            yield_return( _sview );
+                            success = true;
+                        }
+                    }
+                    if (!_sview.empty() && _sview.front() == _c)
+                    {
+                        auto view_copy = _sview;
+                        view_copy.absorb();
+                        yield_return( view_copy );
+                        success = true;
+                    }
                 }
-            }
-            if (_sview.front() == C)
-            {
-                auto view_copy = _sview;
-                view_copy.absorb();
-                yield_return( view_copy );
-                return true;
-            }
-            if constexpr (sizeof...(Cs)!=0)
-                return char_among<Cs...>::parse(_sview, yield_return, _logger);
-            else
-            {
+            }(Cs));
+            if (!success)
                 _logger << "->  FAIL" << push_line;
-                return false;
-            }
+            return success;
         }
 
         template<typename OUTPUT_STREAM_TYPE, typename = std::enable_if_t<!is_logger_v<OUTPUT_STREAM_TYPE>>>
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, char_among)
         {
-            if constexpr (sizeof...(Cs)!=0)
+            if constexpr (sizeof...(Cs)!=1)
             {
-                _os << '[' << detail::to_escaped(C);
+                _os << '[';
                 (_os << ... << detail::to_escaped(Cs)) << ']';
             }
             else
             {
-                _os << detail::to_escaped(C);
+                _os << detail::to_escaped(Cs...);
             }
             return _os;
         }
@@ -264,7 +267,7 @@ namespace grammar
         static constexpr bool parse(const search_view& _sview, FUNCTOR yield_return, LOGGER& _logger)
         {
             _logger << "any_of = \"" << any_of{} << "\", string = \"" << _sview << "\"" << push_line;
-            auto scoped_indent = _logger.make_scoped_indent;
+            auto scoped_indent = _logger.make_scoped_indent();
             if (HEAD::parse(_sview, [&yield_return](const auto& _trailing_sview){ return yield_return(_trailing_sview); }, _logger ))
             {
                 return true;
@@ -559,7 +562,7 @@ int main(void)
         sequence<
             optional< char_among<'a'> >
             , optional< char_among<'a'> >
-            , char_among<'a'>
+            , char_among<'b','a'>
             , char_among<'a'>
         >;
 
