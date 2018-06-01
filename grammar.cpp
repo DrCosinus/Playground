@@ -295,8 +295,9 @@ namespace grammar
         friend OUTPUT_STREAM_TYPE& operator<<(OUTPUT_STREAM_TYPE& _os, any_of)
         {
             _os << '(';
-            bool first = true;
-            (..., [&_os, &first](const auto& arg){ if (first) { first = false; } else { _os << '|'; } _os << arg; }(PREDICATES{}) ) ;
+            // cannot inline the lambda in the fold expression because it expand each parameter independently, so first would not.
+            auto lambda = [&_os, first = true](const auto& arg) mutable { if (first) { first = false; } else { _os << '|'; } _os << arg; };
+            (..., lambda(PREDICATES{}) ) ;
             _os << ')';
             return _os;
         }
