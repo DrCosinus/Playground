@@ -8,3 +8,7 @@
 ## array view
 
 ## determinism helpers
+
+## query selector
+
+auto AllProps = Entities.Select([](auto& s){ return s.IsProp() });
