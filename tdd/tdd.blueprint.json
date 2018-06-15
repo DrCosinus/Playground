@@ -1,0 +1,7 @@
+{
+    "project":
+    {
+        "name": "tdd",
+        "headers": "simple_tests.hpp"
+    }
+}

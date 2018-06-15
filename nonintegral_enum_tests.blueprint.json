@@ -1,0 +1,10 @@
+{
+    "import" : [ "wit/wit.blueprint.json", "tdd/tdd.blueprint.json" ],
+    "project":
+    {
+        "name": "nonintegral_enum_tests",
+        "dependencies": [ "tdd", "wit" ],
+        "sources": "enum.cpp",
+        "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe"
+    }
+}

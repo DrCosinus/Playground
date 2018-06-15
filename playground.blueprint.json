@@ -1,0 +1,8 @@
+{
+    "import":
+    [
+        "grammar.blueprint.json"
+        , "nonintegral_enum_tests.blueprint.json"
+        , "strong_type_tests.blueprint.json"
+    ]
+}
