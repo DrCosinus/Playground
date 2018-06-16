@@ -1,10 +1,10 @@
 {
-    "import": "tdd/tdd.blueprint.json",
+    "import": [ "tdd/tdd.blueprint.json" ],
     "project":
     {
         "name":  "grammar",
-        "dependencies": "tdd",
-        "sources": "grammar.cpp",
+        "dependencies": [ "tdd" ],
+        "sources": [ "grammar.cpp" ],
         "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe",
         "debug":
         {

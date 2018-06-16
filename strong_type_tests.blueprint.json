@@ -1,11 +1,11 @@
 {
-    "import": "extern_libs/catch2.blueprint.json",
+    "import": [ "extern_libs/catch2.blueprint.json" ],
     "project":
     {
         "name": "strong_type_tests",
-        "dependencies": "catch2",
-        "headers": "strong_type.h",
-        "sources": "strong_type_tests.cpp",
+        "dependencies": [ "catch2" ],
+        "headers": [ "strong_type.h" ],
+        "sources": [ "strong_type_tests.cpp" ],
         "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe"
     }
 }
