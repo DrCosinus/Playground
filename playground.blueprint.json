@@ -2,8 +2,8 @@
     "import":
     [
         "sources/grammar/grammar.blueprint.json"
-        , "nonintegral_enum_tests.blueprint.json"
-        , "strong_type_tests.blueprint.json"
+        , "sources/nonintegral_enum/nonintegral_enum.blueprint.json"
+        , "sources/strong_type/strong_type.blueprint.json"
         , "sources/constraint/constraint.blueprint.json"
     ]
 }
