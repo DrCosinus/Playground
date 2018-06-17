@@ -1,5 +1,5 @@
 {
-    "import": [ "tdd/tdd.blueprint.json" ],
+    "import": [ "../../tdd/tdd.blueprint.json" ],
     "project":
     {
         "name":  "grammar",
