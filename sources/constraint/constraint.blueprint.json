@@ -4,7 +4,7 @@
     {
         "name":  "constraint",
         "dependencies": [ "tdd" ],
-        "sources": [ "constraint_tests.cpp" ],
+        "sources": [ "constraint.cpp" ],
         "headers": [ "constraint.h" ],
         "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe"
     }
