@@ -1,4 +1,4 @@
-#include "tdd/simple_tests.hpp"
+#include "simple_tests.hpp"
 
 // for tests
 #include <iostream>

@@ -1,5 +1,5 @@
-#include "tdd/simple_tests.hpp"
-#include "wit/nonintegral_enum.hpp"
+#include "simple_tests.hpp"
+#include "nonintegral_enum.hpp"
 
 #include <iostream>
 #include <string>

@@ -1,5 +1,5 @@
 {
-    "import" : [ "wit/wit.blueprint.json", "tdd/tdd.blueprint.json" ],
+    "import" : [ "sources/wit/wit.blueprint.json", "sources/tdd/tdd.blueprint.json" ],
     "project":
     {
         "name": "nonintegral_enum",

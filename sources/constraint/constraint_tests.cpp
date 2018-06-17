@@ -1,4 +1,4 @@
-#include "tdd/simple_tests.hpp"
+#include "simple_tests.hpp"
 
 #include <iostream>
 #include <type_traits>
