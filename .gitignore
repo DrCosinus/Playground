@@ -15,6 +15,7 @@
 *.so
 *.dylib
 *.dll
+!make/Microsoft.VisualStudio.Setup.Configuration.Interop.dll
 
 # Fortran module files
 *.mod

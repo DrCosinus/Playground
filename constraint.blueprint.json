@@ -1,0 +1,11 @@
+{
+    "import": [ "tdd/tdd.blueprint.json" ],
+    "project":
+    {
+        "name":  "constraint",
+        "dependencies": [ "tdd" ],
+        "sources": [ "constraint_tests.cpp" ],
+        "headers": [ "constraint.h" ],
+        "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe"
+    }
+}

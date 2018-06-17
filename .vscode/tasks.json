@@ -7,7 +7,7 @@
             "label": "build release with msvc",
             "type": "shell",
             "command": "make\\BuildTask.exe",
-            "args": [ "-msvc", "${relativeFile}", "-ndebug", "-warnings_are_errors", "-output", "bin/${fileBasenameNoExtension}_msvc_r.exe" ],
+            "args": [ "-msvc", "${relativeFile}", "-ndebug", "-warnings_are_errors", "-blueprint:playground.blueprint.json", "-output:bin/project_msvc_r.exe" ],
             "group": "build",
             "presentation": { "reveal": "silent", "focus": false, "panel": "shared" },
             "problemMatcher": "$msCompile"
@@ -16,7 +16,7 @@
             "label": "build debug with msvc",
             "type": "shell",
             "command": "make\\BuildTask.exe",
-            "args": [ "-msvc", "${relativeFile}", "-debug", "-warnings_are_errors", "-output", "bin/${fileBasenameNoExtension}_msvc_d.exe" ],
+            "args": [ "-msvc", "${relativeFile}", "-debug", "-warnings_are_errors", "-blueprint:playground.blueprint.json", "-output:bin/project_msvc_d.exe" ],
             "group": "build",
             "presentation": { "reveal": "silent", "focus": false, "panel": "shared" },
             "problemMatcher": "$msCompile"
@@ -25,7 +25,7 @@
             "label": "build release with clang",
             "type": "shell",
             "command": "make\\BuildTask.exe",
-            "args": [ "-clang", "${relativeFile}", "-ndebug", "-warnings_are_errors", "-output", "bin/${fileBasenameNoExtension}_clang_r.exe" ],
+            "args": [ "-clang", "${relativeFile}", "-ndebug", "-warnings_are_errors", "-blueprint:playground.blueprint.json", "-output:bin/project_clang_r.exe" ],
             "group": "build",
             "presentation": { "reveal": "silent", "focus": false, "panel": "shared" },
             "problemMatcher": "$gcc"
@@ -34,7 +34,7 @@
             "label": "build debug with clang",
             "type": "shell",
             "command": "make\\BuildTask.exe",
-            "args": [ "-clang", "${relativeFile}", "-debug", "-warnings_are_errors", "-output", "bin/${fileBasenameNoExtension}_clang_d.exe" ],
+            "args": [ "-clang", "${relativeFile}", "-debug", "-warnings_are_errors", "-blueprint:playground.blueprint.json", "-output:bin/project_clang_d.exe" ],
             "group": "build",
             "presentation": { "reveal": "silent", "focus": false, "panel": "shared" },
             "problemMatcher": "$gcc"
