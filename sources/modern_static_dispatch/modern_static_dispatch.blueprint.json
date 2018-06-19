@@ -1,0 +1,10 @@
+{
+    "import" : [ "sources/wit/wit.blueprint.json", "sources/tdd/tdd.blueprint.json" ],
+    "project":
+    {
+        "name": "modern_static_dispatch",
+        "dependencies": [ "tdd", "wit" ],
+        "sources": [ "modern_static_dispatch.cpp" ],
+        "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe"
+    }
+}
