@@ -39,6 +39,7 @@ if (auto [isDefined, value] cmdlineWrapper.TryGet("value"); isDefined)
 
 ### text
 
+loadcsv
 loadjson
 loadxml
 
