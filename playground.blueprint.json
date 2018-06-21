@@ -6,5 +6,6 @@
         , "sources/strong_type/strong_type.blueprint.json"
         , "sources/constraint/constraint.blueprint.json"
         , "sources/modern_static_dispatch/modern_static_dispatch.blueprint.json"
+        , "sources/cuppa/cuppa.blueprint.json"
     ]
 }

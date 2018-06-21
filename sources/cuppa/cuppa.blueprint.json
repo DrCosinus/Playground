@@ -1,0 +1,16 @@
+{
+    "import" : [ "sources/wit/wit.blueprint.json", "sources/tdd/tdd.blueprint.json" ],
+    "project":
+    {
+        "name": "cuppa",
+        "description": "simple framework to produce prototype in cpp. ease the use of simple 2D & 3D, sound, media, inputs...",
+        "major_version": "0",
+        "minor_version": "1",
+        "path_version": "0",
+        "status": "wip",
+        "dependencies": [ "tdd", "wit" ],
+        "headers": [ "cuppa.hpp" ],
+        "sources": [ "cuppa.cpp", "sketch.cpp" ],
+        "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe"
+    }
+}
