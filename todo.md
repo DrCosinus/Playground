@@ -19,6 +19,9 @@ auto AllProps = Entities.Select([](auto& s){ return s.IsProp() });
 
 ### commandline
 
+Scenario:
+
+```cpp
 using wit::Commandline::CommandlineWrapper;
 
 auto cmdlineWrapper = new CommandlineWrapper{};
@@ -36,6 +39,7 @@ if (auto [isDefined, value] cmdlineWrapper.TryGet("value"); isDefined)
 {
   //  value is a std::string_view
 }
+```
 
 ### text
 
@@ -57,12 +61,46 @@ namespace wit
     Application();
     virtual ~Application() = default;
 
-    setSize();
-    draw rect
-    draw ellipse
-    draw text
-    draw line
-    draw point
+    virtual void setup() {}
+    virtual void update() {}
+    virtual void draw() {}
+
+    void run();
+
+  protected: // does it make sense to make these member functions public?
+    void setWindow(size2d<pixels> _size)
+    {
+      // set the size of the window
+    }
+
+    void draw(rect _rect)
+    {
+      // draw a rectangle...
+    }
+    void draw(ellipse _ellipse)
+    {
+      //...
+    }
+    void draw(point _point)
+    {
+      //...
+    }
+    void draw(line _line)
+    {
+      //...
+    }
+    void draw(text _text)
+    {
+      //...
+    }
+    void draw(auto)
+    {
+      // unknow type...
+    }
   };
 } // namespace wit
 ```
+
+one function to rule them all.
+compile-time visitor
+
