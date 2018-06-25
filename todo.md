@@ -15,7 +15,7 @@ auto AllProps = Entities.Select([](auto& s){ return s.IsProp() });
 
 ## automation
 
-## WIT
+## GENERIC NODE GRAPH EDITOR
 
 ### commandline
 
@@ -41,66 +41,33 @@ if (auto [isDefined, value] cmdlineWrapper.TryGet("value"); isDefined)
 }
 ```
 
-### text
-
-loadcsv
-loadjson
-loadxml
-
-### math
-
-Vector2d, Vector3d
-
-### minimal media interface (graphics, inputs,...)
-
-```cpp
-namespace wit
-{
-  class Application
-  {
-    Application();
-    virtual ~Application() = default;
-
-    virtual void setup() {}
-    virtual void update() {}
-    virtual void draw() {}
-
-    void run();
-
-  protected: // does it make sense to make these member functions public?
-    void setWindow(size2d<pixels> _size)
-    {
-      // set the size of the window
-    }
-
-    void draw(rect _rect)
-    {
-      // draw a rectangle...
-    }
-    void draw(ellipse _ellipse)
-    {
-      //...
-    }
-    void draw(point _point)
-    {
-      //...
-    }
-    void draw(line _line)
-    {
-      //...
-    }
-    void draw(text _text)
-    {
-      //...
-    }
-    void draw(auto)
-    {
-      // unknow type...
-    }
-  };
-} // namespace wit
-```
-
 one function to rule them all.
 compile-time visitor
 
+### manage enum class as bool
+
+```cpp
+enum class Visibility { Visible, Hidden };
+std::string std::to_string(cosnt Visibility& _v) { return { _v==Visibility::Visible?"Visible":"Hidden" }; }
+```
+
+### manage enum serialization by name
+
+### handle constraints
+
+### compose strong_type as aggregate of strong_type / static array of strong_type
+
+row-major/column-major order
+
+```cpp
+struct vector3 : wit::aggregate<
+    std::tuple<length_type,length_type,length_type>
+    , vector3
+    , wit::equalable
+    >
+{
+    using aggregate::aggregate;
+};
+```
+
+[Back to README](README.md)

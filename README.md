@@ -1,132 +1,61 @@
 # Playground
 
-## strong type lib // WIP //
+## Sources of some experiments
 
-### Type safety
+### [Strong type](sources/strong_type/strong_type.md)
 
-Wikipedia/Wiktionary definition:
+Facilities tentative to handle type with a strong semantic.
 
-In computer science, type safety is the extent to which a programming language **discourages** or **prevents** type errors.
+### [Cuppa](sources/cuppa/cuppa.md)
 
-At compiletime, check for:
+C++ prototyping facilities (simple media management). Windows specific until further notice.
 
-- use of one type when another is intended
-- operations that do not make sense
-- use of values outside the defined space
+### [Grammar](sources/grammar/grammar.md)
 
-#### Affine space
+Experiment of compile time expression to analyse strings.
 
-...
+### [Constraint](sources/constraint/constraint.md)
 
-| measure    | difference   |
-| ---------- | ------------ |
-| position   | displacement |
-| angle      | arc          |
-| time_stamp | time_span    |
-| pointer    | offset       |
-| treasury   | cost         |
+Tentative to add some constraints on function parameters, return value...
 
-### Implementation
+### [Non integral enum](sources/nonintegral_enum/nonintegral_enum.md)
 
-```cpp
-namespace wit {
-template<
-  // the type in which the value is effectively stored
-  typename UNDERLYING_TYPE,
-  // ensure the unicity of the whole strong type... 
-  // typically it could be the inherithing type itself
-  typename TAG_TYPE,
-  // a set of modifiers. 
-  // the strong type will inherit from them
-  template<typename> class... MODIFIER_TYPES 
-  >
-struct strong_type : MODIFIER_TYPES<strong_type<UNDERLYING_TYPE, TAG_TYPE, MODIFIER_TYPES...>>...
-{
-  explicit constexpr strong_type(UNDERLYING_TYPE _value)
-  : value_(std::move(_value))
-  {}
-  // ...
-private:
-  UNDERLYING_TYPE value_;
-}
-} // namespace wit
-```
+Implementation of an enumeration type in which values are not numeric... they are types.
 
-- No implicit construction from underlying type
-- No implicit copy-assignment
+### [Wit](sources/wit/wit.md)
 
-#### List of built-in modifiers
+A framework to ease c++ development... humbly trying to fill some gaps in the standard library. 
 
-**st** : strong_type, **ut** : underlying type, **dt** difference type
+### [TDD](sources/tdd/tdd.md)
 
-| | modifier                                | defined<br>operators                | required<br>operators of ut |
-|-| --------------------------------------- | ----------------------------------- | ---------------------- |
-|x| equalable                               | `==` `!=`                           | `==`                   |
-|x| comparable                              | `==` `!=`<br>`<` `>` `<=` `>=`      | `==` &<br>`<`          |
-|x| explicitly_convertible_to\<T>::modifier | T(st)                               |                        |
-|x| self_addable                            | st = st `+` st                      | `+`                    |
-|x| self_substractable                      | st = st `-` st                      | `-`                    |
-|x| self_multipliable                       | st = st `*` st                      | `*`                    |
-|x| self_dividable                          | st = st `/` st                      | `/`                    |
-|x| stringable                              | st.to_string() &<br>std::to_string(st) |                     |
-|x| incrementable                           | st++, ++st &<br>st += st;           | ++ut &<br>ut+=ut       |
-|x| decrementable                           |                                     |                        |
-| | invokable                               | st()                                |                        |
-| | serializable                            |                                     |                        |
-| | hashable                                |                                     |                        |
-| | addable_to<OPERAND_T, RESULT_T>         | res = st + op<br> res = op + st     |                        |
-| | define_difference_type\<dt>             | st = st + dt<br>st = dt + st<br>dt = st - st | st and df have<br>the same ut |
+A very simple, and incomplete test framework, but it is very light and fast.
 
-```cpp
-#include <wit/strong_type.hpp>
+### Misc
 
-struct length_unit : wit::strong_type<
-    float           // underlying type
-    , length_unit   // unique tag (thank to CRTP, it is the type itself)
-    , wit::comparable
-    , wit::explicitly_convertible_to<float>::modifier
-    , wit::self_addable
-    , wit::stringable
-    >
-{
-    using strong_type::strong_type;
-    length_unit() : strong_type{ 0 } {}
-};
+#### covariant
 
-struct time_unit : wit::strong_type<
-    long long
-    , time_unit
-    , wit::comparable
-    , wit::incrementable
-    >
-{
-    using strong_type::strong_type;
-    time_unit() : strong_type{ 0 } {}
-};
-```
+Demonstrate covariance in C++
 
-### manage enum class as bool
+#### deconstify
 
-```cpp
-enum class Visibility { Visible, Hidden };
-std::string std::to_string(cosnt Visibility& _v) { return { _v==Visibility::Visible?"Visible":"Hidden" }; }
-```
+Tentative to ease the create of const and non const getter (hiding the use of const_cast to the user).
 
-### manage enum serialization by name
+#### fsm
 
-### handle constraints
+FX curious finite state machine.
+State is a function which returns the next state.
+It is not my vision of how a state machine should be managed, but in some way it is a kind of fun and tricky.
 
-### compose strong_type as aggregate of strong_type / static array of strong_type
+#### recursive_helper
 
-row-major/column-major order
+Abandonned
 
-```cpp
-struct vector3 : wit::aggregate<
-    std::tuple<length_type,length_type,length_type>
-    , vector3
-    , wit::equalable
-    >
-{
-    using aggregate::aggregate;
-};
-```
+#### magic
+
+Misc transient experiments...
+
+#### static_config
+
+Tentative of multiple configuration initialisation using the preprocessor as little as possible.
+
+### [Todo](todo.md)
