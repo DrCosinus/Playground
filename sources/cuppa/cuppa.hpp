@@ -49,6 +49,27 @@ namespace cuppa
         //...
     };
 
+    template<typename T>
+    T clamp(T v, T min, T max)
+    {
+        if (v<min)
+            return min;
+        if (v>max)
+            return max;
+        return v;
+    }
+
+    struct color
+    {
+        using value_type = unsigned char;
+        value_type r, g, b;
+        // discreet 8bits components 0 to 255
+        color(value_type _red, value_type _green, value_type _blue) : r{ _red }, g{ _green }, b { _blue } {}
+        color(value_type _gray) : r{ _gray }, g{ _gray }, b { _gray } {}
+        // continuous value default visible range is 0.0 to 1.0
+        color(float _intensity) : color{ clamp( static_cast<value_type>( _intensity * 255.999f ), value_type{ 0 }, value_type{ 255 }) } {}
+    };
+
     class app
     {
     public:
@@ -61,7 +82,8 @@ namespace cuppa
   
       void run();
 
-    protected: 
+    protected:
+        void size(unsigned int _width, unsigned int _height);
     // does it make sense to make these member functions public?
         template<typename UNIT>
         void setWindow(size2d<UNIT> /*_size*/)

@@ -11,6 +11,7 @@
         "dependencies": [ "tdd", "wit" ],
         "headers": [ "cuppa.hpp" ],
         "sources": [ "cuppa.cpp", "sketch.cpp" ],
+        "libs": [ "user32.lib" ],
         "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe"
     }
 }
