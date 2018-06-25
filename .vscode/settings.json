@@ -66,7 +66,8 @@
         "array": "cpp",
         "variant": "cpp",
         "typeindex": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "*.rh": "cpp"
     },
     "markdownlint.config": {
         "MD013": false,
