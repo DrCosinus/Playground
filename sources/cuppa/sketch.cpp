@@ -15,9 +15,18 @@ struct sketch : cuppa::app
     }
     void draw() override
     {
-        //stroke(thickness{2_px}, color{0});
-        //fill(color{255});
-        //draw(line{point{0,0}, point{100,100}});
+        stroke(0);
+        strokeWeight(5);
+        fill(255,0,0);
+        rectangle(50,50,50,50);
+
+        strokeWeight(2);
+        stroke(0,0,255);
+        fill(255,255,0, 127);
+        ellipse(75,75,20,20);
+
+        fill(0);
+        text("plop",200,10);
     }
 };
 

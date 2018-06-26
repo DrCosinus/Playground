@@ -1,8 +1,13 @@
 #include "cuppa.hpp"
 
+#include <cstdlib>
+#include <malloc.h>
 #include <windows.h>
 
+#pragma warning(push)
+#pragma warning(disable:4458)
 #include <gdiplus.h>
+#pragma warning(pop)
 // sample GDI+: https://codes-sources.commentcamarche.net/source/view/29875/966776#browser
 
 template<auto N>
@@ -43,12 +48,14 @@ struct MSWindowsDriver
         height = _height;
     }
 
+    auto& GetGraphicsDriver() { return GraphicsDriver; }
+
 private:
     void Draw()
     {
         PAINTSTRUCT ps;
         auto hdc = BeginPaint(hWnd_, &ps);
-        GraphicsDriver.Draw(*app_, hdc);
+        GraphicsDriver.Draw(*app_, hWnd_, hdc);
         EndPaint(hWnd_, &ps);
     }
 
@@ -128,23 +135,84 @@ private:
 
 struct GdiplusDriver
 {
-    using Graphics = Gdiplus::Graphics;
     void Init()
     {
         Gdiplus::GdiplusStartup(&token, &startupInput, NULL);
+        brush_ = new SolidBrush{ Color{ (ARGB)Color::White } };
+        pen_ = new Pen{ (ARGB)Color::Black, 1.0f };
+
+        font_ = new Font(L"Verdana", 10, Gdiplus::FontStyle::FontStyleRegular, Gdiplus::Unit::UnitPoint);
     }
 
-    void Draw(cuppa::app& _app, HDC _hdc)
+    void Draw(cuppa::app& _app, HWND /*_hwnd*/, HDC _hdc)
     {
+        Assert(graphics_==nullptr);
         Graphics graphics{ _hdc };
+        graphics_ = &graphics;
+        graphics.SetInterpolationMode(Gdiplus::InterpolationMode::InterpolationModeHighQuality);
+        graphics.SetCompositingMode(Gdiplus::CompositingMode::CompositingModeSourceOver);
+        graphics.SetSmoothingMode(Gdiplus::SmoothingMode::SmoothingModeHighQuality);
+        // RECT rcClient;
+        // GetClientRect(_hwnd, &rcClient);
 
-        auto fillBrush = Gdiplus::SolidBrush( Gdiplus::Color(255, 0, 0));
-        auto rect = Gdiplus::RectF(Gdiplus::PointF{100,1000}, Gdiplus::SizeF{50,50});
-        graphics.FillRectangle( &fillBrush, rect);
         _app.draw();
+        graphics_ = nullptr;
     }
 
+    void stroke(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
+    {
+        pen_->SetColor( Color{ static_cast<BYTE>(_alpha), static_cast<BYTE>(_red), static_cast<BYTE>(_green), static_cast<BYTE>(_blue) } );
+    }
+
+    void strokeWeight(float _thickness)
+    {
+        pen_->SetWidth(_thickness);
+    }
+
+    void fill(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
+    {
+        brush_->SetColor( Color{ static_cast<BYTE>(_alpha), static_cast<BYTE>(_red), static_cast<BYTE>(_green), static_cast<BYTE>(_blue) } );
+    }
+
+    void rectangle(int _centerX, int _centerY, int _width, int _height)
+    {
+        Rect rc{ _centerX - _width / 2, _centerY - _height / 2, _width, _height };
+        graphics_->FillRectangle( brush_, rc );
+        graphics_->DrawRectangle( pen_, rc );
+    }
+
+    void ellipse(int _centerX, int _centerY, int _width, int _height)
+    {
+        Rect rc{ _centerX - _width / 2, _centerY - _height / 2, _width, _height };
+        graphics_->FillEllipse( brush_, rc );
+        graphics_->DrawEllipse( pen_, rc );
+    }
+
+    void text(const char* c, int x, int y)
+    {
+        auto len = strlen(c);
+        auto wcs = (WCHAR*)_malloca((len+1)*sizeof(WCHAR));
+        decltype(len) ret;
+        mbstowcs_s(&ret, wcs, len + 1, c, len+1);
+        graphics_->DrawString(wcs, static_cast<INT>(len), font_, PointF{static_cast<REAL>(x), static_cast<REAL>(y)}, brush_);
+    }
 private:
+    using Graphics = Gdiplus::Graphics;
+    using Color = Gdiplus::Color;
+    using Pen = Gdiplus::Pen;
+    using Rect = Gdiplus::Rect;
+    using SolidBrush = Gdiplus::SolidBrush;
+    using ARGB = Gdiplus::ARGB;
+    using Font = Gdiplus::Font;
+    using FontFamily = Gdiplus::FontFamily;
+    using PointF = Gdiplus::PointF;
+    using REAL = Gdiplus::REAL;
+
+    Graphics*       graphics_ = nullptr;
+    SolidBrush*     brush_ = nullptr;
+    Pen*            pen_ = nullptr;
+    Font*           font_ = nullptr;
+
     ULONG_PTR                       token;
     Gdiplus::GdiplusStartupInput    startupInput;
 };
@@ -170,6 +238,36 @@ namespace cuppa
     void app::size(unsigned int _width, unsigned int _height)
     {
         SystemDriver.SetWindowSize(_width, _height);
+    }
+
+    void app::stroke(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
+    {
+        SystemDriver.GetGraphicsDriver().stroke(_red, _green, _blue, _alpha);
+    }
+
+    void app::strokeWeight(float _thickness)
+    {
+        SystemDriver.GetGraphicsDriver().strokeWeight(_thickness);
+    }
+
+    void app::fill(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
+    {
+        SystemDriver.GetGraphicsDriver().fill(_red, _green, _blue, _alpha);
+    }
+
+    void app::rectangle(int _centerX, int _centerY, unsigned int _width, unsigned int _height)
+    {
+        SystemDriver.GetGraphicsDriver().rectangle( _centerX, _centerY, _width, _height );
+    }
+
+    void app::ellipse(int _centerX, int _centerY, unsigned int _width, unsigned int _height) const
+    {
+        SystemDriver.GetGraphicsDriver().ellipse( _centerX, _centerY, _width, _height );
+    }
+
+    void app::text(const char* c, int x, int y)
+    {
+        SystemDriver.GetGraphicsDriver().text( c, x, y);
     }
 
 } // namespace cuppa
