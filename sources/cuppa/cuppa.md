@@ -13,6 +13,16 @@ loadxml
 ### math utilities
 
 Vector2d, Vector3d
+Matrix2d (Rows by Columns)
+
+#### Linear algebra
+
+W * X = Y
+
+[[ w11 w12]    [[x1]     [[w11*x1+w12*x2]    [[y1]
+ [ w21 w22]] *  [x2]]  =  [w21*x1+w22*x2]] =  [y2]]
+
+### Neural network Facilities
 
 ### minimal media interface (graphics, inputs,...)
 
