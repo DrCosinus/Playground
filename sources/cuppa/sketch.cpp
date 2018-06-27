@@ -42,6 +42,9 @@ struct sketch : cuppa::app
         arc(50,75,25,25, 0, PI + QUARTER_PI, ArcMode::OPEN);
         arc(80,75,25,25, 0, PI + QUARTER_PI, ArcMode::CHORD);
         arc(110,75,25,25, 0, PI + QUARTER_PI, ArcMode::PIE);
+
+        fill(255,170,85,64);
+        quad(78, 31, 126, 20, 109, 53, 70, 66);
     }
 };
 

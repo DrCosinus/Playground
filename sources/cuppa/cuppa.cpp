@@ -237,6 +237,19 @@ struct GdiplusDriver
         }
     }
 
+    void quad(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4)
+    {
+        GraphicsPath path;
+
+        path.AddLine( x1, y1, x2, y2 );
+        path.AddLine( x3, y3, x4, y4 );
+        path.CloseFigure();
+
+        graphics_->FillPath( brush_, &path );
+        graphics_->DrawPath( pen_, &path);
+    }
+
+
 private:
     using Graphics = Gdiplus::Graphics;
     using REAL = Gdiplus::REAL;
@@ -330,4 +343,8 @@ namespace cuppa
         SystemDriver.GetGraphicsDriver().arc( x, y, width, height, start_angle / PI * 180, end_angle / PI * 180, mode);
     }
 
+    void app::quad(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4)
+    {
+        SystemDriver.GetGraphicsDriver().quad( x1, y1, x2, y2, x3, y3, x4, y4);
+    }
 } // namespace cuppa
