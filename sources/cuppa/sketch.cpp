@@ -27,6 +27,11 @@ struct sketch : cuppa::app
 
         fill(0);
         text("plop",95,2);
+        char buff[] = { '0', '\0' };
+        static int count = 0;
+        buff[0] = count % 10 + '0';
+        ++count;
+        text(buff,2,62);
 
         strokeWeight(0.2f);
         stroke(255,0,255);
