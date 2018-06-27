@@ -33,5 +33,7 @@ namespace cuppa
         void ellipse(int _centerX, int _centerY, unsigned int _diameter)        {   ellipse( _centerX, _centerY, _diameter, _diameter ); }
 
         void text(const char* c, int x, int y);
+
+        void point(int x, int y);
     };
 } // namespace wit

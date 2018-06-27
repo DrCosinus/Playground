@@ -26,7 +26,10 @@ struct sketch : cuppa::app
         ellipse(75,75,20,20);
 
         fill(0);
-        text("plop",200,10);
+        text("plop",80,10);
+
+        strokeWeight(8);
+        point(50, 50);
     }
 };
 

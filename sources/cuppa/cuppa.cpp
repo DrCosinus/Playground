@@ -152,8 +152,10 @@ struct GdiplusDriver
         graphics.SetInterpolationMode(Gdiplus::InterpolationMode::InterpolationModeHighQuality);
         graphics.SetCompositingMode(Gdiplus::CompositingMode::CompositingModeSourceOver);
         graphics.SetSmoothingMode(Gdiplus::SmoothingMode::SmoothingModeHighQuality);
-        // RECT rcClient;
-        // GetClientRect(_hwnd, &rcClient);
+
+        // zoom x6
+        Matrix mx{ 6, 0, 0, 6, 0, 0 };
+        graphics.SetTransform(&mx);
 
         _app.draw();
         graphics_ = nullptr;
@@ -196,17 +198,29 @@ struct GdiplusDriver
         mbstowcs_s(&ret, wcs, len + 1, c, len+1);
         graphics_->DrawString(wcs, static_cast<INT>(len), font_, PointF{static_cast<REAL>(x), static_cast<REAL>(y)}, brush_);
     }
+
+    void point(int x, int y, int /*z*/)
+    {
+        Rect rc{ x, y, 1, 1 };
+        Color c;
+        pen_->GetColor(&c);
+        SolidBrush b{ c };
+        graphics_->FillRectangle( &b, rc );
+    }
 private:
     using Graphics = Gdiplus::Graphics;
+    using REAL = Gdiplus::REAL;
+    using ARGB = Gdiplus::ARGB;
+    using Matrix = Gdiplus::Matrix;
     using Color = Gdiplus::Color;
     using Pen = Gdiplus::Pen;
-    using Rect = Gdiplus::Rect;
     using SolidBrush = Gdiplus::SolidBrush;
-    using ARGB = Gdiplus::ARGB;
+    using Point = Gdiplus::Point;
+    using PointF = Gdiplus::PointF;
+    using Rect = Gdiplus::Rect;
+    using RectF = Gdiplus::RectF;
     using Font = Gdiplus::Font;
     using FontFamily = Gdiplus::FontFamily;
-    using PointF = Gdiplus::PointF;
-    using REAL = Gdiplus::REAL;
 
     Graphics*       graphics_ = nullptr;
     SolidBrush*     brush_ = nullptr;
@@ -270,4 +284,8 @@ namespace cuppa
         SystemDriver.GetGraphicsDriver().text( c, x, y);
     }
 
+    void app::point(int x, int y)
+    {
+        SystemDriver.GetGraphicsDriver().point(x, y, 0);
+    }
 } // namespace cuppa
