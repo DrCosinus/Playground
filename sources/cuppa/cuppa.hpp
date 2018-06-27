@@ -24,12 +24,13 @@ namespace cuppa
     protected:
         void size(unsigned int _width, unsigned int _height);
 
+        void noStroke();
         void stroke(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha);
         void stroke(unsigned int _red, unsigned int _green, unsigned int _blue)     {   stroke(_red, _green, _blue, 255);   }
         void stroke(unsigned int _gray)                                             {   stroke(_gray, _gray, _gray, 255);   }
-
         void strokeWeight(float _thickness);
 
+        void noFill();
         void fill(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha);
         void fill(unsigned int _red, unsigned int _green, unsigned int _blue)   {   fill(_red, _green, _blue, 255); }
         void fill(unsigned int _gray)                                           {   fill(_gray, _gray, _gray, 255); }

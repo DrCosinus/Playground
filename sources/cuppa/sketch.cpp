@@ -48,12 +48,13 @@ struct sketch : cuppa::app
         arc(80,75,25,25, 0, PI + QUARTER_PI, ArcMode::CHORD);
         arc(110,75,25,25, 0, PI + QUARTER_PI, ArcMode::PIE);
 
-        fill(255,170,85,64);
+        noFill();
         quad(78, 31, 126, 20, 109, 53, 70, 66);
 
         fill(255,170,85,64);
+        noStroke();
+        fill(255,170,85,64);
         triangle(30, 75, 58, 20, 86, 75);
-
     }
 };
 

@@ -4,6 +4,8 @@
 #include <malloc.h>
 #include <windows.h>
 
+#include <memory>
+
 #pragma warning(push)
 #pragma warning(disable:4458)
 #include <gdiplus.h>
@@ -138,8 +140,8 @@ struct GdiplusDriver
     void Init()
     {
         Gdiplus::GdiplusStartup(&token, &startupInput, NULL);
-        brush_ = new SolidBrush{ Color{ (ARGB)Color::White } };
-        pen_ = new Pen{ (ARGB)Color::Black, 1.0f };
+        fillBrush_.reset( new SolidBrush{ fillColor_ } );
+        stroke_.reset( new Pen{ strokeColor_, strokeWeight_ } );
 
         font_ = new Font(L"Verdana", 10, Gdiplus::FontStyle::FontStyleRegular, Gdiplus::Unit::UnitPoint);
     }
@@ -161,33 +163,54 @@ struct GdiplusDriver
         graphics_ = nullptr;
     }
 
+    void noStroke()
+    {
+        strokeEnabled_ = false;
+    }
+
     void stroke(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
     {
-        pen_->SetColor( Color{ static_cast<BYTE>(_alpha), static_cast<BYTE>(_red), static_cast<BYTE>(_green), static_cast<BYTE>(_blue) } );
+        strokeEnabled_ = true;
+        strokeColor_ = Color{ static_cast<BYTE>(_alpha), static_cast<BYTE>(_red), static_cast<BYTE>(_green), static_cast<BYTE>(_blue) };
+        if (strokeEnabled_)
+            stroke_.reset( new Pen{ strokeColor_ });
     }
 
     void strokeWeight(float _thickness)
     {
-        pen_->SetWidth(_thickness);
+        strokeEnabled_ = true;
+        strokeWeight_ = _thickness;
+        stroke_->SetWidth(_thickness);
+    }
+
+    void noFill()
+    {
+        fillEnabled_ = false;
     }
 
     void fill(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
     {
-        brush_->SetColor( Color{ static_cast<BYTE>(_alpha), static_cast<BYTE>(_red), static_cast<BYTE>(_green), static_cast<BYTE>(_blue) } );
+        fillEnabled_ = true;
+        fillColor_ = Color{ static_cast<BYTE>(_alpha), static_cast<BYTE>(_red), static_cast<BYTE>(_green), static_cast<BYTE>(_blue) },
+        fillBrush_.reset( new SolidBrush( fillColor_ ) );
     }
 
     void rectangle(int _centerX, int _centerY, int _width, int _height)
     {
         Rect rc{ _centerX - _width / 2, _centerY - _height / 2, _width, _height };
-        graphics_->FillRectangle( brush_, rc );
-        graphics_->DrawRectangle( pen_, rc );
+        if (fillEnabled_)
+            graphics_->FillRectangle( fillBrush_.get(), rc );
+        if (strokeEnabled_)
+            graphics_->DrawRectangle( stroke_.get(), rc );
     }
 
     void ellipse(int _centerX, int _centerY, int _width, int _height)
     {
         Rect rc{ _centerX - _width / 2, _centerY - _height / 2, _width, _height };
-        graphics_->FillEllipse( brush_, rc );
-        graphics_->DrawEllipse( pen_, rc );
+        if (fillEnabled_)
+            graphics_->FillEllipse( fillBrush_.get(), rc );
+        if (strokeEnabled_)
+            graphics_->DrawEllipse( stroke_.get(), rc );
     }
 
     void text(const char* c, int x, int y)
@@ -196,21 +219,20 @@ struct GdiplusDriver
         auto wcs = (WCHAR*)_malloca((len+1)*sizeof(WCHAR));
         decltype(len) ret;
         mbstowcs_s(&ret, wcs, len + 1, c, len+1);
-        graphics_->DrawString(wcs, static_cast<INT>(len), font_, PointF{static_cast<REAL>(x), static_cast<REAL>(y)}, brush_);
+        graphics_->DrawString(wcs, static_cast<INT>(len), font_, PointF{static_cast<REAL>(x), static_cast<REAL>(y)}, fillBrush_.get());
     }
 
     void point(int x, int y, int /*z*/)
     {
         RectF rc{ x-0.5f, y-0.5f, 1, 1 };
-        Color c;
-        pen_->GetColor(&c);
-        SolidBrush b{ c };
+        SolidBrush b{ strokeColor_ };
         graphics_->FillRectangle( &b, rc );
     }
 
     void line(int x1, int y1, int /*z1*/, int x2, int y2, int /*z2*/)
     {
-        graphics_->DrawLine( pen_, x1, y1, x2, y2 );
+        if (strokeEnabled_)
+            graphics_->DrawLine( stroke_.get(), x1, y1, x2, y2 );
     }
 
     using ArcMode = cuppa::app::ArcMode;
@@ -220,8 +242,10 @@ struct GdiplusDriver
         auto sweep_angle = end_angle - start_angle;
         if (mode==ArcMode::PIE)
         {
-            graphics_->FillPie( brush_, rc, start_angle, sweep_angle );
-            graphics_->DrawPie( pen_, rc, start_angle, sweep_angle );
+            if (fillEnabled_)
+                graphics_->FillPie( fillBrush_.get(), rc, start_angle, sweep_angle );
+            if (strokeEnabled_)
+                graphics_->DrawPie( stroke_.get(), rc, start_angle, sweep_angle );
         }
         else
         {
@@ -232,8 +256,10 @@ struct GdiplusDriver
             {
                 path.CloseFigure();
             }
-            graphics_->FillPath( brush_, &path );
-            graphics_->DrawPath( pen_, &path);
+            if (fillEnabled_)
+                graphics_->FillPath( fillBrush_.get(), &path );
+            if (strokeEnabled_)
+                graphics_->DrawPath( stroke_.get(), &path);
         }
     }
 
@@ -245,8 +271,10 @@ struct GdiplusDriver
         path.AddLine( x3, y3, x4, y4 );
         path.CloseFigure();
 
-        graphics_->FillPath( brush_, &path );
-        graphics_->DrawPath( pen_, &path);
+        if (fillEnabled_)
+            graphics_->FillPath( fillBrush_.get(), &path );
+        if (strokeEnabled_)
+            graphics_->DrawPath( stroke_.get(), &path);
     }
 
     void triangle(int x1, int y1, int x2, int y2, int x3, int y3)
@@ -257,10 +285,11 @@ struct GdiplusDriver
         path.AddLine( x2, y2, x3, y3 );
         path.CloseFigure();
 
-        graphics_->FillPath( brush_, &path );
-        graphics_->DrawPath( pen_, &path);
+        if (fillEnabled_)
+            graphics_->FillPath( fillBrush_.get(), &path );
+        if (strokeEnabled_)
+            graphics_->DrawPath( stroke_.get(), &path);
     }
-
 
 private:
     using Graphics = Gdiplus::Graphics;
@@ -269,6 +298,7 @@ private:
     using Matrix = Gdiplus::Matrix;
     using Color = Gdiplus::Color;
     using Pen = Gdiplus::Pen;
+    using Brush = Gdiplus::Brush;
     using SolidBrush = Gdiplus::SolidBrush;
     using Point = Gdiplus::Point;
     using PointF = Gdiplus::PointF;
@@ -279,8 +309,16 @@ private:
     using GraphicsPath = Gdiplus::GraphicsPath;
 
     Graphics*       graphics_ = nullptr;
-    SolidBrush*     brush_ = nullptr;
-    Pen*            pen_ = nullptr;
+
+    std::unique_ptr<Brush>  fillBrush_;
+    Color                   fillColor_ = (ARGB)Color::White;
+    bool                    fillEnabled_ = true;
+
+    std::unique_ptr<Pen>    stroke_;
+    float                   strokeWeight_ = 1.0f;
+    Color                   strokeColor_ = (ARGB)Color::Black;
+    bool                    strokeEnabled_ = true;
+
     Font*           font_ = nullptr;
 
     ULONG_PTR                       token;
@@ -310,6 +348,11 @@ namespace cuppa
         SystemDriver.SetWindowSize(_width, _height);
     }
 
+    void app::noStroke()
+    {
+        SystemDriver.GetGraphicsDriver().noStroke();
+    }
+
     void app::stroke(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
     {
         SystemDriver.GetGraphicsDriver().stroke(_red, _green, _blue, _alpha);
@@ -318,6 +361,11 @@ namespace cuppa
     void app::strokeWeight(float _thickness)
     {
         SystemDriver.GetGraphicsDriver().strokeWeight(_thickness);
+    }
+
+    void app::noFill()
+    {
+        SystemDriver.GetGraphicsDriver().noFill();
     }
 
     void app::fill(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
