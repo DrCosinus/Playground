@@ -249,6 +249,18 @@ struct GdiplusDriver
         graphics_->DrawPath( pen_, &path);
     }
 
+    void triangle(int x1, int y1, int x2, int y2, int x3, int y3)
+    {
+        GraphicsPath path;
+
+        path.AddLine( x1, y1, x2, y2 );
+        path.AddLine( x2, y2, x3, y3 );
+        path.CloseFigure();
+
+        graphics_->FillPath( brush_, &path );
+        graphics_->DrawPath( pen_, &path);
+    }
+
 
 private:
     using Graphics = Gdiplus::Graphics;
@@ -346,5 +358,10 @@ namespace cuppa
     void app::quad(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4)
     {
         SystemDriver.GetGraphicsDriver().quad( x1, y1, x2, y2, x3, y3, x4, y4);
+    }
+
+    void app::triangle(int x1, int y1, int x2, int y2, int x3, int y3)
+    {
+        SystemDriver.GetGraphicsDriver().triangle( x1, y1, x2, y2, x3, y3);
     }
 } // namespace cuppa
