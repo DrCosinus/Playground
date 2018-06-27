@@ -201,12 +201,18 @@ struct GdiplusDriver
 
     void point(int x, int y, int /*z*/)
     {
-        Rect rc{ x, y, 1, 1 };
+        RectF rc{ x-0.5f, y-0.5f, 1, 1 };
         Color c;
         pen_->GetColor(&c);
         SolidBrush b{ c };
         graphics_->FillRectangle( &b, rc );
     }
+
+    void line(int x1, int y1, int /*z1*/, int x2, int y2, int /*z2*/)
+    {
+        graphics_->DrawLine( pen_, x1, y1, x2, y2 );
+    }
+
 private:
     using Graphics = Gdiplus::Graphics;
     using REAL = Gdiplus::REAL;
@@ -288,4 +294,10 @@ namespace cuppa
     {
         SystemDriver.GetGraphicsDriver().point(x, y, 0);
     }
+
+    void app::line(int x1, int y1, int x2, int y2)
+    {
+        SystemDriver.GetGraphicsDriver().line( x1, y1, 0, x2, y2, 0);
+    }
+
 } // namespace cuppa

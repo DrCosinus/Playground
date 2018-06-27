@@ -28,6 +28,12 @@ struct sketch : cuppa::app
         fill(0);
         text("plop",80,10);
 
+        strokeWeight(0.2f);
+        stroke(255,0,255);
+        line(25,25,75,75);
+        line(25,75,75,25);
+
+        stroke(0);
         strokeWeight(8);
         point(50, 50);
     }

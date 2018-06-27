@@ -35,5 +35,7 @@ namespace cuppa
         void text(const char* c, int x, int y);
 
         void point(int x, int y);
+
+        void line(int x1, int y1, int x2, int y2);
     };
 } // namespace wit
