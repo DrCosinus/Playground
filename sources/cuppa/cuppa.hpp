@@ -5,14 +5,21 @@ namespace cuppa
     class app
     {
     public:
-      app() = default;
-      virtual ~app() = default;
+        static constexpr float QUARTER_PI = 0.78539816339744830961566084581988f;
+        static constexpr float HALF_PI = 1.5707963267948966192313216916398f;
+        static constexpr float PI = 3.1415926535897932384626433832795f;
+        static constexpr float TWO_PI = 6.283185307179586476925286766559f;
 
-      virtual void setup() {}
-      virtual void update() {}
-      virtual void draw() {}
-  
-      void run();
+        enum struct ArcMode{ PIE, OPEN, CHORD };
+
+        app() = default;
+        virtual ~app() = default;
+
+        virtual void setup() {}
+        virtual void update() {}
+        virtual void draw() {}
+
+        void run();
 
     protected:
         void size(unsigned int _width, unsigned int _height);
@@ -37,5 +44,8 @@ namespace cuppa
         void point(int x, int y);
 
         void line(int x1, int y1, int x2, int y2);
+
+        void arc(int x, int y, int width, int height, float start_angle, float end_angle, ArcMode mode);
+        void arc(int x, int y, int width, int height, float start_angle, float end_angle)   { arc(x, y, width, height, start_angle, end_angle, ArcMode::OPEN); }
     };
 } // namespace wit

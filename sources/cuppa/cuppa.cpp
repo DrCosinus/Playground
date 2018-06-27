@@ -213,6 +213,30 @@ struct GdiplusDriver
         graphics_->DrawLine( pen_, x1, y1, x2, y2 );
     }
 
+    using ArcMode = cuppa::app::ArcMode;
+    void arc(int x, int y, int width, int height, float start_angle, float end_angle, ArcMode mode)
+    {
+        Rect rc{ x - width / 2, y - height / 2, width, height };
+        auto sweep_angle = end_angle - start_angle;
+        if (mode==ArcMode::PIE)
+        {
+            graphics_->FillPie( brush_, rc, start_angle, sweep_angle );
+            graphics_->DrawPie( pen_, rc, start_angle, sweep_angle );
+        }
+        else
+        {
+            GraphicsPath path;
+
+            path.AddArc(rc, start_angle, sweep_angle);
+            if (mode==ArcMode::CHORD)
+            {
+                path.CloseFigure();
+            }
+            graphics_->FillPath( brush_, &path );
+            graphics_->DrawPath( pen_, &path);
+        }
+    }
+
 private:
     using Graphics = Gdiplus::Graphics;
     using REAL = Gdiplus::REAL;
@@ -227,6 +251,7 @@ private:
     using RectF = Gdiplus::RectF;
     using Font = Gdiplus::Font;
     using FontFamily = Gdiplus::FontFamily;
+    using GraphicsPath = Gdiplus::GraphicsPath;
 
     Graphics*       graphics_ = nullptr;
     SolidBrush*     brush_ = nullptr;
@@ -298,6 +323,11 @@ namespace cuppa
     void app::line(int x1, int y1, int x2, int y2)
     {
         SystemDriver.GetGraphicsDriver().line( x1, y1, 0, x2, y2, 0);
+    }
+
+    void app::arc(int x, int y, int width, int height, float start_angle, float end_angle, ArcMode mode)
+    {
+        SystemDriver.GetGraphicsDriver().arc( x, y, width, height, start_angle / PI * 180, end_angle / PI * 180, mode);
     }
 
 } // namespace cuppa
