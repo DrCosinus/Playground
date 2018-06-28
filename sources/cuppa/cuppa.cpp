@@ -63,7 +63,7 @@ private:
 
     void RefreshWindow(HWND _hWnd)
     {
-        InvalidateRect(_hWnd, nullptr, TRUE);
+        InvalidateRect(_hWnd, nullptr, FALSE);
         UpdateWindow(_hWnd);
     }
 
@@ -157,21 +157,37 @@ struct GdiplusDriver
         font_ = new Font(L"Verdana", 10, Gdiplus::FontStyle::FontStyleRegular, Gdiplus::Unit::UnitPoint);
     }
 
-    void Draw(cuppa::app& _app, HWND /*_hwnd*/, HDC _hdc)
+    void Draw(cuppa::app& _app, HWND _hWnd, HDC _hdc)
     {
         Assert(graphics_==nullptr);
         Graphics graphics{ _hdc };
-        graphics_ = &graphics;
-        graphics.SetInterpolationMode(Gdiplus::InterpolationMode::InterpolationModeHighQuality);
-        graphics.SetCompositingMode(Gdiplus::CompositingMode::CompositingModeSourceOver);
-        graphics.SetSmoothingMode(Gdiplus::SmoothingMode::SmoothingModeHighQuality);
+        RECT rc;
+        GetClientRect(_hWnd, &rc);
+        auto rcWidth = static_cast<UINT>( rc.right-rc.left );
+        auto rcHeight = static_cast<UINT>( rc.bottom-rc.top );
+        if (drawBuffer_==nullptr || drawBuffer_->GetWidth() != rcWidth || drawBuffer_->GetHeight() != rcHeight)
+        {
+            drawBuffer_.reset(new Bitmap(rcWidth, rcHeight, PixelFormat32bppPARGB));
+        }
+        Graphics g{ drawBuffer_.get() };
+        graphics_ = &g;
+        g.SetInterpolationMode(Gdiplus::InterpolationMode::InterpolationModeHighQuality);
+        g.SetCompositingMode(Gdiplus::CompositingMode::CompositingModeSourceOver);
+        g.SetSmoothingMode(Gdiplus::SmoothingMode::SmoothingModeHighQuality);
 
         // zoom x6
         Matrix mx{ 6, 0, 0, 6, 0, 0 };
-        graphics.SetTransform(&mx);
+        g.SetTransform(&mx);
 
         _app.draw();
+        graphics.DrawImage( drawBuffer_.get(), 0, 0 );
         graphics_ = nullptr;
+    }
+
+    void background(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
+    {
+        auto clearColor_ = Color{ static_cast<BYTE>(_alpha), static_cast<BYTE>(_red), static_cast<BYTE>(_green), static_cast<BYTE>(_blue) };
+        graphics_->Clear(clearColor_);
     }
 
     void noStroke()
@@ -304,6 +320,7 @@ struct GdiplusDriver
 
 private:
     using Graphics = Gdiplus::Graphics;
+    using Bitmap = Gdiplus::Bitmap;
     using REAL = Gdiplus::REAL;
     using ARGB = Gdiplus::ARGB;
     using Matrix = Gdiplus::Matrix;
@@ -319,7 +336,8 @@ private:
     using FontFamily = Gdiplus::FontFamily;
     using GraphicsPath = Gdiplus::GraphicsPath;
 
-    Graphics*       graphics_ = nullptr;
+    Graphics*               graphics_ = nullptr;
+    std::unique_ptr<Bitmap> drawBuffer_;
 
     std::unique_ptr<Brush>  fillBrush_;
     Color                   fillColor_ = (ARGB)Color::White;
@@ -352,6 +370,11 @@ namespace cuppa
             DispatchMessage(&Msg);
             update();
         }
+    }
+
+    void app::background(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
+    {
+        SystemDriver.GetGraphicsDriver().background(_red, _green, _blue, _alpha);
     }
 
     void app::size(unsigned int _width, unsigned int _height)

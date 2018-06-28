@@ -15,6 +15,8 @@ struct sketch : cuppa::app
     }
     void draw() override
     {
+        background(255);
+
         stroke(0);
         strokeWeight(5);
         fill(255,0,0);

@@ -24,6 +24,11 @@ namespace cuppa
     protected:
         void size(unsigned int _width, unsigned int _height);
 
+        void background(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha);
+        void background(unsigned int _red, unsigned int _green, unsigned int _blue)   {   background(_red, _green, _blue, 255); }
+        void background(unsigned int _gray, unsigned int _alpha)                      {   background(_gray, _gray, _gray, _alpha); }
+        void background(unsigned int _gray)                                           {   background(_gray, _gray, _gray, 255); }
+
         void noStroke();
         void stroke(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha);
         void stroke(unsigned int _red, unsigned int _green, unsigned int _blue)     {   stroke(_red, _green, _blue, 255);   }
