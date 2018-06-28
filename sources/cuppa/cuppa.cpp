@@ -5,6 +5,7 @@
 #include <windows.h>
 
 #include <memory>
+#include <stack>
 
 #pragma warning(push)
 #pragma warning(disable:4458)
@@ -183,6 +184,32 @@ struct GdiplusDriver
         graphics_ = nullptr;
     }
 
+    void resetMatrix()
+    {
+        Matrix identity;
+        graphics_->SetTransform(&identity);
+    }
+
+    void pushMatrix()
+    {
+        matrixStack.emplace();
+        graphics_->GetTransform(&matrixStack.top());
+    }
+
+    bool popMatrix()
+    {
+        if (!matrixStack.empty())
+        {
+            graphics_->SetTransform(&matrixStack.top());
+            matrixStack.pop();
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     void translate(float xmove, float ymove, float)
     {
         Matrix mxTransform{ 1, 0, 0, 1, xmove, ymove };
@@ -195,7 +222,7 @@ struct GdiplusDriver
 
     void rotate(float angle)
     {
-        Matrix mxTransform{ cosf(angle), sinf(angle), -sinf(angle), cosf(angle), 0, 0 };
+        Matrix mxTransform{ cosf(angle), -sinf(angle), sinf(angle), cosf(angle), 0, 0 };
         Matrix mx;
         graphics_->GetTransform(&mx);
         mx.Multiply(&mxTransform, Gdiplus::MatrixOrder::MatrixOrderAppend);
@@ -206,6 +233,26 @@ struct GdiplusDriver
     void scale(float xscale, float yscale, float)
     {
         Matrix mxTransform{ xscale, 0, 0, yscale, 0, 0 };
+        Matrix mx;
+        graphics_->GetTransform(&mx);
+        mx.Multiply(&mxTransform, Gdiplus::MatrixOrder::MatrixOrderAppend);
+
+        graphics_->SetTransform(&mx);
+    }
+
+    void shearX(float angle)
+    {
+        Matrix mxTransform{ 1, 0, sinf(angle), 1, 0, 0 };
+        Matrix mx;
+        graphics_->GetTransform(&mx);
+        mx.Multiply(&mxTransform, Gdiplus::MatrixOrder::MatrixOrderAppend);
+
+        graphics_->SetTransform(&mx);
+    }
+
+    void shearY(float angle)
+    {
+        Matrix mxTransform{ 1, sinf(angle), 0, 1, 0, 0 };
         Matrix mx;
         graphics_->GetTransform(&mx);
         mx.Multiply(&mxTransform, Gdiplus::MatrixOrder::MatrixOrderAppend);
@@ -377,7 +424,9 @@ private:
     Color                   strokeColor_ = (ARGB)Color::Black;
     bool                    strokeEnabled_ = true;
 
-    Font*           font_ = nullptr;
+    std::stack<Matrix>      matrixStack;
+
+    Font*                   font_ = nullptr;
 
     ULONG_PTR                       token;
     Gdiplus::GdiplusStartupInput    startupInput;
@@ -406,30 +455,18 @@ namespace cuppa
         SystemDriver.GetGraphicsDriver().background(_red, _green, _blue, _alpha);
     }
 
-    void app::size(unsigned int _width, unsigned int _height)
-    {
-        SystemDriver.SetWindowSize(_width, _height);
-    }
+    void app::size(unsigned int _width, unsigned int _height)   {   SystemDriver.SetWindowSize(_width, _height);    }
 
-    void app::noStroke()
-    {
-        SystemDriver.GetGraphicsDriver().noStroke();
-    }
+    void app::noStroke()                                        {   SystemDriver.GetGraphicsDriver().noStroke();    }
 
     void app::stroke(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
     {
         SystemDriver.GetGraphicsDriver().stroke(_red, _green, _blue, _alpha);
     }
 
-    void app::strokeWeight(float _thickness)
-    {
-        SystemDriver.GetGraphicsDriver().strokeWeight(_thickness);
-    }
+    void app::strokeWeight(float _thickness)    {   SystemDriver.GetGraphicsDriver().strokeWeight(_thickness);  }
 
-    void app::noFill()
-    {
-        SystemDriver.GetGraphicsDriver().noFill();
-    }
+    void app::noFill()                          {   SystemDriver.GetGraphicsDriver().noFill();  }
 
     void app::fill(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
     {
@@ -446,20 +483,11 @@ namespace cuppa
         SystemDriver.GetGraphicsDriver().ellipse( _centerX, _centerY, _width, _height );
     }
 
-    void app::text(const char* c, int x, int y)
-    {
-        SystemDriver.GetGraphicsDriver().text( c, x, y);
-    }
+    void app::text(const char* c, int x, int y)     {   SystemDriver.GetGraphicsDriver().text( c, x, y);    }
 
-    void app::point(int x, int y)
-    {
-        SystemDriver.GetGraphicsDriver().point(x, y, 0);
-    }
+    void app::point(int x, int y)                   {   SystemDriver.GetGraphicsDriver().point(x, y, 0);    }
 
-    void app::line(int x1, int y1, int x2, int y2)
-    {
-        SystemDriver.GetGraphicsDriver().line( x1, y1, 0, x2, y2, 0);
-    }
+    void app::line(int x1, int y1, int x2, int y2)  {   SystemDriver.GetGraphicsDriver().line( x1, y1, 0, x2, y2, 0);   }
 
     void app::arc(int x, int y, int width, int height, float start_angle, float end_angle, ArcMode mode)
     {
@@ -476,6 +504,10 @@ namespace cuppa
         SystemDriver.GetGraphicsDriver().triangle( x1, y1, x2, y2, x3, y3);
     }
 
+    void app::pushMatrix()  { SystemDriver.GetGraphicsDriver().pushMatrix(); }
+    void app::popMatrix()   { SystemDriver.GetGraphicsDriver().popMatrix(); }
+    void app::resetMatrix() { SystemDriver.GetGraphicsDriver().resetMatrix(); }
+
     void app::translate(float xmove, float ymove, float zmove)
     {
         SystemDriver.GetGraphicsDriver().translate(xmove, ymove, zmove);
@@ -490,4 +522,7 @@ namespace cuppa
     {
         SystemDriver.GetGraphicsDriver().scale(xscale, yscale, zscale);
     }
+
+    void app::shearX(float angle) { SystemDriver.GetGraphicsDriver().shearX(angle); }
+    void app::shearY(float angle) { SystemDriver.GetGraphicsDriver().shearY(angle);}
 } // namespace cuppa
