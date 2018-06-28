@@ -66,10 +66,10 @@ struct sketch : cuppa::app
         rect(30+25, 20+25, 50, 50);
 
         static float angle = 0.0f;
-        //rotate(angle);
+        shearY(QUARTER_PI);
+        rotate(angle);
         angle += 0.03f;
         translate(300,300);
-        shearY(QUARTER_PI);
         rect(0,0,100,100);
     }
 };

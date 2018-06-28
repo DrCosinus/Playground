@@ -212,52 +212,29 @@ struct GdiplusDriver
 
     void translate(float xmove, float ymove, float)
     {
-        Matrix mxTransform{ 1, 0, 0, 1, xmove, ymove };
-        Matrix mx;
-        graphics_->GetTransform(&mx);
-        mx.Multiply(&mxTransform, Gdiplus::MatrixOrder::MatrixOrderAppend);
-
-        graphics_->SetTransform(&mx);
+        graphics_->TranslateTransform(xmove, ymove, Gdiplus::MatrixOrder::MatrixOrderAppend);
     }
 
-    void rotate(float angle)
+    void rotate(float angle_in_degree)
     {
-        Matrix mxTransform{ cosf(angle), -sinf(angle), sinf(angle), cosf(angle), 0, 0 };
-        Matrix mx;
-        graphics_->GetTransform(&mx);
-        mx.Multiply(&mxTransform, Gdiplus::MatrixOrder::MatrixOrderAppend);
-
-        graphics_->SetTransform(&mx);
+        graphics_->RotateTransform(angle_in_degree, Gdiplus::MatrixOrder::MatrixOrderAppend);
     }
 
     void scale(float xscale, float yscale, float)
     {
-        Matrix mxTransform{ xscale, 0, 0, yscale, 0, 0 };
-        Matrix mx;
-        graphics_->GetTransform(&mx);
-        mx.Multiply(&mxTransform, Gdiplus::MatrixOrder::MatrixOrderAppend);
-
-        graphics_->SetTransform(&mx);
+        graphics_->ScaleTransform(xscale, yscale, Gdiplus::MatrixOrder::MatrixOrderAppend);
     }
 
-    void shearX(float angle)
+    void shearX(float slope)
     {
-        Matrix mxTransform{ 1, 0, sinf(angle), 1, 0, 0 };
-        Matrix mx;
-        graphics_->GetTransform(&mx);
-        mx.Multiply(&mxTransform, Gdiplus::MatrixOrder::MatrixOrderAppend);
-
-        graphics_->SetTransform(&mx);
+        Matrix mxTransform{ 1, 0, slope, 1, 0, 0 };
+        graphics_->MultiplyTransform( &mxTransform, Gdiplus::MatrixOrder::MatrixOrderAppend);
     }
 
-    void shearY(float angle)
+    void shearY(float slope)
     {
-        Matrix mxTransform{ 1, sinf(angle), 0, 1, 0, 0 };
-        Matrix mx;
-        graphics_->GetTransform(&mx);
-        mx.Multiply(&mxTransform, Gdiplus::MatrixOrder::MatrixOrderAppend);
-
-        graphics_->SetTransform(&mx);
+        Matrix mxTransform{ 1, slope, 0, 1, 0, 0 };
+        graphics_->MultiplyTransform(&mxTransform, Gdiplus::MatrixOrder::MatrixOrderAppend);
     }
 
     void background(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
@@ -515,7 +492,7 @@ namespace cuppa
 
     void app::rotate(float angle)
     {
-        SystemDriver.GetGraphicsDriver().rotate(angle);
+        SystemDriver.GetGraphicsDriver().rotate(angle / PI * 180);
     }
 
     void app::scale(float xscale, float yscale, float zscale)
