@@ -61,6 +61,12 @@ private:
         EndPaint(hWnd_, &ps);
     }
 
+    void RefreshWindow(HWND _hWnd)
+    {
+        InvalidateRect(_hWnd, nullptr, TRUE);
+        UpdateWindow(_hWnd);
+    }
+
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
         switch(msg)
@@ -70,6 +76,11 @@ private:
                 {
                     instance->GraphicsDriver.Init();
                 }
+                SetTimer(hwnd, 1234, 16, (TIMERPROC)0);
+                break;
+            case WM_TIMER:
+            // TODO: check the TIMER_ID
+                instance->RefreshWindow(hwnd);
                 break;
             case WM_PAINT:
                 instance->Draw();
