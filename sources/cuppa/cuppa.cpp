@@ -183,6 +183,26 @@ struct GdiplusDriver
         graphics_ = nullptr;
     }
 
+    void translate(float xmove, float ymove, float)
+    {
+        Matrix mxTransform{ 1, 0, 0, 1, xmove, ymove };
+        Matrix mx;
+        graphics_->GetTransform(&mx);
+        mx.Multiply(&mxTransform, Gdiplus::MatrixOrder::MatrixOrderAppend);
+
+        graphics_->SetTransform(&mx);
+    }
+
+    void rotate(float angle)
+    {
+        Matrix mxTransform{ cosf(angle), sinf(angle), -sinf(angle), cosf(angle), 0, 0 };
+        Matrix mx;
+        graphics_->GetTransform(&mx);
+        mx.Multiply(&mxTransform, Gdiplus::MatrixOrder::MatrixOrderAppend);
+
+        graphics_->SetTransform(&mx);
+    }
+
     void scale(float xscale, float yscale, float)
     {
         Matrix mxTransform{ xscale, 0, 0, yscale, 0, 0 };
@@ -454,6 +474,16 @@ namespace cuppa
     void app::triangle(int x1, int y1, int x2, int y2, int x3, int y3)
     {
         SystemDriver.GetGraphicsDriver().triangle( x1, y1, x2, y2, x3, y3);
+    }
+
+    void app::translate(float xmove, float ymove, float zmove)
+    {
+        SystemDriver.GetGraphicsDriver().translate(xmove, ymove, zmove);
+    }
+
+    void app::rotate(float angle)
+    {
+        SystemDriver.GetGraphicsDriver().rotate(angle);
     }
 
     void app::scale(float xscale, float yscale, float zscale)

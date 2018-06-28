@@ -62,8 +62,14 @@ namespace cuppa
         void triangle(int x1, int y1, int x2, int y2, int x3, int y3);
 
     // transforms
+        void translate(float xmove, float ymove, float zmove);
+        void translate(float xscale, float yscale)                  { translate(xscale, yscale, 1.0f); }
+        void translate(float _scale)                                { translate(_scale, _scale, _scale); }
+
         void scale(float xscale, float yscale, float zscale);
         void scale(float xscale, float yscale)                  { scale(xscale, yscale, 1.0f); }
         void scale(float _scale)                                { scale(_scale, _scale, _scale); }
+
+        void rotate(float angle);
     };
 } // namespace wit
