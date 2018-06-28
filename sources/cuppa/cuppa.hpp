@@ -22,8 +22,10 @@ namespace cuppa
         void run();
 
     protected:
+    // environment
         void size(unsigned int _width, unsigned int _height);
 
+    // colors: settings
         void background(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha);
         void background(unsigned int _red, unsigned int _green, unsigned int _blue)   {   background(_red, _green, _blue, 255); }
         void background(unsigned int _gray, unsigned int _alpha)                      {   background(_gray, _gray, _gray, _alpha); }
@@ -40,7 +42,8 @@ namespace cuppa
         void fill(unsigned int _red, unsigned int _green, unsigned int _blue)   {   fill(_red, _green, _blue, 255); }
         void fill(unsigned int _gray)                                           {   fill(_gray, _gray, _gray, 255); }
 
-        void rectangle(int _centerX, int _centerY, unsigned int _width, unsigned int _height);
+    // shapes: 2D primitives
+        void rect(int _centerX, int _centerY, unsigned int _width, unsigned int _height);
 
         void ellipse(int _centerX, int _centerY, unsigned int _width, unsigned int _height) const;
         void ellipse(int _centerX, int _centerY, unsigned int _diameter)        {   ellipse( _centerX, _centerY, _diameter, _diameter ); }
@@ -57,5 +60,10 @@ namespace cuppa
         void quad(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4);
 
         void triangle(int x1, int y1, int x2, int y2, int x3, int y3);
+
+    // transforms
+        void scale(float xscale, float yscale, float zscale);
+        void scale(float xscale, float yscale)                  { scale(xscale, yscale, 1.0f); }
+        void scale(float _scale)                                { scale(_scale, _scale, _scale); }
     };
 } // namespace wit

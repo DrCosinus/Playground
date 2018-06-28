@@ -169,19 +169,28 @@ struct GdiplusDriver
         {
             drawBuffer_.reset(new Bitmap(rcWidth, rcHeight, PixelFormat32bppPARGB));
         }
-        Graphics g{ drawBuffer_.get() };
-        graphics_ = &g;
-        g.SetInterpolationMode(Gdiplus::InterpolationMode::InterpolationModeHighQuality);
-        g.SetCompositingMode(Gdiplus::CompositingMode::CompositingModeSourceOver);
-        g.SetSmoothingMode(Gdiplus::SmoothingMode::SmoothingModeHighQuality);
-
-        // zoom x6
-        Matrix mx{ 6, 0, 0, 6, 0, 0 };
-        g.SetTransform(&mx);
+        Graphics drawGraphics{ drawBuffer_.get() };
+        graphics_ = &drawGraphics;
+        drawGraphics.SetInterpolationMode(Gdiplus::InterpolationMode::InterpolationModeHighQuality);
+        drawGraphics.SetCompositingMode(Gdiplus::CompositingMode::CompositingModeSourceOver);
+        drawGraphics.SetSmoothingMode(Gdiplus::SmoothingMode::SmoothingModeHighQuality);
 
         _app.draw();
+        graphics.SetInterpolationMode(Gdiplus::InterpolationMode::InterpolationModeLowQuality);
+        graphics.SetCompositingMode(Gdiplus::CompositingMode::CompositingModeSourceCopy);
+        graphics.SetSmoothingMode(Gdiplus::SmoothingMode::SmoothingModeHighSpeed);
         graphics.DrawImage( drawBuffer_.get(), 0, 0 );
         graphics_ = nullptr;
+    }
+
+    void scale(float xscale, float yscale, float)
+    {
+        Matrix mxTransform{ xscale, 0, 0, yscale, 0, 0 };
+        Matrix mx;
+        graphics_->GetTransform(&mx);
+        mx.Multiply(&mxTransform, Gdiplus::MatrixOrder::MatrixOrderAppend);
+
+        graphics_->SetTransform(&mx);
     }
 
     void background(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
@@ -407,7 +416,7 @@ namespace cuppa
         SystemDriver.GetGraphicsDriver().fill(_red, _green, _blue, _alpha);
     }
 
-    void app::rectangle(int _centerX, int _centerY, unsigned int _width, unsigned int _height)
+    void app::rect(int _centerX, int _centerY, unsigned int _width, unsigned int _height)
     {
         SystemDriver.GetGraphicsDriver().rectangle( _centerX, _centerY, _width, _height );
     }
@@ -445,5 +454,10 @@ namespace cuppa
     void app::triangle(int x1, int y1, int x2, int y2, int x3, int y3)
     {
         SystemDriver.GetGraphicsDriver().triangle( x1, y1, x2, y2, x3, y3);
+    }
+
+    void app::scale(float xscale, float yscale, float zscale)
+    {
+        SystemDriver.GetGraphicsDriver().scale(xscale, yscale, zscale);
     }
 } // namespace cuppa

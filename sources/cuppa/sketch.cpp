@@ -16,11 +16,12 @@ struct sketch : cuppa::app
     void draw() override
     {
         background(255);
+        scale(6);
 
         stroke(0);
         strokeWeight(5);
         fill(255,0,0);
-        rectangle(30,30,50,50);
+        rect(30,30,50,50);
 
         strokeWeight(2);
         stroke(0,0,255);
@@ -57,6 +58,12 @@ struct sketch : cuppa::app
         noStroke();
         fill(255,170,85,64);
         triangle(30, 75, 58, 20, 86, 75);
+
+        stroke(0);
+        fill(255);
+        rect(30+25, 20+25, 50, 50);
+        scale(0.5);
+        rect(30+25, 20+25, 50, 50);
     }
 };
 
