@@ -45,16 +45,14 @@ namespace cuppa
         void fill(unsigned int _gray)                                           {   fill(_gray, _gray, _gray, 255); }
 
     // shapes: 2D primitives
-        void rect(int _centerX, int _centerY, unsigned int _width, unsigned int _height);
+        void point(Point2D pt);
+        void line(Point2D pt1, Point2D pt2);
+        void rect(Point2D center, Move2D size);
 
         void ellipse(int _centerX, int _centerY, unsigned int _width, unsigned int _height) const;
         void ellipse(int _centerX, int _centerY, unsigned int _diameter)        {   ellipse( _centerX, _centerY, _diameter, _diameter ); }
 
         void text(const char* c, int x, int y);
-
-        void point(Point2D pt);
-
-        void line(Point2D pt1, Point2D pt2);
 
         void arc(int x, int y, int width, int height, float start_angle, float end_angle, ArcMode mode);
         void arc(int x, int y, int width, int height, float start_angle, float end_angle)   { arc(x, y, width, height, start_angle, end_angle, ArcMode::OPEN); }

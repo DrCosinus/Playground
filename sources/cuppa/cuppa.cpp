@@ -240,9 +240,9 @@ namespace cuppa
                 graphics_->DrawLine( stroke_.get(), toNative(pt1), toNative(pt2) );
         }
 
-        void rectangle(int _centerX, int _centerY, int _width, int _height)
+        void rect(Point2D center, Move2D size)
         {
-            Rect rc{ _centerX - _width / 2, _centerY - _height / 2, _width, _height };
+            RectF rc{ toNative(center - size * 0.5f), toNative(size) };
             if (fillEnabled_)
                 graphics_->FillRectangle( fillBrush_.get(), rc );
             if (strokeEnabled_)
@@ -457,10 +457,9 @@ namespace cuppa
         SystemDriver.GetGraphicsDriver().fill(_red, _green, _blue, _alpha);
     }
 
-    void app::rect(int _centerX, int _centerY, unsigned int _width, unsigned int _height)
-    {
-        SystemDriver.GetGraphicsDriver().rectangle( _centerX, _centerY, _width, _height );
-    }
+    void app::point(Point2D pt)                     {   SystemDriver.GetGraphicsDriver().point(pt);             }
+    void app::line(Point2D pt1, Point2D pt2)        {   SystemDriver.GetGraphicsDriver().line(pt1, pt2);        }
+    void app::rect(Point2D center, Move2D size)     {   SystemDriver.GetGraphicsDriver().rect(center, size);    }
 
     void app::ellipse(int _centerX, int _centerY, unsigned int _width, unsigned int _height) const
     {
@@ -469,9 +468,6 @@ namespace cuppa
 
     void app::text(const char* c, int x, int y)     {   SystemDriver.GetGraphicsDriver().text( c, x, y);    }
 
-    void app::point(Point2D pt)                     {   SystemDriver.GetGraphicsDriver().point(pt);    }
-
-    void app::line(Point2D pt1, Point2D pt2)        {   SystemDriver.GetGraphicsDriver().line(pt1, pt2);   }
 
     void app::arc(int x, int y, int width, int height, float start_angle, float end_angle, ArcMode mode)
     {

@@ -21,7 +21,7 @@ struct sketch : cuppa::app
         stroke(0);
         strokeWeight(5);
         fill(255,0,0);
-        rect(30,30,50,50);
+        rect({ 30_m, 30_m }, { 50_m, 50_m });
 
         strokeWeight(2);
         stroke(0,0,255);
