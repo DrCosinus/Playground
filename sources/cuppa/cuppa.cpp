@@ -302,9 +302,9 @@ struct GdiplusDriver
         graphics_->DrawString(wcs, static_cast<INT>(len), font_, PointF{static_cast<REAL>(x), static_cast<REAL>(y)}, fillBrush_.get());
     }
 
-    void point(int x, int y, int /*z*/)
+    void point(cuppa::Point2D pt)
     {
-        RectF rc{ x-0.5f, y-0.5f, 1, 1 };
+        RectF rc{ pt.x.GetFloat()-0.5f, pt.y.GetFloat()-0.5f, 1, 1 };
         SolidBrush b{ strokeColor_ };
         graphics_->FillRectangle( &b, rc );
     }
@@ -462,7 +462,7 @@ namespace cuppa
 
     void app::text(const char* c, int x, int y)     {   SystemDriver.GetGraphicsDriver().text( c, x, y);    }
 
-    void app::point(int x, int y)                   {   SystemDriver.GetGraphicsDriver().point(x, y, 0);    }
+    void app::point(Point2D pt)                     {   SystemDriver.GetGraphicsDriver().point(pt);    }
 
     void app::line(int x1, int y1, int x2, int y2)  {   SystemDriver.GetGraphicsDriver().line( x1, y1, 0, x2, y2, 0);   }
 

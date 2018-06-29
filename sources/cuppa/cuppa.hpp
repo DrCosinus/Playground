@@ -1,5 +1,7 @@
 #pragma once
 
+#include "unit.hpp"
+
 namespace cuppa
 {
     class app
@@ -50,7 +52,7 @@ namespace cuppa
 
         void text(const char* c, int x, int y);
 
-        void point(int x, int y);
+        void point(Point2D pt);
 
         void line(int x1, int y1, int x2, int y2);
 

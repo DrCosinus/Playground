@@ -43,7 +43,7 @@ struct sketch : cuppa::app
 
         stroke(0);
         strokeWeight(8);
-        point(30, 30);
+        point({30_m, 30_m});
 
         strokeWeight(1);
         fill(255,0,255,64);
@@ -58,7 +58,7 @@ struct sketch : cuppa::app
         noStroke();
         fill(255,170,85,64);
         triangle(30, 75, 58, 20, 86, 75);
-
+/*
         stroke(0);
         fill(255);
         rect(30+25, 20+25, 50, 50);
@@ -70,7 +70,7 @@ struct sketch : cuppa::app
         rotate(angle);
         angle += 0.03f;
         translate(300,300);
-        rect(0,0,100,100);
+        rect(0,0,100,100);*/
     }
 };
 

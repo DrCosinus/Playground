@@ -55,7 +55,8 @@
                 "C:/Program Files (x86)/Windows Kits/10/Include/10.0.16299.0/winrt",
                 "${workspaceRoot}",
                 "${workspaceRoot}/sources/tdd",
-                "${workspaceRoot}/sources/wit"
+                "${workspaceRoot}/sources/wit",
+                "${workspaceRoot}/sources/cuppa"
             ],
             "defines": [
                 "_DEBUG",
@@ -75,7 +76,8 @@
                     "C:/Program Files (x86)/Windows Kits/10/Include/10.0.16299.0/winrt",
                     "${workspaceRoot}",
                     "${workspaceRoot}/sources/tdd",
-                    "${workspaceRoot}/sources/wit"
+                    "${workspaceRoot}/sources/wit",
+                    "${workspaceRoot}/sources/cuppa"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
