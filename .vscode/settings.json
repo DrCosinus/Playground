@@ -69,7 +69,9 @@
         "string_view": "cpp",
         "*.rh": "cpp",
         "windows.h": "cpp",
-        "gdiplus.h": "cpp"
+        "gdiplus.h": "cpp",
+        "deque": "cpp",
+        "stack": "cpp"
     },
     "markdownlint.config": {
         "MD013": false,
