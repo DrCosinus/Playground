@@ -49,8 +49,8 @@ namespace cuppa
         void line(Point2D pt1, Point2D pt2);
         void rect(Point2D center, Move2D size);
 
-        void ellipse(int _centerX, int _centerY, unsigned int _width, unsigned int _height) const;
-        void ellipse(int _centerX, int _centerY, unsigned int _diameter)        {   ellipse( _centerX, _centerY, _diameter, _diameter ); }
+        void ellipse(Point2D center, Move2D size) const;
+        void ellipse(Point2D center, Meter diameter)        {   ellipse( center, { diameter, diameter } ); }
 
         void text(const char* c, int x, int y);
 

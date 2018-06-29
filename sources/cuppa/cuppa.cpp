@@ -249,9 +249,9 @@ namespace cuppa
                 graphics_->DrawRectangle( stroke_.get(), rc );
         }
 
-        void ellipse(int _centerX, int _centerY, int _width, int _height)
+        void ellipse(Point2D center, Move2D size)
         {
-            Rect rc{ _centerX - _width / 2, _centerY - _height / 2, _width, _height };
+            RectF rc{ toNative(center - size * 0.5f), toNative(size) };
             if (fillEnabled_)
                 graphics_->FillEllipse( fillBrush_.get(), rc );
             if (strokeEnabled_)
@@ -461,9 +461,9 @@ namespace cuppa
     void app::line(Point2D pt1, Point2D pt2)        {   SystemDriver.GetGraphicsDriver().line(pt1, pt2);        }
     void app::rect(Point2D center, Move2D size)     {   SystemDriver.GetGraphicsDriver().rect(center, size);    }
 
-    void app::ellipse(int _centerX, int _centerY, unsigned int _width, unsigned int _height) const
+    void app::ellipse(Point2D center, Move2D size) const
     {
-        SystemDriver.GetGraphicsDriver().ellipse( _centerX, _centerY, _width, _height );
+        SystemDriver.GetGraphicsDriver().ellipse( center, size );
     }
 
     void app::text(const char* c, int x, int y)     {   SystemDriver.GetGraphicsDriver().text( c, x, y);    }

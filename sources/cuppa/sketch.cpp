@@ -26,7 +26,7 @@ struct sketch : cuppa::app
         strokeWeight(2);
         stroke(0,0,255);
         fill(255,255,0, 127);
-        ellipse(55,55,20,20);
+        ellipse({ 55_m, 55_m }, 20_m);
 
         fill(0);
         text("plop",95,2);
