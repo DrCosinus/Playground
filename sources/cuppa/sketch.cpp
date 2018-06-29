@@ -38,8 +38,8 @@ struct sketch : cuppa::app
 
         strokeWeight(0.2f);
         stroke(255,0,255);
-        line(5,5,55,55);
-        line(5,55,55,5);
+        line({ 5_m, 5_m}, { 55_m,55_m});
+        line({ 5_m, 55_m}, { 55_m, 5_m});
 
         stroke(0);
         strokeWeight(8);

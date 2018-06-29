@@ -54,7 +54,7 @@ namespace cuppa
 
         void point(Point2D pt);
 
-        void line(int x1, int y1, int x2, int y2);
+        void line(Point2D pt1, Point2D pt2);
 
         void arc(int x, int y, int width, int height, float start_angle, float end_angle, ArcMode mode);
         void arc(int x, int y, int width, int height, float start_angle, float end_angle)   { arc(x, y, width, height, start_angle, end_angle, ArcMode::OPEN); }

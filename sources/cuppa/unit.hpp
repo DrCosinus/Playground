@@ -19,9 +19,9 @@ namespace cuppa
     };
 
     // size, displacement, delta
-    struct Size2D
+    struct Move2D
     {
-        /*implicit*/ Size2D(Meter _width, Meter _height) : width{_width}, height{_height}  { }
+        /*implicit*/ Move2D(Meter _width, Meter _height) : width{_width}, height{_height}  { }
         Meter width;
         Meter height;
     };
