@@ -47,9 +47,9 @@ struct sketch : cuppa::app
 
         strokeWeight(1);
         fill(255,0,255,64);
-        arc(50,75,25,25, 0, PI + QUARTER_PI, ArcMode::OPEN);
-        arc(80,75,25,25, 0, PI + QUARTER_PI, ArcMode::CHORD);
-        arc(110,75,25,25, 0, PI + QUARTER_PI, ArcMode::PIE);
+        arc({ 50_m, 75_m }, { 25_m, 25_m }, 0_turn, 1.25_turn, ArcMode::OPEN);
+        arc({ 80_m, 75_m }, { 25_m, 25_m }, 0_turn, 1.25_turn, ArcMode::CHORD);
+        arc({110_m, 75_m }, { 25_m, 25_m }, 0_turn, 1.25_turn, ArcMode::PIE);
 
         noFill();
         quad(78, 31, 126, 20, 109, 53, 70, 66);

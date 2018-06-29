@@ -258,32 +258,23 @@ namespace cuppa
                 graphics_->DrawEllipse( stroke_.get(), rc );
         }
 
-        void text(const char* c, int x, int y)
-        {
-            auto len = strlen(c);
-            auto wcs = (WCHAR*)_malloca((len+1)*sizeof(WCHAR));
-            decltype(len) ret;
-            mbstowcs_s(&ret, wcs, len + 1, c, len+1);
-            graphics_->DrawString(wcs, static_cast<INT>(len), font_, PointF{static_cast<REAL>(x), static_cast<REAL>(y)}, fillBrush_.get());
-        }
-
         using ArcMode = app::ArcMode;
-        void arc(int x, int y, int width, int height, float start_angle, float end_angle, ArcMode mode)
+        void arc(Point2D center, Move2D size, Angle start, Angle end, ArcMode mode)
         {
-            Rect rc{ x - width / 2, y - height / 2, width, height };
-            auto sweep_angle = end_angle - start_angle;
+            RectF rc{ toNative(center - size * 0.5f), toNative(size) };
+            auto sweep = end - start;
             if (mode==ArcMode::PIE)
             {
                 if (fillEnabled_)
-                    graphics_->FillPie( fillBrush_.get(), rc, start_angle, sweep_angle );
+                    graphics_->FillPie( fillBrush_.get(), rc, start.ToDegree(), sweep.ToDegree() );
                 if (strokeEnabled_)
-                    graphics_->DrawPie( stroke_.get(), rc, start_angle, sweep_angle );
+                    graphics_->DrawPie( stroke_.get(), rc, start.ToDegree(), sweep.ToDegree() );
             }
             else
             {
                 GraphicsPath path;
 
-                path.AddArc(rc, start_angle, sweep_angle);
+                path.AddArc(rc, start.ToDegree(), sweep.ToDegree());
                 if (mode==ArcMode::CHORD)
                 {
                     path.CloseFigure();
@@ -293,6 +284,15 @@ namespace cuppa
                 if (strokeEnabled_)
                     graphics_->DrawPath( stroke_.get(), &path);
             }
+        }
+
+        void text(const char* c, int x, int y)
+        {
+            auto len = strlen(c);
+            auto wcs = (WCHAR*)_malloca((len+1)*sizeof(WCHAR));
+            decltype(len) ret;
+            mbstowcs_s(&ret, wcs, len + 1, c, len+1);
+            graphics_->DrawString(wcs, static_cast<INT>(len), font_, PointF{static_cast<REAL>(x), static_cast<REAL>(y)}, fillBrush_.get());
         }
 
         void quad(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4)
@@ -469,9 +469,9 @@ namespace cuppa
     void app::text(const char* c, int x, int y)     {   SystemDriver.GetGraphicsDriver().text( c, x, y);    }
 
 
-    void app::arc(int x, int y, int width, int height, float start_angle, float end_angle, ArcMode mode)
+    void app::arc(Point2D center, Move2D size, Angle start, Angle end, ArcMode mode)
     {
-        SystemDriver.GetGraphicsDriver().arc( x, y, width, height, start_angle / PI * 180, end_angle / PI * 180, mode);
+        SystemDriver.GetGraphicsDriver().arc( center, size, start, end, mode);
     }
 
     void app::quad(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4)

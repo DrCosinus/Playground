@@ -48,14 +48,13 @@ namespace cuppa
         void point(Point2D pt);
         void line(Point2D pt1, Point2D pt2);
         void rect(Point2D center, Move2D size);
-
         void ellipse(Point2D center, Move2D size) const;
         void ellipse(Point2D center, Meter diameter)        {   ellipse( center, { diameter, diameter } ); }
+        void arc(Point2D center, Move2D size, Angle start, Angle end, ArcMode mode);
+        void arc(Point2D center, Move2D size, Angle start, Angle end)   { arc(center, size, start, end, ArcMode::OPEN); }
 
         void text(const char* c, int x, int y);
 
-        void arc(int x, int y, int width, int height, float start_angle, float end_angle, ArcMode mode);
-        void arc(int x, int y, int width, int height, float start_angle, float end_angle)   { arc(x, y, width, height, start_angle, end_angle, ArcMode::OPEN); }
 
         void quad(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4);
 
