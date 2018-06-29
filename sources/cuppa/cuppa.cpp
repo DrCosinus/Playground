@@ -201,10 +201,10 @@ namespace cuppa
             strokeEnabled_ = false;
         }
 
-        void stroke(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
+        void stroke(Color color)
         {
             strokeEnabled_ = true;
-            strokeColor_ = GdiColor{ static_cast<BYTE>(_alpha), static_cast<BYTE>(_red), static_cast<BYTE>(_green), static_cast<BYTE>(_blue) };
+            strokeColor_ = toNative(color);
             if (strokeEnabled_)
                 stroke_.reset( new Pen{ strokeColor_ });
         }
@@ -221,10 +221,10 @@ namespace cuppa
             fillEnabled_ = false;
         }
 
-        void fill(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
+        void fill(Color color)
         {
             fillEnabled_ = true;
-            fillColor_ = GdiColor{ static_cast<BYTE>(_alpha), static_cast<BYTE>(_red), static_cast<BYTE>(_green), static_cast<BYTE>(_blue) },
+            fillColor_ = toNative(color);
             fillBrush_.reset( new SolidBrush( fillColor_ ) );
         }
 
@@ -442,21 +442,12 @@ namespace cuppa
 
     void app::size(unsigned int _width, unsigned int _height)   {   SystemDriver.SetWindowSize(_width, _height);    }
 
-    void app::noStroke()                                        {   SystemDriver.GetGraphicsDriver().noStroke();    }
-
-    void app::stroke(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
-    {
-        SystemDriver.GetGraphicsDriver().stroke(_red, _green, _blue, _alpha);
-    }
-
+    void app::noStroke()                        {   SystemDriver.GetGraphicsDriver().noStroke();    }
+    void app::stroke(Color color)               {   SystemDriver.GetGraphicsDriver().stroke(color); }
     void app::strokeWeight(float _thickness)    {   SystemDriver.GetGraphicsDriver().strokeWeight(_thickness);  }
 
     void app::noFill()                          {   SystemDriver.GetGraphicsDriver().noFill();  }
-
-    void app::fill(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
-    {
-        SystemDriver.GetGraphicsDriver().fill(_red, _green, _blue, _alpha);
-    }
+    void app::fill(Color color)                 {   SystemDriver.GetGraphicsDriver().fill(color);   }
 
     void app::point(Point2D pt)                     {   SystemDriver.GetGraphicsDriver().point(pt);             }
     void app::line(Point2D pt1, Point2D pt2)        {   SystemDriver.GetGraphicsDriver().line(pt1, pt2);        }

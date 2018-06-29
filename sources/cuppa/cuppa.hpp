@@ -33,15 +33,11 @@ namespace cuppa
         void background(Color color);
 
         void noStroke();
-        void stroke(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha);
-        void stroke(unsigned int _red, unsigned int _green, unsigned int _blue)     {   stroke(_red, _green, _blue, 255);   }
-        void stroke(unsigned int _gray)                                             {   stroke(_gray, _gray, _gray, 255);   }
+        void stroke(Color color);
         void strokeWeight(float _thickness);
 
         void noFill();
-        void fill(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha);
-        void fill(unsigned int _red, unsigned int _green, unsigned int _blue)   {   fill(_red, _green, _blue, 255); }
-        void fill(unsigned int _gray)                                           {   fill(_gray, _gray, _gray, 255); }
+        void fill(Color color);
 
     // shapes: 2D primitives
         void point(Point2D pt);
@@ -55,9 +51,6 @@ namespace cuppa
         void triangle(Point2D pt1, Point2D pt2, Point2D pt3);
 
         void text(const char* c, int x, int y);
-
-
-
 
     // transforms
         void pushMatrix();
