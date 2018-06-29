@@ -186,9 +186,13 @@ namespace cuppa
             graphics_ = nullptr;
         }
 
-        void background(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
+        auto toNative(Point2D pt) { return PointF{pt.x.GetFloat(), pt.y.GetFloat()}; }
+        auto toNative(Move2D sz) { return SizeF{sz.width.GetFloat(), sz.height.GetFloat()}; }
+        auto toNative(Color col) { return GdiColor{ col.GetAlpha(), col.GetRed(), col.GetGreen(), col.GetBlue() }; }
+
+        void background(Color color)
         {
-            auto clearColor_ = Color{ static_cast<BYTE>(_alpha), static_cast<BYTE>(_red), static_cast<BYTE>(_green), static_cast<BYTE>(_blue) };
+            auto clearColor_ = toNative(color);
             graphics_->Clear(clearColor_);
         }
 
@@ -200,7 +204,7 @@ namespace cuppa
         void stroke(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
         {
             strokeEnabled_ = true;
-            strokeColor_ = Color{ static_cast<BYTE>(_alpha), static_cast<BYTE>(_red), static_cast<BYTE>(_green), static_cast<BYTE>(_blue) };
+            strokeColor_ = GdiColor{ static_cast<BYTE>(_alpha), static_cast<BYTE>(_red), static_cast<BYTE>(_green), static_cast<BYTE>(_blue) };
             if (strokeEnabled_)
                 stroke_.reset( new Pen{ strokeColor_ });
         }
@@ -220,12 +224,9 @@ namespace cuppa
         void fill(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
         {
             fillEnabled_ = true;
-            fillColor_ = Color{ static_cast<BYTE>(_alpha), static_cast<BYTE>(_red), static_cast<BYTE>(_green), static_cast<BYTE>(_blue) },
+            fillColor_ = GdiColor{ static_cast<BYTE>(_alpha), static_cast<BYTE>(_red), static_cast<BYTE>(_green), static_cast<BYTE>(_blue) },
             fillBrush_.reset( new SolidBrush( fillColor_ ) );
         }
-
-        auto toNative(Point2D pt) { return PointF{pt.x.GetFloat(), pt.y.GetFloat()}; }
-        auto toNative(Move2D sz) { return SizeF{sz.width.GetFloat(), sz.height.GetFloat()}; }
 
         void point(Point2D pt)
         {
@@ -382,7 +383,7 @@ namespace cuppa
         using REAL = Gdiplus::REAL;
         using ARGB = Gdiplus::ARGB;
         using Matrix = Gdiplus::Matrix;
-        using Color = Gdiplus::Color;
+        using GdiColor = Gdiplus::Color;
         using Pen = Gdiplus::Pen;
         using Brush = Gdiplus::Brush;
         using SolidBrush = Gdiplus::SolidBrush;
@@ -399,12 +400,12 @@ namespace cuppa
         std::unique_ptr<Bitmap> drawBuffer_;
 
         std::unique_ptr<Brush>  fillBrush_;
-        Color                   fillColor_ = (ARGB)Color::White;
+        GdiColor                fillColor_ = (ARGB)GdiColor::White;
         bool                    fillEnabled_ = true;
 
         std::unique_ptr<Pen>    stroke_;
         float                   strokeWeight_ = 1.0f;
-        Color                   strokeColor_ = (ARGB)Color::Black;
+        GdiColor                strokeColor_ = (ARGB)GdiColor::Black;
         bool                    strokeEnabled_ = true;
 
         std::stack<Matrix>      matrixStack;
@@ -434,9 +435,9 @@ namespace cuppa
         }
     }
 
-    void app::background(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha)
+    void app::background(Color color)
     {
-        SystemDriver.GetGraphicsDriver().background(_red, _green, _blue, _alpha);
+        SystemDriver.GetGraphicsDriver().background(color);
     }
 
     void app::size(unsigned int _width, unsigned int _height)   {   SystemDriver.SetWindowSize(_width, _height);    }

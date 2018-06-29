@@ -68,31 +68,34 @@ namespace cuppa
     struct Color
     {
         using U8 = unsigned char;
-        static constexpr auto FromGray(U8 gray) { return Color{ gray / 255.0f, 1.0f }; }
-        static constexpr auto FromRGB(U8 red, U8 green, U8 blue) { return Color{ red / 255.0f, green / 255.0f, blue / 255.0f, 1.0f }; }
-        static constexpr auto FromRGBA(U8 red, U8 green, U8 blue, U8 alpha) { return Color{ red / 255.0f, green / 255.0f, blue / 255.0f, alpha / 255.0f }; }
+        explicit constexpr Color(U8 _red, U8 _green, U8 _blue, U8 _alpha=255)
+        : alpha{ _alpha }, red{ _red }, green{ _green }, blue{ _blue }
+        {}
+        explicit constexpr Color(U8 _gray, U8 _alpha=255)
+        : Color{ _gray, _gray, _gray, _alpha }
+        {}
+        // static constexpr auto FromGray(U8 gray) { return Color{ gray, 255 }; }
+        // static constexpr auto FromRGB(U8 red, U8 green, U8 blue) { return Color{ red, green, blue, 255 }; }
+        // static constexpr auto FromRGBA(U8 red, U8 green, U8 blue, U8 alpha) { return Color{ red, green, blue, alpha }; }
         //static constexpr auto FromHSV() { return Color{}; }
         //static constexpr auto FromHSB() { return Color{}; }
         static constexpr unsigned int ToARGB32() { return 0U; }
+        U8 GetRed() const { return red; }
+        U8 GetGreen() const { return green; }
+        U8 GetBlue() const { return blue; }
+        U8 GetAlpha() const { return alpha; }
     private:
-        explicit constexpr Color(float _red, float _green, float _blue, float _alpha)
-        : alpha{ _alpha }, red{ _red }, green{ _green }, blue{ _blue }
-        {}
-        explicit constexpr Color(float _gray, float _alpha)
-        : Color{ _gray, _gray, _gray, _alpha }
-        {}
-        [[Maybe_unused]]
-        float alpha, red, green, blue;
+        U8 alpha, red, green, blue;
     };
 
 } // namespace cuppa
 
-constexpr auto operator"" _m(unsigned long long int _meter) { return cuppa::Meter{_meter}; }
-constexpr auto operator"" _m(long double _meter) { return cuppa::Meter{_meter}; }
+constexpr auto operator"" _m(unsigned long long int _meter) { return cuppa::Meter{static_cast<float>(_meter)}; }
+constexpr auto operator"" _m(long double _meter) { return cuppa::Meter{static_cast<float>(_meter)}; }
 
-constexpr auto operator"" _rad(unsigned long long int radian) { return cuppa::Angle::FromRadian(radian); }
-constexpr auto operator"" _rad(long double radian) { return cuppa::Angle::FromRadian(radian); }
-constexpr auto operator"" _deg(unsigned long long int degree) { return cuppa::Angle::FromDegree(degree); }
-constexpr auto operator"" _deg(long double degree) { return cuppa::Angle::FromDegree(degree); }
-constexpr auto operator"" _turn(unsigned long long int turn) { return cuppa::Angle::FromTurn(turn); }
-constexpr auto operator"" _turn(long double turn) { return cuppa::Angle::FromTurn(turn); }
+constexpr auto operator"" _rad(unsigned long long int radian) { return cuppa::Angle::FromRadian(static_cast<float>(radian)); }
+constexpr auto operator"" _rad(long double radian) { return cuppa::Angle::FromRadian(static_cast<float>(radian)); }
+constexpr auto operator"" _deg(unsigned long long int degree) { return cuppa::Angle::FromDegree(static_cast<float>(degree)); }
+constexpr auto operator"" _deg(long double degree) { return cuppa::Angle::FromDegree(static_cast<float>(degree)); }
+constexpr auto operator"" _turn(unsigned long long int turn) { return cuppa::Angle::FromTurn(static_cast<float>(turn)); }
+constexpr auto operator"" _turn(long double turn) { return cuppa::Angle::FromTurn(static_cast<float>(turn)); }

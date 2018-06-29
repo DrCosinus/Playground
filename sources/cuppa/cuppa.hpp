@@ -14,6 +14,8 @@ namespace cuppa
 
         enum struct ArcMode{ PIE, OPEN, CHORD };
 
+        using Color = cuppa::Color;
+
         app() = default;
         virtual ~app() = default;
 
@@ -28,10 +30,7 @@ namespace cuppa
         void size(unsigned int _width, unsigned int _height);
 
     // colors: settings
-        void background(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha);
-        void background(unsigned int _red, unsigned int _green, unsigned int _blue)   {   background(_red, _green, _blue, 255); }
-        void background(unsigned int _gray, unsigned int _alpha)                      {   background(_gray, _gray, _gray, _alpha); }
-        void background(unsigned int _gray)                                           {   background(_gray, _gray, _gray, 255); }
+        void background(Color color);
 
         void noStroke();
         void stroke(unsigned int _red, unsigned int _green, unsigned int _blue, unsigned int _alpha);
