@@ -52,12 +52,12 @@ struct sketch : cuppa::app
         arc({110_m, 75_m }, { 25_m, 25_m }, 0_turn, 1.25_turn, ArcMode::PIE);
 
         noFill();
-        quad(78, 31, 126, 20, 109, 53, 70, 66);
+        quad({ 78_m, 31_m}, { 126_m, 20_m }, { 109_m, 53_m }, { 70_m, 66_m });
 
         fill(255,170,85,64);
         noStroke();
         fill(255,170,85,64);
-        triangle(30, 75, 58, 20, 86, 75);
+        triangle({ 30_m, 75_m}, { 58_m, 20_m}, { 86_m, 75_m });
 /*
         stroke(0);
         fill(255);

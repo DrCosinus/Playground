@@ -52,13 +52,13 @@ namespace cuppa
         void ellipse(Point2D center, Meter diameter)        {   ellipse( center, { diameter, diameter } ); }
         void arc(Point2D center, Move2D size, Angle start, Angle end, ArcMode mode);
         void arc(Point2D center, Move2D size, Angle start, Angle end)   { arc(center, size, start, end, ArcMode::OPEN); }
+        void quad(Point2D pt1, Point2D pt2, Point2D pt3, Point2D pt4);
+        void triangle(Point2D pt1, Point2D pt2, Point2D pt3);
 
         void text(const char* c, int x, int y);
 
 
-        void quad(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4);
 
-        void triangle(int x1, int y1, int x2, int y2, int x3, int y3);
 
     // transforms
         void pushMatrix();

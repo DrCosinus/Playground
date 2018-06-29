@@ -286,6 +286,34 @@ namespace cuppa
             }
         }
 
+        void quad(Point2D pt1, Point2D pt2, Point2D pt3, Point2D pt4)
+        {
+            GraphicsPath path;
+
+            path.AddLine( toNative(pt1), toNative(pt2) );
+            path.AddLine( toNative(pt3), toNative(pt4) );
+            path.CloseFigure();
+
+            if (fillEnabled_)
+                graphics_->FillPath( fillBrush_.get(), &path );
+            if (strokeEnabled_)
+                graphics_->DrawPath( stroke_.get(), &path);
+        }
+
+        void triangle(Point2D pt1, Point2D pt2, Point2D pt3)
+        {
+            GraphicsPath path;
+
+            path.AddLine( toNative(pt1), toNative(pt2) );
+            path.AddLine( toNative(pt2), toNative(pt3) );
+            path.CloseFigure();
+
+            if (fillEnabled_)
+                graphics_->FillPath( fillBrush_.get(), &path );
+            if (strokeEnabled_)
+                graphics_->DrawPath( stroke_.get(), &path);
+        }
+
         void text(const char* c, int x, int y)
         {
             auto len = strlen(c);
@@ -293,34 +321,6 @@ namespace cuppa
             decltype(len) ret;
             mbstowcs_s(&ret, wcs, len + 1, c, len+1);
             graphics_->DrawString(wcs, static_cast<INT>(len), font_, PointF{static_cast<REAL>(x), static_cast<REAL>(y)}, fillBrush_.get());
-        }
-
-        void quad(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4)
-        {
-            GraphicsPath path;
-
-            path.AddLine( x1, y1, x2, y2 );
-            path.AddLine( x3, y3, x4, y4 );
-            path.CloseFigure();
-
-            if (fillEnabled_)
-                graphics_->FillPath( fillBrush_.get(), &path );
-            if (strokeEnabled_)
-                graphics_->DrawPath( stroke_.get(), &path);
-        }
-
-        void triangle(int x1, int y1, int x2, int y2, int x3, int y3)
-        {
-            GraphicsPath path;
-
-            path.AddLine( x1, y1, x2, y2 );
-            path.AddLine( x2, y2, x3, y3 );
-            path.CloseFigure();
-
-            if (fillEnabled_)
-                graphics_->FillPath( fillBrush_.get(), &path );
-            if (strokeEnabled_)
-                graphics_->DrawPath( stroke_.get(), &path);
         }
 
         void resetMatrix()
@@ -474,14 +474,14 @@ namespace cuppa
         SystemDriver.GetGraphicsDriver().arc( center, size, start, end, mode);
     }
 
-    void app::quad(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4)
+    void app::quad(Point2D pt1, Point2D pt2, Point2D pt3, Point2D pt4)
     {
-        SystemDriver.GetGraphicsDriver().quad( x1, y1, x2, y2, x3, y3, x4, y4);
+        SystemDriver.GetGraphicsDriver().quad( pt1, pt2, pt3, pt4);
     }
 
-    void app::triangle(int x1, int y1, int x2, int y2, int x3, int y3)
+    void app::triangle(Point2D pt1, Point2D pt2, Point2D pt3)
     {
-        SystemDriver.GetGraphicsDriver().triangle( x1, y1, x2, y2, x3, y3);
+        SystemDriver.GetGraphicsDriver().triangle( pt1, pt2, pt3);
     }
 
     void app::pushMatrix()  { SystemDriver.GetGraphicsDriver().pushMatrix(); }
