@@ -65,6 +65,26 @@ namespace cuppa
         float radian;
     };
 
+    struct Color
+    {
+        using U8 = unsigned char;
+        static constexpr auto FromGray(U8 gray) { return Color{ gray / 255.0f, 1.0f }; }
+        static constexpr auto FromRGB(U8 red, U8 green, U8 blue) { return Color{ red / 255.0f, green / 255.0f, blue / 255.0f, 1.0f }; }
+        static constexpr auto FromRGBA(U8 red, U8 green, U8 blue, U8 alpha) { return Color{ red / 255.0f, green / 255.0f, blue / 255.0f, alpha / 255.0f }; }
+        //static constexpr auto FromHSV() { return Color{}; }
+        //static constexpr auto FromHSB() { return Color{}; }
+        static constexpr unsigned int ToARGB32() { return 0U; }
+    private:
+        explicit constexpr Color(float _red, float _green, float _blue, float _alpha)
+        : alpha{ _alpha }, red{ _red }, green{ _green }, blue{ _blue }
+        {}
+        explicit constexpr Color(float _gray, float _alpha)
+        : Color{ _gray, _gray, _gray, _alpha }
+        {}
+        [[Maybe_unused]]
+        float alpha, red, green, blue;
+    };
+
 } // namespace cuppa
 
 constexpr auto operator"" _m(unsigned long long int _meter) { return cuppa::Meter{_meter}; }
