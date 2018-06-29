@@ -209,7 +209,7 @@ namespace cuppa
                 stroke_.reset( new Pen{ strokeColor_ });
         }
 
-        void strokeWeight(Meter _thickness)
+        void stroke(Meter _thickness)
         {
             strokeEnabled_ = true;
             strokeWeight_ = _thickness;
@@ -442,9 +442,9 @@ namespace cuppa
 
     void app::size(unsigned int _width, unsigned int _height)   {   SystemDriver.SetWindowSize(_width, _height);    }
 
-    void app::noStroke()                        {   SystemDriver.GetGraphicsDriver().noStroke();    }
-    void app::stroke(Color color)               {   SystemDriver.GetGraphicsDriver().stroke(color); }
-    void app::strokeWeight(Meter _thickness)    {   SystemDriver.GetGraphicsDriver().strokeWeight(_thickness);  }
+    void app::noStroke()                {   SystemDriver.GetGraphicsDriver().noStroke();    }
+    void app::stroke(Color color)       {   SystemDriver.GetGraphicsDriver().stroke(color); }
+    void app::stroke(Meter _thickness)  {   SystemDriver.GetGraphicsDriver().stroke(_thickness);  }
 
     void app::noFill()                          {   SystemDriver.GetGraphicsDriver().noFill();  }
     void app::fill(Color color)                 {   SystemDriver.GetGraphicsDriver().fill(color);   }

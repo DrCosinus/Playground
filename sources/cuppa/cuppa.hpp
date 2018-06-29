@@ -34,7 +34,7 @@ namespace cuppa
 
         void noStroke();
         void stroke(Color color);
-        void strokeWeight(Meter _thickness);
+        void stroke(Meter _thickness);
 
         void noFill();
         void fill(Color color);
