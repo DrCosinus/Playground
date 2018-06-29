@@ -19,11 +19,11 @@ struct sketch : cuppa::app
         scale(6);
 
         stroke(Color{ 0 });
-        strokeWeight(5);
+        strokeWeight(5_m);
         fill(Color{ 255, 0, 0 });
         rect({ 30_m, 30_m }, { 50_m, 50_m });
 
-        strokeWeight(2);
+        strokeWeight(2_m);
         stroke(Color{ 0, 0,255 });
         fill(Color{ 255, 255, 0, 127 });
         ellipse({ 55_m, 55_m }, 20_m);
@@ -36,16 +36,16 @@ struct sketch : cuppa::app
         ++count;
         text(buff,2,62);
 
-        strokeWeight(0.2f);
+        strokeWeight(0.2_m);
         stroke(Color{ 255, 0, 255 });
         line({ 5_m, 5_m}, { 55_m,55_m});
         line({ 5_m, 55_m}, { 55_m, 5_m});
 
         stroke(Color{ 0 });
-        strokeWeight(8);
+        strokeWeight(8_m);
         point({30_m, 30_m});
 
-        strokeWeight(1);
+        strokeWeight(1_m);
         fill(Color{ 255, 0, 255, 64 });
         arc({ 50_m, 75_m }, { 25_m, 25_m }, 0_turn, 1.25_turn, ArcMode::OPEN);
         arc({ 80_m, 75_m }, { 25_m, 25_m }, 0_turn, 1.25_turn, ArcMode::CHORD);

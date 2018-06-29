@@ -155,7 +155,7 @@ namespace cuppa
         {
             Gdiplus::GdiplusStartup(&token, &startupInput, NULL);
             fillBrush_.reset( new SolidBrush{ fillColor_ } );
-            stroke_.reset( new Pen{ strokeColor_, strokeWeight_ } );
+            stroke_.reset( new Pen{ strokeColor_, strokeWeight_.GetFloat() } );
 
             font_ = new Font(L"Verdana", 10, Gdiplus::FontStyle::FontStyleRegular, Gdiplus::Unit::UnitPoint);
         }
@@ -209,11 +209,11 @@ namespace cuppa
                 stroke_.reset( new Pen{ strokeColor_ });
         }
 
-        void strokeWeight(float _thickness)
+        void strokeWeight(Meter _thickness)
         {
             strokeEnabled_ = true;
             strokeWeight_ = _thickness;
-            stroke_->SetWidth(_thickness);
+            stroke_->SetWidth(_thickness.GetFloat());
         }
 
         void noFill()
@@ -404,7 +404,7 @@ namespace cuppa
         bool                    fillEnabled_ = true;
 
         std::unique_ptr<Pen>    stroke_;
-        float                   strokeWeight_ = 1.0f;
+        Meter                   strokeWeight_ = 1_m;
         GdiColor                strokeColor_ = (ARGB)GdiColor::Black;
         bool                    strokeEnabled_ = true;
 
@@ -444,7 +444,7 @@ namespace cuppa
 
     void app::noStroke()                        {   SystemDriver.GetGraphicsDriver().noStroke();    }
     void app::stroke(Color color)               {   SystemDriver.GetGraphicsDriver().stroke(color); }
-    void app::strokeWeight(float _thickness)    {   SystemDriver.GetGraphicsDriver().strokeWeight(_thickness);  }
+    void app::strokeWeight(Meter _thickness)    {   SystemDriver.GetGraphicsDriver().strokeWeight(_thickness);  }
 
     void app::noFill()                          {   SystemDriver.GetGraphicsDriver().noFill();  }
     void app::fill(Color color)                 {   SystemDriver.GetGraphicsDriver().fill(color);   }
