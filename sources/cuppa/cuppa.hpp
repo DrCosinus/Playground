@@ -7,14 +7,9 @@ namespace cuppa
     class app
     {
     public:
-        static constexpr float QUARTER_PI = 0.78539816339744830961566084581988f;
-        static constexpr float HALF_PI = 1.5707963267948966192313216916398f;
-        static constexpr float PI = 3.1415926535897932384626433832795f;
-        static constexpr float TWO_PI = 6.283185307179586476925286766559f;
+        using Color = cuppa::Color;
 
         enum struct ArcMode{ PIE, OPEN, CHORD };
-
-        using Color = cuppa::Color;
 
         app() = default;
         virtual ~app() = default;
@@ -26,6 +21,18 @@ namespace cuppa
         void run();
 
     protected:
+        static constexpr float PI = 3.1415926535897932384626433832795f;
+
+        static constexpr Color White{ 255 };
+        static constexpr Color Black{ 0 };
+        static constexpr Color Red{ 255, 0, 0 };
+        static constexpr Color Green{ 0, 255, 0 };
+        static constexpr Color Blue{ 0, 0, 255 };
+        static constexpr Color Magenta{ 255, 0, 255 };
+        static constexpr Color Cyan{ 0, 255, 255 };
+        static constexpr Color Yellow{ 255, 255, 0 };
+        static constexpr Color Orange{ 255, 170, 85 };
+
     // environment
         void size(unsigned int _width, unsigned int _height);
 

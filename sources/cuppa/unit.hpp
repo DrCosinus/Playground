@@ -74,12 +74,17 @@ namespace cuppa
         explicit constexpr Color(U8 _gray, U8 _alpha=255)
         : Color{ _gray, _gray, _gray, _alpha }
         {}
+
+        constexpr Color ModulateAlpha(U8 _alpha) const
+        {
+            return Color{ red, green, blue, U8(alpha * _alpha / 255) };
+        }
         // static constexpr auto FromGray(U8 gray) { return Color{ gray, 255 }; }
         // static constexpr auto FromRGB(U8 red, U8 green, U8 blue) { return Color{ red, green, blue, 255 }; }
         // static constexpr auto FromRGBA(U8 red, U8 green, U8 blue, U8 alpha) { return Color{ red, green, blue, alpha }; }
         //static constexpr auto FromHSV() { return Color{}; }
         //static constexpr auto FromHSB() { return Color{}; }
-        static constexpr unsigned int ToARGB32() { return 0U; }
+        //static constexpr unsigned int ToARGB32() { return 0U; }
         U8 GetRed() const { return red; }
         U8 GetGreen() const { return green; }
         U8 GetBlue() const { return blue; }
