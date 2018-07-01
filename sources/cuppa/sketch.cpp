@@ -16,40 +16,55 @@ struct sketch : cuppa::app
     void draw() override
     {
         background(Color{ 240 });
-        scale(6);
+        scale( 3 );
 
-        stroke( Black );
-        stroke( 5_m );
-        fill( Red );
-        rect({ 30_m, 30_m }, { 50_m, 50_m });
+        pushMatrix();
+        {
+            translate(400, 0);
 
-        stroke( 2_m );
-        stroke( Blue );
-        fill( Yellow.ModulateAlpha(127) );
-        ellipse({ 55_m, 55_m }, 20_m);
+            stroke( Black );
+            stroke( 5_m );
+            fill( Red );
+            rect({ 30_m, 30_m }, { 50_m, 50_m });
 
-        fill( Black );
-        text("plop",95,2);
-        char buff[] = { '0', '\0' };
-        static int count = 0;
-        buff[0] = count % 10 + '0';
-        ++count;
-        text(buff,2,62);
+            stroke( 2_m );
+            stroke( Blue );
+            fill( Yellow.ModulateAlpha(127) );
+            ellipse({ 55_m, 55_m }, 20_m);
 
-        stroke(0.2_m);
-        stroke( Magenta );
-        line({ 5_m, 5_m}, { 55_m,55_m});
-        line({ 5_m, 55_m}, { 55_m, 5_m});
+            stroke(0.2_m);
+            stroke( Magenta );
+            line({ 5_m, 5_m}, { 55_m,55_m});
+            line({ 5_m, 55_m}, { 55_m, 5_m});
 
-        stroke( Black );
-        stroke(8_m);
-        point({30_m, 30_m});
+            stroke( Black );
+            stroke(8_m);
+            point({30_m, 30_m});
+        }
+        popMatrix();
 
-        stroke(1_m);
-        fill( Magenta.ModulateAlpha(64) );
-        arc({ 50_m, 75_m }, { 25_m, 25_m }, 0_turn, 1.25_turn, ArcMode::OPEN);
-        arc({ 80_m, 75_m }, { 25_m, 25_m }, 0_turn, 1.25_turn, ArcMode::CHORD);
-        arc({110_m, 75_m }, { 25_m, 25_m }, 0_turn, 1.25_turn, ArcMode::PIE);
+        pushMatrix();
+        {
+            translate(400 + 12.5 * 3, 250);
+            stroke(1_m);
+            fill( Magenta.ModulateAlpha(64) );
+            arc({ 0_m, 0_m }, { 25_m, 25_m }, 0_turn, 1.25_turn, ArcMode::OPEN);
+            translate(90, 0);
+            arc({ 0_m, 0_m }, { 25_m, 25_m }, 0_turn, 1.25_turn, ArcMode::CHORD);
+            translate(90, 0);
+            arc({ 0_m, 0_m }, { 25_m, 25_m }, 0_turn, 1.25_turn, ArcMode::PIE);
+        }
+        popMatrix();
+
+        pushMatrix();
+        {
+            translate(400, 300);
+            fill( Black );
+            static char buff[6] = "plop0";
+            buff[4] = (((buff[4]-'0')+1)%10)+'0';
+            text(buff,0,0);
+        }
+        popMatrix();
 
         noFill();
         quad({ 78_m, 31_m}, { 126_m, 20_m }, { 109_m, 53_m }, { 70_m, 66_m });

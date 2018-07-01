@@ -26,54 +26,35 @@ W * X = Y
 
 ### minimal media interface (graphics, inputs,...)
 
-### brainstorming a use case
+### transform matrix
 
 ```cpp
-namespace cuppa
-{
-  class Application
-  {
-    Application();
-    virtual ~Application() = default;
+  // ObjectToWorld x World ToCam
 
-    virtual void setup() {}
-    virtual void update() {}
-    virtual void draw() {}
+  // Generic
+  //          [[  a  d  0 ]
+  //  [x y 1]  [  b  e  0 ]   =  [ a*x+b*y+c d*x+e*y+f 1 ]
+  //           [  c  f  1 ]]
 
-    void run();
+  // Translate
+  //          [[  1  0  0 ]
+  //  [x y 1]  [  0  1  0 ]   =  [ x+dx y+dy 1 ]
+  //           [ dx dy  1 ]]
 
-  protected: // does it make sense to make these member functions public?
-    void setWindow(size2d<pixels> _size)
-    {
-      // set the size of the window
-    }
+  // Rotate
+  //          [[  cos(a) sin(a)  0 ]
+  //  [x y 1]  [ -sin(a) cos(a)  0 ]   =  [ x.cos(a)-y.sin(a) x.sin(a)+y.cos(a) 1 ]
+  //           [       0      0  1 ]]
 
-    void draw(rect _rect)
-    {
-      // draw a rectangle...
-    }
-    void draw(ellipse _ellipse)
-    {
-      //...
-    }
-    void draw(point _point)
-    {
-      //...
-    }
-    void draw(line _line)
-    {
-      //...
-    }
-    void draw(text _text)
-    {
-      //...
-    }
-    void draw(auto)
-    {
-      // unknow type...
-    }
-  };
-} // namespace wit
+  // Scale
+  //          [[ sx  0  0 ]
+  //  [x y 1]  [  0 sy  0 ]   =  [ x*sx y*sy 1 ]
+  //           [  0  0  1 ]]
+
+  // ShearX
+  //          [[  1  0  0 ]
+  //  [x y 1]  [  s  1  0 ]   =  [ x+s*y y 1 ]
+  //           [  0  0  1 ]]
 ```
 
 [Back to README](../../README.md)
