@@ -17,10 +17,25 @@ Matrix2d (Rows by Columns)
 
 #### Linear algebra
 
-W * X = Y
+for neural network study
 
-[[ w11 w12]    [[x1]     [[w11*x1+w12*x2]    [[y1]
- [ w21 w22]] *  [x2]]  =  [w21*x1+w22*x2]] =  [y2]]
+$
+\begin{alignedat}{3}
+& W: \text{Weight matrix} & B: \text{Bias vector} \\
+& X: \text{Input vector}  & Y: \text{Output vector}
+\end{alignedat}
+$
+
+$W.X+B=Y$
+
+$
+\begin{bmatrix} w_{11} & w_{12} \\ w_{21} & w_{12} \\ w_{31} & w_{32} \end{bmatrix}
+\begin{bmatrix} x_{1} \\ x_{2} \end{bmatrix}
++
+\begin{bmatrix} b_{1} \\ b_{2}\\ b_{3} \end{bmatrix}
+= \begin{bmatrix} w_{11}x_{1}+w_{12}x_{2}+b_{1} \\ w_{21}x_{1}+w_{22}x_{2}+b_{2} \\ w_{31}x_{1}+w_{32}x_{2}+b_{3} \end{bmatrix}
+= \begin{bmatrix} y_{1} \\ y_{2} \\ y_{3} \end{bmatrix}
+$
 
 ### Neural network Facilities
 
