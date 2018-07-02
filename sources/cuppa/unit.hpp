@@ -6,11 +6,14 @@ namespace cuppa
     {
         explicit constexpr Meter(float _value) : value_{_value} {}
         constexpr auto operator-() const { return Meter{-value_}; }
-        float GetFloat() const { return value_; }
+        template<typename T>
+        T getAs() const { return static_cast<T>(value_); }
 
         auto operator+(Meter rhs) const { return Meter{ value_ + rhs.value_ }; }
         auto operator-(Meter rhs) const { return Meter{ value_ - rhs.value_ }; }
         auto operator*(float ratio) const { return Meter{ value_ * ratio }; }
+
+        auto operator<(Meter rhs) const { return value_ < rhs.value_; }
     private:
         float value_;
     };

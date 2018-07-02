@@ -29,12 +29,14 @@ void Assert(bool _condition)
     Assert(_condition, "No description");
 }
 
+using namespace cuppa;
+
 static constexpr char windowClassName[] = "cuppaWindowClass";
 
 template<typename GRAPHICS_DRIVER_TYPE>
 struct MSWindowsDriver
 {
-    void Setup(cuppa::app& _app)
+    void Setup(app& _app)
     {
         app_ = &_app;
         instance = this;
@@ -43,13 +45,15 @@ struct MSWindowsDriver
         CreateAppWindow(hInstance);
     }
 
-    void SetWindowSize(unsigned int _width, unsigned int _height)
+    void SetWindowSize(Meter _width, Meter _height)
     {
         // for now, we only handle initial width and height
         // TODO: handle SetWindowSize after the creation of the windows
         width = _width;
         height = _height;
     }
+    Meter GetWindowWidth() const { return width; }
+    Meter GetWindowHeight() const { return height; }
 
     auto& GetGraphicsDriver() { return GraphicsDriver; }
 
@@ -128,7 +132,7 @@ private:
             windowClassName,
             "Cuppa",
             WS_OVERLAPPEDWINDOW,
-            CW_USEDEFAULT, CW_USEDEFAULT, width, height,
+            CW_USEDEFAULT, CW_USEDEFAULT, width.getAs<int>(), height.getAs<int>(),
             NULL, NULL, hInstance, NULL);
         if (hWnd_ == NULL)
         {
@@ -139,12 +143,12 @@ private:
         UpdateWindow(hWnd_);
     }
 
-    cuppa::app* app_;
+    app* app_;
 
     inline static MSWindowsDriver* instance = nullptr;
     GRAPHICS_DRIVER_TYPE GraphicsDriver;
     HWND hWnd_ { 0 };
-    unsigned int width = 240, height = 120;
+    Meter width = 240_m, height = 120_m;
 };
 
 namespace cuppa
@@ -155,7 +159,7 @@ namespace cuppa
         {
             Gdiplus::GdiplusStartup(&token, &startupInput, NULL);
             fillBrush_.reset( new SolidBrush{ fillColor_ } );
-            stroke_.reset( new Pen{ strokeColor_, strokeWeight_.GetFloat() } );
+            stroke_.reset( new Pen{ strokeColor_, strokeWeight_.getAs<float>() } );
 
             font_ = new Font(L"Verdana", 10, Gdiplus::FontStyle::FontStyleRegular, Gdiplus::Unit::UnitPoint);
         }
@@ -186,8 +190,8 @@ namespace cuppa
             graphics_ = nullptr;
         }
 
-        auto toNative(Point2D pt) { return PointF{pt.x.GetFloat(), pt.y.GetFloat()}; }
-        auto toNative(Move2D sz) { return SizeF{sz.width.GetFloat(), sz.height.GetFloat()}; }
+        auto toNative(Point2D pt) { return PointF{pt.x.getAs<float>(), pt.y.getAs<float>()}; }
+        auto toNative(Move2D sz) { return SizeF{sz.width.getAs<float>(), sz.height.getAs<float>()}; }
         auto toNative(Color col) { return GdiColor{ col.GetAlpha(), col.GetRed(), col.GetGreen(), col.GetBlue() }; }
 
         void background(Color color)
@@ -213,7 +217,7 @@ namespace cuppa
         {
             strokeEnabled_ = true;
             strokeWeight_ = _thickness;
-            stroke_->SetWidth(_thickness.GetFloat());
+            stroke_->SetWidth(_thickness.getAs<float>());
         }
 
         void noFill()
@@ -230,7 +234,7 @@ namespace cuppa
 
         void point(Point2D pt)
         {
-            RectF rc{ pt.x.GetFloat()-0.5f, pt.y.GetFloat()-0.5f, 1, 1 };
+            RectF rc{ pt.x.getAs<float>()-0.5f, pt.y.getAs<float>()-0.5f, 1, 1 };
             SolidBrush b{ strokeColor_ };
             graphics_->FillRectangle( &b, rc );
         }
@@ -417,7 +421,7 @@ namespace cuppa
     };
 } // namespace cuppa
 
-static MSWindowsDriver<cuppa::GdiplusDriver> SystemDriver;
+static MSWindowsDriver<GdiplusDriver> SystemDriver;
 
 namespace cuppa
 {
@@ -440,7 +444,9 @@ namespace cuppa
         SystemDriver.GetGraphicsDriver().background(color);
     }
 
-    void app::size(unsigned int _width, unsigned int _height)   {   SystemDriver.SetWindowSize(_width, _height);    }
+    void app::size(Meter _width, Meter _height)   {   SystemDriver.SetWindowSize(_width, _height);    }
+    Meter app::getWidth() const { return SystemDriver.GetWindowWidth(); }
+    Meter app::getHeight() const { return SystemDriver.GetWindowHeight(); }
 
     void app::noStroke()                {   SystemDriver.GetGraphicsDriver().noStroke();    }
     void app::stroke(Color color)       {   SystemDriver.GetGraphicsDriver().stroke(color); }

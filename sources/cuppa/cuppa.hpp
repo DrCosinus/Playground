@@ -8,6 +8,7 @@ namespace cuppa
     {
     public:
         using Color = cuppa::Color;
+        using Meter = cuppa::Meter;
 
         enum struct ArcMode{ PIE, OPEN, CHORD };
 
@@ -34,7 +35,9 @@ namespace cuppa
         static constexpr Color Orange{ 255, 170, 85 };
 
     // environment
-        void size(unsigned int _width, unsigned int _height);
+        void size(Meter _width, Meter _height);
+        Meter getWidth() const;
+        Meter getHeight() const;
 
     // colors: settings
         void background(Color color);
