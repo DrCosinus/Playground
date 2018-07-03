@@ -7,11 +7,11 @@ struct sketch : cuppa::app
     using cuppa::app::app;
 
     //Image image;
-    Meter x = 0_m;
+    Pixel x = 0_px;
 
     void setup() override
     {
-        size(800_m, 600_m);
+        size(800_px, 600_px);
         //image = loadImage();
     }
     void update() override
@@ -23,11 +23,16 @@ struct sketch : cuppa::app
 
         if (x < getWidth())
         {
-            x = x + 4_m;
+            x = x + 4_px;
         }
         fill(Color{101});
         stroke(White);
-        ellipse({x,150_m},16_m);
+        ellipse({x,150_px},16_px);
+
+        fill(Green);
+        ellipse({0_px,100_px},16_px);
+        ellipse({getWidth(),100_px},16_px);
+        ellipse({getWidth()-21_px,100_px},16_px);
     }
 };
 

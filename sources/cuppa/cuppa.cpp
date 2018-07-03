@@ -45,15 +45,15 @@ struct MSWindowsDriver
         CreateAppWindow(hInstance);
     }
 
-    void SetWindowSize(Meter _width, Meter _height)
+    void SetWindowSize(Pixel _width, Pixel _height)
     {
         // for now, we only handle initial width and height
         // TODO: handle SetWindowSize after the creation of the windows
         width = _width;
         height = _height;
     }
-    Meter GetWindowWidth() const { return width; }
-    Meter GetWindowHeight() const { return height; }
+    Pixel GetWindowWidth() const { return width; }
+    Pixel GetWindowHeight() const { return height; }
 
     auto& GetGraphicsDriver() { return GraphicsDriver; }
 
@@ -148,7 +148,7 @@ private:
     inline static MSWindowsDriver* instance = nullptr;
     GRAPHICS_DRIVER_TYPE GraphicsDriver;
     HWND hWnd_ { 0 };
-    Meter width = 240_m, height = 120_m;
+    Pixel width = 240_px, height = 120_px;
 };
 
 namespace cuppa
@@ -213,7 +213,7 @@ namespace cuppa
                 stroke_.reset( new Pen{ strokeColor_ });
         }
 
-        void stroke(Meter _thickness)
+        void stroke(Pixel _thickness)
         {
             strokeEnabled_ = true;
             strokeWeight_ = _thickness;
@@ -408,7 +408,7 @@ namespace cuppa
         bool                    fillEnabled_ = true;
 
         std::unique_ptr<Pen>    stroke_;
-        Meter                   strokeWeight_ = 1_m;
+        Pixel                   strokeWeight_ = 1_px;
         GdiColor                strokeColor_ = (ARGB)GdiColor::Black;
         bool                    strokeEnabled_ = true;
 
@@ -444,13 +444,13 @@ namespace cuppa
         SystemDriver.GetGraphicsDriver().background(color);
     }
 
-    void app::size(Meter _width, Meter _height)   {   SystemDriver.SetWindowSize(_width, _height);    }
-    Meter app::getWidth() const { return SystemDriver.GetWindowWidth(); }
-    Meter app::getHeight() const { return SystemDriver.GetWindowHeight(); }
+    void app::size(Pixel _width, Pixel _height)   {   SystemDriver.SetWindowSize(_width, _height);    }
+    Pixel app::getWidth() const { return SystemDriver.GetWindowWidth(); }
+    Pixel app::getHeight() const { return SystemDriver.GetWindowHeight(); }
 
     void app::noStroke()                {   SystemDriver.GetGraphicsDriver().noStroke();    }
     void app::stroke(Color color)       {   SystemDriver.GetGraphicsDriver().stroke(color); }
-    void app::stroke(Meter _thickness)  {   SystemDriver.GetGraphicsDriver().stroke(_thickness);  }
+    void app::stroke(Pixel _thickness)  {   SystemDriver.GetGraphicsDriver().stroke(_thickness);  }
 
     void app::noFill()                          {   SystemDriver.GetGraphicsDriver().noFill();  }
     void app::fill(Color color)                 {   SystemDriver.GetGraphicsDriver().fill(color);   }

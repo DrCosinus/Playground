@@ -8,7 +8,7 @@ namespace cuppa
     {
     public:
         using Color = cuppa::Color;
-        using Meter = cuppa::Meter;
+        using Pixel = cuppa::Pixel;
 
         enum struct ArcMode{ PIE, OPEN, CHORD };
 
@@ -35,16 +35,16 @@ namespace cuppa
         static constexpr Color Orange{ 255, 170, 85 };
 
     // environment
-        void size(Meter _width, Meter _height);
-        Meter getWidth() const;
-        Meter getHeight() const;
+        void size(Pixel _width, Pixel _height);
+        Pixel getWidth() const;
+        Pixel getHeight() const;
 
     // colors: settings
         void background(Color color);
 
         void noStroke();
         void stroke(Color color);
-        void stroke(Meter _thickness);
+        void stroke(Pixel _thickness);
 
         void noFill();
         void fill(Color color);
@@ -54,7 +54,7 @@ namespace cuppa
         void line(Point2D pt1, Point2D pt2);
         void rect(Point2D center, Move2D size);
         void ellipse(Point2D center, Move2D size) const;
-        void ellipse(Point2D center, Meter diameter)        {   ellipse( center, { diameter, diameter } ); }
+        void ellipse(Point2D center, Pixel diameter)        {   ellipse( center, { diameter, diameter } ); }
         void arc(Point2D center, Move2D size, Angle start, Angle end, ArcMode mode);
         void arc(Point2D center, Move2D size, Angle start, Angle end)   { arc(center, size, start, end, ArcMode::OPEN); }
         void quad(Point2D pt1, Point2D pt2, Point2D pt3, Point2D pt4);

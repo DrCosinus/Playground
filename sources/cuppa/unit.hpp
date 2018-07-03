@@ -2,18 +2,18 @@
 
 namespace cuppa
 {
-    struct Meter
+    struct Pixel
     {
-        explicit constexpr Meter(float _value) : value_{_value} {}
-        constexpr auto operator-() const { return Meter{-value_}; }
+        explicit constexpr Pixel(float _value) : value_{_value} {}
+        constexpr auto operator-() const { return Pixel{-value_}; }
         template<typename T>
         T getAs() const { return static_cast<T>(value_); }
 
-        auto operator+(Meter rhs) const { return Meter{ value_ + rhs.value_ }; }
-        auto operator-(Meter rhs) const { return Meter{ value_ - rhs.value_ }; }
-        auto operator*(float ratio) const { return Meter{ value_ * ratio }; }
+        auto operator+(Pixel rhs) const { return Pixel{ value_ + rhs.value_ }; }
+        auto operator-(Pixel rhs) const { return Pixel{ value_ - rhs.value_ }; }
+        auto operator*(float ratio) const { return Pixel{ value_ * ratio }; }
 
-        auto operator<(Meter rhs) const { return value_ < rhs.value_; }
+        auto operator<(Pixel rhs) const { return value_ < rhs.value_; }
     private:
         float value_;
     };
@@ -22,24 +22,24 @@ namespace cuppa
 
     struct Point2D
     {
-        /*implicit*/ Point2D(Meter _x, Meter _y) : x{_x}, y{_y}  { }
+        /*implicit*/ Point2D(Pixel _x, Pixel _y) : x{_x}, y{_y}  { }
 
         Point2D operator+(Move2D offset) const;
         Point2D operator-(Move2D offset) const;
 
-        Meter x;
-        Meter y;
+        Pixel x;
+        Pixel y;
     };
 
     // size, displacement, delta
     struct Move2D
     {
-        /*implicit*/ Move2D(Meter _width, Meter _height) : width{_width}, height{_height}  { }
+        /*implicit*/ Move2D(Pixel _width, Pixel _height) : width{_width}, height{_height}  { }
 
         Move2D operator*(float factor) const { return { width * factor, height * factor }; }
 
-        Meter width;
-        Meter height;
+        Pixel width;
+        Pixel height;
     };
 
     inline Point2D Point2D::operator+(Move2D offset) const
@@ -56,7 +56,7 @@ namespace cuppa
         static constexpr auto FromRadian(float radian) { return Angle{radian}; }
         static constexpr auto FromDegree(float degree) { return Angle{degree/180.0f*PI}; }
         static constexpr auto FromTurn(float turn) { return Angle{turn*PI}; }
-        constexpr auto operator-() const { return Meter{-radian}; }
+        constexpr auto operator-() const { return Angle{-radian}; }
         float ToRadian() const { return radian; }
         float ToDegree() const { return radian/PI*180.0f; }
         float ToTurn() const { return radian/PI; }
@@ -98,8 +98,8 @@ namespace cuppa
 
 } // namespace cuppa
 
-constexpr auto operator"" _m(unsigned long long int _meter) { return cuppa::Meter{static_cast<float>(_meter)}; }
-constexpr auto operator"" _m(long double _meter) { return cuppa::Meter{static_cast<float>(_meter)}; }
+constexpr auto operator"" _px(unsigned long long int _pixel) { return cuppa::Pixel{static_cast<float>(_pixel)}; }
+constexpr auto operator"" _px(long double _pixel) { return cuppa::Pixel{static_cast<float>(_pixel)}; }
 
 constexpr auto operator"" _rad(unsigned long long int radian) { return cuppa::Angle::FromRadian(static_cast<float>(radian)); }
 constexpr auto operator"" _rad(long double radian) { return cuppa::Angle::FromRadian(static_cast<float>(radian)); }
