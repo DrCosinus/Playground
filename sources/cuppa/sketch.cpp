@@ -32,6 +32,7 @@ struct sketch : cuppa::app
         fill(Green);
         ellipse({0_px,100_px},16_px);
         ellipse({getWidth(),100_px},16_px);
+        fill( Red );
         ellipse({getWidth()-21_px,100_px},16_px);
     }
 };
