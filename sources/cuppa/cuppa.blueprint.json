@@ -9,8 +9,8 @@
         "path_version": "0",
         "status": "wip",
         "dependencies": [ "tdd", "wit" ],
-        "headers": [ "cuppa.hpp", "unit.hpp" ],
-        "sources": [ "cuppa.cpp", "sketch.cpp" ],
+        "headers": [ "cuppa.hpp", "unit.hpp", "image.hpp" ],
+        "sources": [ "cuppa.cpp", "sketch.cpp", "image.cpp" ],
         "libs": [ "user32.lib", "gdiplus.lib" ],
         "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe"
     }

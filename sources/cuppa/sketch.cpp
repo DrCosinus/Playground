@@ -6,13 +6,13 @@ struct sketch : cuppa::app
 {
     using cuppa::app::app;
 
-    //Image image;
+    Image image;
     Pixel x = 0_px;
 
     void setup() override
     {
         size(800_px, 600_px);
-        //image = loadImage();
+        //image = loadImage("test.png");
     }
     void update() override
     {

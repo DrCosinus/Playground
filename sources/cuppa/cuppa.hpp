@@ -1,6 +1,9 @@
 #pragma once
 
 #include "unit.hpp"
+#include "image.hpp"
+
+#include <string_view>
 
 namespace cuppa
 {
@@ -9,6 +12,7 @@ namespace cuppa
     public:
         using Color = cuppa::Color;
         using Pixel = cuppa::Pixel;
+        using Image = cuppa::Image;
 
         enum struct ArcMode{ PIE, OPEN, CHORD };
 
@@ -79,5 +83,8 @@ namespace cuppa
 
         void shearX(float angle);
         void shearY(float angle);
+
+    // image
+        Image loadImage(std::string_view filename);
     };
 } // namespace wit

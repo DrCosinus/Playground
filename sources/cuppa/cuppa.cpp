@@ -381,6 +381,20 @@ namespace cuppa
             graphics_->MultiplyTransform(&mxTransform, Gdiplus::MatrixOrder::MatrixOrderAppend);
         }
 
+        Image loadImage(std::string_view filename)
+        {
+            auto len = filename.length();
+            auto wcs = (WCHAR*)_malloca((len+1)*sizeof(WCHAR));
+            decltype(len) ret;
+            mbstowcs_s(&ret, wcs, len, filename.data(), len+1);
+            wcs[len+1] = L'\0';
+
+            GdiImage gdiImage{ wcs };
+            Image img;
+            //img.assign(gdiImage);
+            return img;
+        }
+
     private:
         using Graphics = Gdiplus::Graphics;
         using Bitmap = Gdiplus::Bitmap;
@@ -399,6 +413,7 @@ namespace cuppa
         using Font = Gdiplus::Font;
         using FontFamily = Gdiplus::FontFamily;
         using GraphicsPath = Gdiplus::GraphicsPath;
+        using GdiImage = Gdiplus::Image;
 
         Graphics*               graphics_ = nullptr;
         std::unique_ptr<Bitmap> drawBuffer_;
@@ -502,5 +517,7 @@ namespace cuppa
     }
 
     void app::shearX(float angle) { SystemDriver.GetGraphicsDriver().shearX(angle); }
-    void app::shearY(float angle) { SystemDriver.GetGraphicsDriver().shearY(angle);}
+    void app::shearY(float angle) { SystemDriver.GetGraphicsDriver().shearY(angle); }
+
+    Image app::loadImage(std::string_view filename) { return SystemDriver.GetGraphicsDriver().loadImage(filename); }
 } // namespace cuppa
