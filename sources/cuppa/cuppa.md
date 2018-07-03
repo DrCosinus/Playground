@@ -4,11 +4,60 @@ C++ prototyping facilities (simple media management). Windows specific until fur
 
 ## Thinkings
 
-### text utilities
+### functions
+
+println
+
+random / noise
+
+loadImage
+
+image (drawImage)
+
+rect:
+
+- should support rounded corners
+- should support both (center, size) and (topLeftCorner, bottomRightCorner) construction parameter
+
+ellipse:
+
+- should support both (center, size) and (topLeftCorner, bottomRightCorner) construction parameter
+
+support for gamepad
+
+support for time
+
+support for curve (bezier, spline...)
+
+#### text utilities
 
 loadcsv
+
 loadjson
+
 loadxml
+
+### events
+
+keyPressed
+
+mousePressed
+
+keyReleased
+
+mouseReleased
+
+### built in variables
+
+mousex, mousey
+
+pmousex, pmousey
+
+width, height
+
+### lib to be considered for integration
+
+sqlite
 
 ### math utilities
 
@@ -40,6 +89,8 @@ $
 ### Neural network Facilities
 
 ### minimal media interface (graphics, inputs,...)
+
+## Appendices
 
 ### transform matrix
 
