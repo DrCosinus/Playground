@@ -1,6 +1,9 @@
 #include "cuppa.hpp"
 
-#include <iostream>
+#include <algorithm>
+#include <string>
+
+#pragma warning(disable: 4244)
 
 struct sketch : cuppa::app
 {
@@ -60,12 +63,49 @@ struct sketch : cuppa::app
         fill( Red );
         ellipse({getWidth()-21_px,100_px},16_px);
 
-        stroke(1_px);
-        translate({ 250_px, 0_px});
-        for (auto y = 0_px; y < 100_px; ++y)
+        // random
         {
-            float r = random(50);
-            line({ 0_px, y }, { Pixel(r), y });
+            stroke(1_px);
+            static std::size_t pots[100] = {0};
+            translate({ 250_px, 0_px});
+            static float max = 0.0f;
+            static float min = 1000.0f;
+            static std::size_t count = 0;
+            static std::size_t out_of_range_count = 0;
+
+            for (auto y = 0_px; y < 600_px; ++y)
+            {
+                float r = randomGaussian()/3.5*50+50;
+                //float r = random(100);
+                min = std::min(min, r);
+                max = std::max(max, r);
+                count++;
+                if (r<0 || r>=100)
+                {
+                    out_of_range_count++;
+                    stroke(Red);
+                    line({ 0_px, y }, { 200_px, y });
+                    continue;
+                }
+                stroke(White);
+                // r = std::clamp(r,0.0f,100.0f);
+                pots[(int)r]++;
+                line({ 0_px, y }, { Pixel(r), y });
+            }
+
+            resetMatrix();
+            noStroke();
+            fill(Yellow);
+            translate({350_px, 250_px});
+            auto pot_max = *std::max_element(std::begin(pots), std::end(pots));
+            for (int i = 0; i < 100; ++i)
+            {
+                auto v = 200.0f * pots[i] / pot_max + 1.0f;
+                rect({i*4_px, Pixel(-v*0.5f)}, {4_px, Pixel(v)});
+            }
+            text(std::to_string(min).c_str(), 0, 0);
+            text(std::to_string(max).c_str(), 0, 20);
+            text(std::to_string(out_of_range_count*100.0f/count).c_str(), 0, 40);
         }
     }
 };
