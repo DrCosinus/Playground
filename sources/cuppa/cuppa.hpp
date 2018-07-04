@@ -46,6 +46,11 @@ namespace cuppa
         Pixel getWidth() const;
         Pixel getHeight() const;
 
+    // random
+        float random(); // returns a flot between 0 and 1 (1 not included)
+        float random(float high) { return high * random(); }
+        float random(float low, float high) { return low + ( high - low ) * random(); }
+
     // colors: settings
         void background(Color color);
 

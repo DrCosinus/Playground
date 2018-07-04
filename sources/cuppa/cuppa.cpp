@@ -9,6 +9,7 @@
 #include <algorithm>
 
 #include <iostream>
+#include <random>
 
 #pragma warning(push)
 #pragma warning(disable:4458)
@@ -542,4 +543,9 @@ namespace cuppa
 
     Image app::loadImage(std::string_view filename) { return SystemDriver.GetGraphicsDriver().loadImage(filename); }
     void app::image(const Image& img, Point2D pt) { return SystemDriver.GetGraphicsDriver().image(img, pt); }
+
+    std::default_random_engine engine{ std::random_device()() };
+    std::uniform_real_distribution<float> distribution{ 0.0f, 1.0f };
+
+    float app::random() { return distribution(engine); }
 } // namespace cuppa

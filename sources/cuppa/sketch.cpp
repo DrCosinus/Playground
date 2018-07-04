@@ -59,6 +59,14 @@ struct sketch : cuppa::app
         ellipse({getWidth(),100_px},16_px);
         fill( Red );
         ellipse({getWidth()-21_px,100_px},16_px);
+
+        stroke(1_px);
+        translate({ 250_px, 0_px});
+        for (auto y = 0_px; y < 100_px; ++y)
+        {
+            float r = random(50);
+            line({ 0_px, y }, { Pixel(r), y });
+        }
     }
 };
 
