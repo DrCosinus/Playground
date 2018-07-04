@@ -10,6 +10,12 @@ namespace cuppa
         T getAs() const { return static_cast<T>(value_); }
 
         auto operator+(Pixel rhs) const { return Pixel{ value_ + rhs.value_ }; }
+        Pixel& operator++() { value_+=1.0f; return *this; }
+        Pixel operator++(int) { Pixel result{value_}; value_+=1.0f; return result; }
+        Pixel& operator--() { value_-=1.0f; return *this; }
+        Pixel operator--(int) { Pixel result{value_}; value_-=1.0f; return result; }
+        Pixel& operator+=(Pixel rhs) { value_+=rhs.value_; return *this; } 
+        Pixel& operator-=(Pixel rhs) { value_-=rhs.value_; return *this; } 
         auto operator-(Pixel rhs) const { return Pixel{ value_ - rhs.value_ }; }
         auto operator*(float ratio) const { return Pixel{ value_ * ratio }; }
 
