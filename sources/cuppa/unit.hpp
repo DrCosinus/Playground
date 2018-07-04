@@ -22,7 +22,7 @@ namespace cuppa
 
     struct Point2D
     {
-        /*implicit*/ Point2D(Pixel _x, Pixel _y) : x{_x}, y{_y}  { }
+        /*implicit*/ constexpr Point2D(Pixel _x, Pixel _y) : x{_x}, y{_y}  { }
 
         Point2D operator+(Move2D offset) const;
         Point2D operator-(Move2D offset) const;
@@ -34,7 +34,7 @@ namespace cuppa
     // size, displacement, delta
     struct Move2D
     {
-        /*implicit*/ Move2D(Pixel _width, Pixel _height) : width{_width}, height{_height}  { }
+        /*implicit*/ constexpr Move2D(Pixel _width, Pixel _height) : width{_width}, height{_height}  { }
 
         Move2D operator*(float factor) const { return { width * factor, height * factor }; }
 
@@ -57,6 +57,7 @@ namespace cuppa
         static constexpr auto FromDegree(float degree) { return Angle{degree/180.0f*PI}; }
         static constexpr auto FromTurn(float turn) { return Angle{turn*PI}; }
         constexpr auto operator-() const { return Angle{-radian}; }
+        constexpr auto operator+=(Angle arc) { radian += arc.radian; }
         float ToRadian() const { return radian; }
         float ToDegree() const { return radian/PI*180.0f; }
         float ToTurn() const { return radian/PI; }

@@ -12,7 +12,10 @@ namespace cuppa
     public:
         using Color = cuppa::Color;
         using Pixel = cuppa::Pixel;
+        using Angle = cuppa::Angle;
         using Image = cuppa::Image;
+        using Point2D = cuppa::Point2D;
+        using Move2D = cuppa::Move2D;
 
         enum struct ArcMode{ PIE, OPEN, CHORD };
 
@@ -71,20 +74,19 @@ namespace cuppa
         void popMatrix();
         void resetMatrix();
 
-        void translate(float xmove, float ymove, float zmove);
-        void translate(float xscale, float yscale)                  { translate(xscale, yscale, 1.0f); }
-        void translate(float _scale)                                { translate(_scale, _scale, _scale); }
+        void translate(Move2D translation);
 
         void scale(float xscale, float yscale, float zscale);
         void scale(float xscale, float yscale)                  { scale(xscale, yscale, 1.0f); }
         void scale(float _scale)                                { scale(_scale, _scale, _scale); }
 
-        void rotate(float angle);
+        void rotate(Angle angle);
 
         void shearX(float angle);
         void shearY(float angle);
 
     // image
         Image loadImage(std::string_view filename);
+        void image(const Image& img, Point2D pt);
     };
 } // namespace wit

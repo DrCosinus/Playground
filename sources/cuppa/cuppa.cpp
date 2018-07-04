@@ -6,6 +6,9 @@
 
 #include <memory>
 #include <stack>
+#include <algorithm>
+
+#include <iostream>
 
 #pragma warning(push)
 #pragma warning(disable:4458)
@@ -77,10 +80,6 @@ private:
         switch(msg)
         {
             case WM_CREATE:
-                if (instance)
-                {
-                    instance->GraphicsDriver.Init();
-                }
                 SetTimer(hwnd, 1234, 16, (TIMERPROC)0);
                 break;
             case WM_TIMER:
@@ -234,7 +233,7 @@ namespace cuppa
 
         void point(Point2D pt)
         {
-            RectF rc{ pt.x.getAs<float>()-0.5f, pt.y.getAs<float>()-0.5f, 1, 1 };
+            RectF rc{ pt.x.getAs<float>()-0.5f*strokeWeight_.getAs<float>(), pt.y.getAs<float>()-0.5f*strokeWeight_.getAs<float>(), strokeWeight_.getAs<float>(), strokeWeight_.getAs<float>() };
             SolidBrush b{ strokeColor_ };
             graphics_->FillRectangle( &b, rc );
         }
@@ -354,14 +353,14 @@ namespace cuppa
             }
         }
 
-        void translate(float xmove, float ymove, float)
+        void translate(Move2D translation)
         {
-            graphics_->TranslateTransform(xmove, ymove, Gdiplus::MatrixOrder::MatrixOrderAppend);
+            graphics_->TranslateTransform( translation.width.getAs<float>(), translation.height.getAs<float>(), Gdiplus::MatrixOrder::MatrixOrderAppend);
         }
 
-        void rotate(float angle_in_degree)
+        void rotate(Angle angle)
         {
-            graphics_->RotateTransform(angle_in_degree, Gdiplus::MatrixOrder::MatrixOrderAppend);
+            graphics_->RotateTransform( angle.ToDegree(), Gdiplus::MatrixOrder::MatrixOrderAppend);
         }
 
         void scale(float xscale, float yscale, float)
@@ -385,14 +384,33 @@ namespace cuppa
         {
             auto len = filename.length();
             auto wcs = (WCHAR*)_malloca((len+1)*sizeof(WCHAR));
-            decltype(len) ret;
-            mbstowcs_s(&ret, wcs, len, filename.data(), len+1);
-            wcs[len+1] = L'\0';
+            std::transform(std::begin(filename), std::end(filename), wcs, [](char c){ WCHAR wc; mbtowc(&wc, &c, 1); return wc; });
+            wcs[len] = L'\0';
+            auto gdiImage = std::make_shared<GdiImage>( wcs );
+            std::cout << gdiImage->GetWidth() << " x " << gdiImage->GetHeight() << " x " << gdiImage->GetPaletteSize() << std::endl;
+            std::cout << gdiImage->GetHorizontalResolution() << " x " << gdiImage->GetVerticalResolution() << std::endl;
+            SizeF sz;
+            gdiImage->GetPhysicalDimension(&sz);
+            std::cout << sz.Width << " x " << sz.Height << std::endl;
+            return Image{ std::make_shared<GdiImage>( wcs ) };
+        }
 
-            GdiImage gdiImage{ wcs };
-            Image img;
-            //img.assign(gdiImage);
-            return img;
+        void image(const Image& img, Point2D pt)
+        {
+            auto gdiImage = img.getNativeAs<std::shared_ptr<GdiImage>>().get();
+            // static bool once = true;
+            // if (once)
+            // {
+            //     std::cout << gdiImage->GetWidth() << " x " << gdiImage->GetHeight() << " x " << gdiImage->GetPaletteSize() << std::endl;
+            //     std::cout << gdiImage->GetHorizontalResolution() << " x " << gdiImage->GetVerticalResolution() << std::endl;
+            //     SizeF sz;
+            //     gdiImage->GetPhysicalDimension(&sz);
+            //     std::cout << sz.Width << " x " << sz.Height << std::endl;
+            //     once = false;
+            // }
+
+            RectF rc{ toNative(pt), SizeF{gdiImage->GetWidth(),gdiImage->GetHeight()}};
+            graphics_->DrawImage(img.getNativeAs<std::shared_ptr<GdiImage>>().get(), rc);
         }
 
     private:
@@ -443,6 +461,7 @@ namespace cuppa
     void app::run()
     {
         // __argc, __argv
+        SystemDriver.GetGraphicsDriver().Init();
         setup();
         SystemDriver.Setup(*this);
         MSG Msg;
@@ -501,14 +520,14 @@ namespace cuppa
     void app::popMatrix()   { SystemDriver.GetGraphicsDriver().popMatrix(); }
     void app::resetMatrix() { SystemDriver.GetGraphicsDriver().resetMatrix(); }
 
-    void app::translate(float xmove, float ymove, float zmove)
+    void app::translate(Move2D translation)
     {
-        SystemDriver.GetGraphicsDriver().translate(xmove, ymove, zmove);
+        SystemDriver.GetGraphicsDriver().translate(translation);
     }
 
-    void app::rotate(float angle)
+    void app::rotate(Angle angle)
     {
-        SystemDriver.GetGraphicsDriver().rotate(angle / PI * 180);
+        SystemDriver.GetGraphicsDriver().rotate(angle);
     }
 
     void app::scale(float xscale, float yscale, float zscale)
@@ -520,4 +539,5 @@ namespace cuppa
     void app::shearY(float angle) { SystemDriver.GetGraphicsDriver().shearY(angle); }
 
     Image app::loadImage(std::string_view filename) { return SystemDriver.GetGraphicsDriver().loadImage(filename); }
+    void app::image(const Image& img, Point2D pt) { return SystemDriver.GetGraphicsDriver().image(img, pt); }
 } // namespace cuppa
