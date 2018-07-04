@@ -126,12 +126,14 @@ private:
 
     void CreateAppWindow(HINSTANCE hInstance)
     {
+        RECT rc{0,0,width.getAs<int>(), height.getAs<int>()};
+        AdjustWindowRectEx(&rc,WS_OVERLAPPEDWINDOW,FALSE, WS_EX_CLIENTEDGE);
         hWnd_ = CreateWindowEx(
             WS_EX_CLIENTEDGE,
             windowClassName,
             "Cuppa",
             WS_OVERLAPPEDWINDOW,
-            CW_USEDEFAULT, CW_USEDEFAULT, width.getAs<int>(), height.getAs<int>(),
+            CW_USEDEFAULT, CW_USEDEFAULT, rc.right-rc.left, rc.bottom-rc.top,
             NULL, NULL, hInstance, NULL);
         if (hWnd_ == NULL)
         {
@@ -409,7 +411,7 @@ namespace cuppa
             //     once = false;
             // }
 
-            RectF rc{ toNative(pt), SizeF{gdiImage->GetWidth(),gdiImage->GetHeight()}};
+            RectF rc{ toNative(pt), SizeF{static_cast<float>(gdiImage->GetWidth()),static_cast<float>(gdiImage->GetHeight())}};
             graphics_->DrawImage(img.getNativeAs<std::shared_ptr<GdiImage>>().get(), rc);
         }
 
