@@ -545,7 +545,9 @@ namespace cuppa
     void app::image(const Image& img, Point2D pt) { return SystemDriver.GetGraphicsDriver().image(img, pt); }
 
     std::default_random_engine engine{ std::random_device()() };
-    std::uniform_real_distribution<float> distribution{ 0.0f, 1.0f };
+    std::uniform_real_distribution<float> uniform_distribution{ 0.0f, 1.0f };
+    std::normal_distribution<float> normal_distribution{ };
+    float app::random() { return uniform_distribution(engine); }
 
-    float app::random() { return distribution(engine); }
+    float app::randomGaussian() { return normal_distribution(engine); }
 } // namespace cuppa

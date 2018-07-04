@@ -51,6 +51,12 @@ namespace cuppa
         float random(float high) { return high * random(); }
         float random(float low, float high) { return low + ( high - low ) * random(); }
 
+        // returns a float from a series of number having a mean of 0 and standard deviation of 1
+        // - 68%   of numbers are between -1 and 1
+        // - 95%   of numbers are between -2 and 2
+        // - 99.8% of numbers are between -3 and 3
+        float randomGaussian();
+
     // colors: settings
         void background(Color color);
 
