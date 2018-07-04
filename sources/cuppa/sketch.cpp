@@ -6,14 +6,16 @@ struct sketch : cuppa::app
 {
     using cuppa::app::app;
 
-    Image img;
+    Image imgArrow;
+    Image imgDots;
     Pixel x = 0_px;
     Angle angle = 0_deg;
 
     void setup() override
     {
         size(800_px, 600_px);
-        img = loadImage("data/arrow.png");
+        imgArrow = loadImage("data/arrow.png");
+        imgDots = loadImage("data/dots.png");
     }
     void update() override
     {
@@ -28,7 +30,7 @@ struct sketch : cuppa::app
         rotate(angle);
         scale(1+cosf(angle.ToRadian()*5)*0.1f);
         translate(position);
-        image(img, {0_px, 0_px});
+        image(imgArrow, {0_px, 0_px});
         stroke(Magenta);
         stroke(5_px);
         fill(Magenta.ModulateAlpha(64));
@@ -40,6 +42,9 @@ struct sketch : cuppa::app
         translate(position);
         point({0_px, 0_px});
         resetMatrix();
+
+        image(imgDots, { 600_px, 400_px});
+        image(imgDots, { 0_px, 0_px});
 
         if (x < getWidth())
         {
