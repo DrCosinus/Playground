@@ -94,33 +94,66 @@ $
 
 ### transform matrix
 
-```cpp
-  // ObjectToWorld x World ToCam
+Generic:
+$
+\begin{bmatrix} x & y & 1\end{bmatrix}
+\begin{bmatrix} a & d & 0 \\ b & e & 0 \\ c & f & 1\end{bmatrix}
+= \begin{bmatrix} a.x+b.y+c & d.x+e.y+f & 1\end{bmatrix}
+$
 
-  // Generic
-  //          [[  a  d  0 ]
-  //  [x y 1]  [  b  e  0 ]   =  [ a*x+b*y+c d*x+e*y+f 1 ]
-  //           [  c  f  1 ]]
+#### Translation
 
-  // Translate
-  //          [[  1  0  0 ]
-  //  [x y 1]  [  0  1  0 ]   =  [ x+dx y+dy 1 ]
-  //           [ dx dy  1 ]]
+Translate from offset $\begin{pmatrix} d_x & d_y \end{pmatrix}$:
 
-  // Rotate
-  //          [[  cos(a) sin(a)  0 ]
-  //  [x y 1]  [ -sin(a) cos(a)  0 ]   =  [ x.cos(a)-y.sin(a) x.sin(a)+y.cos(a) 1 ]
-  //           [       0      0  1 ]]
+$
+\begin{bmatrix} x & y & 1\end{bmatrix}
+\begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ d_x & d_y & 1\end{bmatrix}
+= \begin{bmatrix} x+d_x & y+d_y & 1\end{bmatrix}
+$
 
-  // Scale
-  //          [[ sx  0  0 ]
-  //  [x y 1]  [  0 sy  0 ]   =  [ x*sx y*sy 1 ]
-  //           [  0  0  1 ]]
+#### Rotation
 
-  // ShearX
-  //          [[  1  0  0 ]
-  //  [x y 1]  [  s  1  0 ]   =  [ x+s*y y 1 ]
-  //           [  0  0  1 ]]
-```
+Rotate of angle $\alpha$:
+
+$
+\begin{bmatrix} x & y & 1\end{bmatrix}
+\begin{bmatrix} cos(\alpha) & sin(\alpha) & 0 \\ -sin(\alpha) & cos(\alpha) & 0 \\ 0 & 0 & 1\end{bmatrix}
+= \begin{bmatrix} x.cos(\alpha)-y.sin(\alpha) & x.sin(\alpha)+y.cos(\alpha) & 1\end{bmatrix}
+$
+
+#### Scale
+
+Scale by $\begin{pmatrix} s_x & s_y \end{pmatrix}$:
+
+Scale:
+$
+\begin{bmatrix} x & y & 1\end{bmatrix}
+\begin{bmatrix} s_x & 0 & 0 \\ 0 & s_y & 0 \\ 0 & 0 & 1\end{bmatrix}
+= \begin{bmatrix} s_x.x & s_y.y & 1\end{bmatrix}
+$
+
+#### Shear on X axis
+
+Factor is $sh_x$:
+
+$
+\begin{bmatrix} x & y & 1\end{bmatrix}
+\begin{bmatrix} 1 & 0 & 0 \\ sh_x & 1 & 0 \\ 0 & 0 & 1\end{bmatrix}
+= \begin{bmatrix} x+sh_x.y & y & 1\end{bmatrix}
+$
+
+#### Shear on Y axis
+
+Factor is $sh_y$:
+
+$
+\begin{bmatrix} x & y & 1\end{bmatrix}
+\begin{bmatrix} 1 & sh_y & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1\end{bmatrix}
+= \begin{bmatrix} x & y+sh_y.x & 1\end{bmatrix}
+$
+
+### Camera transform
+
+ObjectToWorld x World ToCam
 
 [Back to README](../../README.md)
