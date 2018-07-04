@@ -26,6 +26,7 @@ struct sketch : cuppa::app
         resetMatrix();
         translate({-148_px, -107_px});
         rotate(angle);
+        scale(1+cosf(angle.ToRadian()*5)*0.1f);
         translate(position);
         image(img, {0_px, 0_px});
         stroke(Magenta);
@@ -35,6 +36,7 @@ struct sketch : cuppa::app
         resetMatrix();
 
         rotate(angle);
+        scale(1+cosf(angle.ToRadian()*5)*0.1f);
         translate(position);
         point({0_px, 0_px});
         resetMatrix();
