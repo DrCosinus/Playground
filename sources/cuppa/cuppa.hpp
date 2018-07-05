@@ -7,6 +7,14 @@
 
 namespace cuppa
 {
+    template<typename T>
+    struct range
+    {
+        T min;
+        T max;
+        auto width() const { return max - min; }
+    };
+
     class app
     {
     public:
@@ -45,6 +53,12 @@ namespace cuppa
         void size(Pixel _width, Pixel _height);
         Pixel getWidth() const;
         Pixel getHeight() const;
+
+    // calculation
+        float remap(float value, range<float> from, range<float> to)
+        {
+            return (value - from.min) * to.width() / from.width() + to.min;
+        }
 
     // random
         float random(); // returns a flot between 0 and 1 (1 not included)
