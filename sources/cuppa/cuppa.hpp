@@ -107,7 +107,7 @@ namespace cuppa
         void arc(Point center, Direction size, Angle start, Angle end)              const   {   arc(center, size, start, end, ArcMode::OPEN);           }
         void quad(Point pt1, Point pt2, Point pt3, Point pt4)                       const   {   graphicsDriver->quad( pt1, pt2, pt3, pt4);              }
         void triangle(Point pt1, Point pt2, Point pt3)                              const   {   graphicsDriver->triangle( pt1, pt2, pt3);               }
-        void text(const char* c, Point pt)                                          const   {   graphicsDriver->text( c, pt);                           }
+        void text(std::string_view txt, Point pt)                                   const   {   graphicsDriver->text( txt, pt);                         }
 
     // transforms
         void pushMatrix()   const   { graphicsDriver->pushMatrix();  }

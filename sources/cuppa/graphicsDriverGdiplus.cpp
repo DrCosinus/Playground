@@ -187,12 +187,12 @@ namespace cuppa
                 graphics_->DrawPath( stroke_.get(), &path);
         }
 
-        void text(const char* c, Point pt) override
+        void text(std::string_view txt, Point pt) override
         {
-            auto len = strlen(c);
+            auto len = txt.length();
             auto wcs = (WCHAR*)_malloca((len+1)*sizeof(WCHAR));
-            decltype(len) ret;
-            mbstowcs_s(&ret, wcs, len + 1, c, len+1);
+            std::transform(std::begin(txt), std::end(txt), wcs, [](char c){ WCHAR wc; mbtowc(&wc, &c, 1); return wc; });
+            wcs[len] = L'\0';
             graphics_->DrawString(wcs, static_cast<INT>(len), font_, toNative(pt), fillBrush_.get());
         }
 
