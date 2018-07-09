@@ -28,7 +28,7 @@ namespace cuppa
         using Pixel = cuppa::Pixel;
         using Angle = cuppa::Angle;
         using Image = cuppa::Image;
-        using Point2D = cuppa::Point2D;
+        using Point = cuppa::Point;
         using Move2D = cuppa::Move2D;
 
         app() = default;
@@ -98,16 +98,16 @@ namespace cuppa
         //void resetFill()
 
     // shapes: 2D primitives
-        void point(Point2D pt)                                                      const   {   graphicsDriver->point(pt);                              }
-        void line(Point2D pt1, Point2D pt2)                                         const   {   graphicsDriver->line(pt1, pt2);                         }
-        void rect(Point2D center, Move2D size)                                      const   {   graphicsDriver->rect(center, size);                     }
-        void ellipse(Point2D center, Move2D size)                                   const   {   graphicsDriver->ellipse( center, size );                }
-        void ellipse(Point2D center, Pixel diameter)                                const   {   ellipse( center, { diameter, diameter } );              }
-        void arc(Point2D center, Move2D size, Angle start, Angle end, ArcMode mode) const   {   graphicsDriver->arc( center, size, start, end, mode);   }
-        void arc(Point2D center, Move2D size, Angle start, Angle end)               const   {   arc(center, size, start, end, ArcMode::OPEN);           }
-        void quad(Point2D pt1, Point2D pt2, Point2D pt3, Point2D pt4)               const   {   graphicsDriver->quad( pt1, pt2, pt3, pt4);              }
-        void triangle(Point2D pt1, Point2D pt2, Point2D pt3)                        const   {   graphicsDriver->triangle( pt1, pt2, pt3);               }
-        void text(const char* c, Point2D pt)                                        const   {   graphicsDriver->text( c, pt);                           }
+        void point(Point pt)                                                        const   {   graphicsDriver->point(pt);                              }
+        void line(Point pt1, Point pt2)                                             const   {   graphicsDriver->line(pt1, pt2);                         }
+        void rect(Point center, Move2D size)                                        const   {   graphicsDriver->rect(center, size);                     }
+        void ellipse(Point center, Move2D size)                                     const   {   graphicsDriver->ellipse( center, size );                }
+        void ellipse(Point center, Pixel diameter)                                  const   {   ellipse( center, { diameter, diameter } );              }
+        void arc(Point center, Move2D size, Angle start, Angle end, ArcMode mode)   const   {   graphicsDriver->arc( center, size, start, end, mode);   }
+        void arc(Point center, Move2D size, Angle start, Angle end)                 const   {   arc(center, size, start, end, ArcMode::OPEN);           }
+        void quad(Point pt1, Point pt2, Point pt3, Point pt4)                       const   {   graphicsDriver->quad( pt1, pt2, pt3, pt4);              }
+        void triangle(Point pt1, Point pt2, Point pt3)                              const   {   graphicsDriver->triangle( pt1, pt2, pt3);               }
+        void text(const char* c, Point pt)                                          const   {   graphicsDriver->text( c, pt);                           }
 
     // transforms
         void pushMatrix()   const   { graphicsDriver->pushMatrix();  }
@@ -127,6 +127,6 @@ namespace cuppa
 
     // image
         Image loadImage(std::string_view filename)  const   {   return graphicsDriver->loadImage(filename); }
-        void image(const Image& img, Point2D pt)    const   {   graphicsDriver->image(img, pt);             }
+        void image(const Image& img, Point pt)      const   {   graphicsDriver->image(img, pt);             }
     };
 } // namespace wit

@@ -59,7 +59,7 @@ namespace cuppa
             graphics_ = nullptr;
         }
 
-        auto toNative(Point2D pt) { return PointF{pt.x.getAs<float>(), pt.y.getAs<float>()}; }
+        auto toNative(Point pt) { return PointF{pt.x.getAs<float>(), pt.y.getAs<float>()}; }
         auto toNative(Move2D sz) { return SizeF{sz.width.getAs<float>(), sz.height.getAs<float>()}; }
         auto toNative(Color col) { return GdiColor{ col.GetAlpha(), col.GetRed(), col.GetGreen(), col.GetBlue() }; }
 
@@ -101,20 +101,20 @@ namespace cuppa
             fillBrush_.reset( new SolidBrush( fillColor_ ) );
         }
 
-        void point(Point2D pt) override
+        void point(Point pt) override
         {
             RectF rc{ pt.x.getAs<float>()-0.5f*strokeWeight_.getAs<float>(), pt.y.getAs<float>()-0.5f*strokeWeight_.getAs<float>(), strokeWeight_.getAs<float>(), strokeWeight_.getAs<float>() };
             SolidBrush b{ strokeColor_ };
             graphics_->FillRectangle( &b, rc );
         }
 
-        void line(Point2D pt1, Point2D pt2) override
+        void line(Point pt1, Point pt2) override
         {
             if (strokeEnabled_)
                 graphics_->DrawLine( stroke_.get(), toNative(pt1), toNative(pt2) );
         }
 
-        void rect(Point2D center, Move2D size) override
+        void rect(Point center, Move2D size) override
         {
             RectF rc{ toNative(center - size * 0.5f), toNative(size) };
             if (fillEnabled_)
@@ -123,7 +123,7 @@ namespace cuppa
                 graphics_->DrawRectangle( stroke_.get(), rc );
         }
 
-        void ellipse(Point2D center, Move2D size) override
+        void ellipse(Point center, Move2D size) override
         {
             RectF rc{ toNative(center - size * 0.5f), toNative(size) };
             if (fillEnabled_)
@@ -132,7 +132,7 @@ namespace cuppa
                 graphics_->DrawEllipse( stroke_.get(), rc );
         }
 
-        void arc(Point2D center, Move2D size, Angle start, Angle end, ArcMode mode) override
+        void arc(Point center, Move2D size, Angle start, Angle end, ArcMode mode) override
         {
             RectF rc{ toNative(center - size * 0.5f), toNative(size) };
             auto sweep = end - start;
@@ -159,7 +159,7 @@ namespace cuppa
             }
         }
 
-        void quad(Point2D pt1, Point2D pt2, Point2D pt3, Point2D pt4) override
+        void quad(Point pt1, Point pt2, Point pt3, Point pt4) override
         {
             GraphicsPath path;
 
@@ -173,7 +173,7 @@ namespace cuppa
                 graphics_->DrawPath( stroke_.get(), &path);
         }
 
-        void triangle(Point2D pt1, Point2D pt2, Point2D pt3) override
+        void triangle(Point pt1, Point pt2, Point pt3) override
         {
             GraphicsPath path;
 
@@ -187,7 +187,7 @@ namespace cuppa
                 graphics_->DrawPath( stroke_.get(), &path);
         }
 
-        void text(const char* c, Point2D pt) override
+        void text(const char* c, Point pt) override
         {
             auto len = strlen(c);
             auto wcs = (WCHAR*)_malloca((len+1)*sizeof(WCHAR));
@@ -264,7 +264,7 @@ namespace cuppa
             return Image{ std::make_shared<GdiImage>( wcs ) };
         }
 
-        void image(const Image& img, Point2D pt) override
+        void image(const Image& img, Point pt) override
         {
             auto gdiImage = img.getNativeAs<std::shared_ptr<GdiImage>>().get();
             // static bool once = true;

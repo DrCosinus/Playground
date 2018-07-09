@@ -27,12 +27,12 @@ namespace cuppa
 
     struct Move2D;
 
-    struct Point2D
+    struct Point
     {
-        /*implicit*/ constexpr Point2D(Pixel _x, Pixel _y) : x{_x}, y{_y}  { }
+        /*implicit*/ constexpr Point(Pixel _x, Pixel _y) : x{_x}, y{_y}  { }
 
-        Point2D operator+(Move2D offset) const;
-        Point2D operator-(Move2D offset) const;
+        Point operator+(Move2D offset) const;
+        Point operator-(Move2D offset) const;
 
         Pixel x;
         Pixel y;
@@ -49,11 +49,11 @@ namespace cuppa
         Pixel height;
     };
 
-    inline Point2D Point2D::operator+(Move2D offset) const
+    inline Point Point::operator+(Move2D offset) const
     {
         return { x + offset.width, y + offset.height };
     }
-    inline Point2D Point2D::operator-(Move2D offset) const
+    inline Point Point::operator-(Move2D offset) const
     {
         return { x - offset.width, y - offset.height };
     }
