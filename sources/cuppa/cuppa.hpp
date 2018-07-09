@@ -115,8 +115,8 @@ namespace cuppa
 
         void rotate(Angle angle)    {   graphicsDriver->rotate(angle);  }
 
-        void shearX(float angle)    { graphicsDriver->shearX(angle);    }
-        void shearY(float angle)    { graphicsDriver->shearY(angle);    }
+        void shearX(float slope)    { graphicsDriver->shearX(slope);    }
+        void shearY(float slope)    { graphicsDriver->shearY(slope);    }
 
     // image
         Image loadImage(std::string_view filename)  {   return graphicsDriver->loadImage(filename); }
