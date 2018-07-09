@@ -60,7 +60,7 @@ namespace cuppa
         }
 
         auto toNative(Point pt) { return PointF{pt.x.getAs<float>(), pt.y.getAs<float>()}; }
-        auto toNative(Move2D sz) { return SizeF{sz.width.getAs<float>(), sz.height.getAs<float>()}; }
+        auto toNative(Direction sz) { return SizeF{sz.width.getAs<float>(), sz.height.getAs<float>()}; }
         auto toNative(Color col) { return GdiColor{ col.GetAlpha(), col.GetRed(), col.GetGreen(), col.GetBlue() }; }
 
         void background(Color color) override
@@ -114,7 +114,7 @@ namespace cuppa
                 graphics_->DrawLine( stroke_.get(), toNative(pt1), toNative(pt2) );
         }
 
-        void rect(Point center, Move2D size) override
+        void rect(Point center, Direction size) override
         {
             RectF rc{ toNative(center - size * 0.5f), toNative(size) };
             if (fillEnabled_)
@@ -123,7 +123,7 @@ namespace cuppa
                 graphics_->DrawRectangle( stroke_.get(), rc );
         }
 
-        void ellipse(Point center, Move2D size) override
+        void ellipse(Point center, Direction size) override
         {
             RectF rc{ toNative(center - size * 0.5f), toNative(size) };
             if (fillEnabled_)
@@ -132,7 +132,7 @@ namespace cuppa
                 graphics_->DrawEllipse( stroke_.get(), rc );
         }
 
-        void arc(Point center, Move2D size, Angle start, Angle end, ArcMode mode) override
+        void arc(Point center, Direction size, Angle start, Angle end, ArcMode mode) override
         {
             RectF rc{ toNative(center - size * 0.5f), toNative(size) };
             auto sweep = end - start;
@@ -222,7 +222,7 @@ namespace cuppa
             }
         }
 
-        void translate(Move2D translation) override
+        void translate(Direction translation) override
         {
             graphics_->TranslateTransform( translation.width.getAs<float>(), translation.height.getAs<float>(), Gdiplus::MatrixOrder::MatrixOrderAppend);
         }

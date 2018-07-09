@@ -25,14 +25,14 @@ struct sketch : cuppa::app
     }
     void draw() override
     {
-        constexpr Move2D position = {150_px, 350_px};
+        constexpr Direction translation = {150_px, 350_px};
         angle += 2_deg;
         background(Black);
         resetMatrix();
         translate({-148_px, -107_px});
         rotate(angle);
         scale(1+cosf(angle.ToRadian()*5)*0.1f);
-        translate(position);
+        translate(translation);
         image(imgArrow, {0_px, 0_px});
         stroke(Magenta);
         stroke(5_px);
@@ -42,7 +42,7 @@ struct sketch : cuppa::app
 
         rotate(angle);
         scale(1+cosf(angle.ToRadian()*5)*0.1f);
-        translate(position);
+        translate(translation);
         point({0_px, 0_px});
         resetMatrix();
 

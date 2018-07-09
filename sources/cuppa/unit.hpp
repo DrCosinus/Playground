@@ -25,35 +25,35 @@ namespace cuppa
         float value_;
     };
 
-    struct Move2D;
+    struct Direction;
 
     struct Point
     {
         /*implicit*/ constexpr Point(Pixel _x, Pixel _y) : x{_x}, y{_y}  { }
 
-        Point operator+(Move2D offset) const;
-        Point operator-(Move2D offset) const;
+        Point operator+(Direction offset) const;
+        Point operator-(Direction offset) const;
 
         Pixel x;
         Pixel y;
     };
 
-    // size, displacement, delta
-    struct Move2D
+    // size, displacement, delta, direction
+    struct Direction
     {
-        /*implicit*/ constexpr Move2D(Pixel _width, Pixel _height) : width{_width}, height{_height}  { }
+        /*implicit*/ constexpr Direction(Pixel _width, Pixel _height) : width{_width}, height{_height}  { }
 
-        Move2D operator*(float factor) const { return { width * factor, height * factor }; }
+        Direction operator*(float factor) const { return { width * factor, height * factor }; }
 
         Pixel width;
         Pixel height;
     };
 
-    inline Point Point::operator+(Move2D offset) const
+    inline Point Point::operator+(Direction offset) const
     {
         return { x + offset.width, y + offset.height };
     }
-    inline Point Point::operator-(Move2D offset) const
+    inline Point Point::operator-(Direction offset) const
     {
         return { x - offset.width, y - offset.height };
     }
