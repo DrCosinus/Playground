@@ -61,65 +61,72 @@ namespace cuppa
         static constexpr Color Orange{ 255, 170, 85 };
 
     // environment
-        void size(Pixel _width, Pixel _height) { platformDriver->size(_width, _height); }
+        void size(Pixel _width, Pixel _height)  const   { platformDriver->size(_width, _height); }
 
     // calculation
-        float remap(float value, range<float> from, range<float> to)
+        static float remap(float value, range<float> from, range<float> to)
         {
             return (value - from.min) * to.width() / from.width() + to.min;
         }
 
     // random
-        float random(); // returns a flot between 0 and 1 (1 not included)
-        float random(float high) { return high * random(); }
-        float random(float low, float high) { return low + ( high - low ) * random(); }
+        // returns a flot between 0 and 1 (1 not included)
+        float random()                      const;
+        float random(float high)            const   { return high * random(); }
+        float random(float low, float high) const   { return low + ( high - low ) * random(); }
 
         // returns a float from a series of number having a mean of 0 and standard deviation of 1
         // - 68%   of numbers are between -1 and 1
         // - 95%   of numbers are between -2 and 2
         // - 99.8% of numbers are between -3 and 3
-        float randomGaussian();
+        float randomGaussian() const;
 
     // colors: settings
-        void background(Color color)                        {   graphicsDriver->background(color);  }
+        void background(Color color)                const   {   graphicsDriver->background(color);  }
 
-        void noStroke()                                     {   graphicsDriver->noStroke();         }
-        void stroke(Color color)                            {   graphicsDriver->stroke(color);      }
-        void stroke(Pixel _thickness)                       {   graphicsDriver->stroke(_thickness); }
+        void noStroke()                             const   {   graphicsDriver->noStroke();         }
+        void stroke(Color color)                    const   {   graphicsDriver->stroke(color);      }
+        void stroke(Pixel _thickness)               const   {   graphicsDriver->stroke(_thickness); }
+        //void pushStroke()
+        //void popStroke()
+        //void resetStroke()
 
-        void noFill()                                       {   graphicsDriver->noFill();           }
-        void fill(Color color)                              {   graphicsDriver->fill(color);        }
+        void noFill()                               const   {   graphicsDriver->noFill();           }
+        void fill(Color color)                      const   {   graphicsDriver->fill(color);        }
+        //void pushFill()
+        //void popFill()
+        //void resetFill()
 
     // shapes: 2D primitives
-        void point(Point2D pt)                                                          {   graphicsDriver->point(pt);                              }
-        void line(Point2D pt1, Point2D pt2)                                             {   graphicsDriver->line(pt1, pt2);                         }
-        void rect(Point2D center, Move2D size)                                          {   graphicsDriver->rect(center, size);                     }
-        void ellipse(Point2D center, Move2D size) const                                 {   graphicsDriver->ellipse( center, size );                }
-        void ellipse(Point2D center, Pixel diameter)                                    {   ellipse( center, { diameter, diameter } );              }
-        void arc(Point2D center, Move2D size, Angle start, Angle end, ArcMode mode)     {   graphicsDriver->arc( center, size, start, end, mode);   }
-        void arc(Point2D center, Move2D size, Angle start, Angle end)                   {   arc(center, size, start, end, ArcMode::OPEN);           }
-        void quad(Point2D pt1, Point2D pt2, Point2D pt3, Point2D pt4)                   {   graphicsDriver->quad( pt1, pt2, pt3, pt4);              }
-        void triangle(Point2D pt1, Point2D pt2, Point2D pt3)                            {   graphicsDriver->triangle( pt1, pt2, pt3);               }
-        void text(const char* c, int x, int y)                                          {   graphicsDriver->text( c, x, y);                         }
+        void point(Point2D pt)                                                      const   {   graphicsDriver->point(pt);                              }
+        void line(Point2D pt1, Point2D pt2)                                         const   {   graphicsDriver->line(pt1, pt2);                         }
+        void rect(Point2D center, Move2D size)                                      const   {   graphicsDriver->rect(center, size);                     }
+        void ellipse(Point2D center, Move2D size)                                   const   {   graphicsDriver->ellipse( center, size );                }
+        void ellipse(Point2D center, Pixel diameter)                                const   {   ellipse( center, { diameter, diameter } );              }
+        void arc(Point2D center, Move2D size, Angle start, Angle end, ArcMode mode) const   {   graphicsDriver->arc( center, size, start, end, mode);   }
+        void arc(Point2D center, Move2D size, Angle start, Angle end)               const   {   arc(center, size, start, end, ArcMode::OPEN);           }
+        void quad(Point2D pt1, Point2D pt2, Point2D pt3, Point2D pt4)               const   {   graphicsDriver->quad( pt1, pt2, pt3, pt4);              }
+        void triangle(Point2D pt1, Point2D pt2, Point2D pt3)                        const   {   graphicsDriver->triangle( pt1, pt2, pt3);               }
+        void text(const char* c, int x, int y)                                      const   {   graphicsDriver->text( c, x, y);                         }
 
     // transforms
-        void pushMatrix()  { graphicsDriver->pushMatrix();  }
-        void popMatrix()   { graphicsDriver->popMatrix();   }
-        void resetMatrix() { graphicsDriver->resetMatrix(); }
+        void pushMatrix()   const   { graphicsDriver->pushMatrix();  }
+        void popMatrix()    const   { graphicsDriver->popMatrix();   }
+        void resetMatrix()  const   { graphicsDriver->resetMatrix(); }
 
-        void translate(Move2D translation)  {   graphicsDriver->translate(translation); }
+        void translate(Move2D translation)  const   {   graphicsDriver->translate(translation); }
 
-        void scale(float xscale, float yscale, float zscale)    {   graphicsDriver->scale(xscale, yscale, zscale);  }
-        void scale(float xscale, float yscale)                  {   scale(xscale, yscale, 1.0f);                    }
-        void scale(float _scale)                                {   scale(_scale, _scale, _scale);                  }
+        void scale(float xscale, float yscale, float zscale)    const   {   graphicsDriver->scale(xscale, yscale, zscale);  }
+        void scale(float xscale, float yscale)                  const   {   scale(xscale, yscale, 1.0f);                    }
+        void scale(float _scale)                                const   {   scale(_scale, _scale, _scale);                  }
 
-        void rotate(Angle angle)    {   graphicsDriver->rotate(angle);  }
+        void rotate(Angle angle)    const   {   graphicsDriver->rotate(angle);  }
 
-        void shearX(float slope)    { graphicsDriver->shearX(slope);    }
-        void shearY(float slope)    { graphicsDriver->shearY(slope);    }
+        void shearX(float slope)    const   { graphicsDriver->shearX(slope);    }
+        void shearY(float slope)    const   { graphicsDriver->shearY(slope);    }
 
     // image
-        Image loadImage(std::string_view filename)  {   return graphicsDriver->loadImage(filename); }
-        void image(const Image& img, Point2D pt)    {   graphicsDriver->image(img, pt);             }
+        Image loadImage(std::string_view filename)  const   {   return graphicsDriver->loadImage(filename); }
+        void image(const Image& img, Point2D pt)    const   {   graphicsDriver->image(img, pt);             }
     };
 } // namespace wit
