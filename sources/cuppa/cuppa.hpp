@@ -4,8 +4,8 @@
 #include "image.hpp"
 
 #include "graphicsDriverInterface.hpp"
+#include "platformDriverInterface.hpp"
 
-#include <any>
 #include <string_view>
 
 namespace cuppa
@@ -42,11 +42,11 @@ namespace cuppa
         void run();
 
     // environment
-        Pixel getWidth() const;
-        Pixel getHeight() const;
+        Pixel getWidth() const { return platformDriver->getWidth(); }
+        Pixel getHeight() const { return platformDriver->getHeight(); }
 
         std::unique_ptr<graphicsDriverInterface> graphicsDriver;
-        std::any SystemDriver;
+        std::unique_ptr<platformDriverInterface> platformDriver;
     protected:
         static constexpr float PI = 3.1415926535897932384626433832795f;
 
@@ -61,7 +61,7 @@ namespace cuppa
         static constexpr Color Orange{ 255, 170, 85 };
 
     // environment
-        void size(Pixel _width, Pixel _height);
+        void size(Pixel _width, Pixel _height) { platformDriver->size(_width, _height); }
 
     // calculation
         float remap(float value, range<float> from, range<float> to)
