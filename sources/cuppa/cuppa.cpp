@@ -17,7 +17,7 @@
 #pragma warning(pop)
 // sample GDI+: https://codes-sources.commentcamarche.net/source/view/29875/966776#browser
 
-template<auto N>
+template<std::size_t N>
 void Assert(bool _condition, const char (&_message)[N])
 {
     if(!_condition)
