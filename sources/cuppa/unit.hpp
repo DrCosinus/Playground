@@ -58,6 +58,8 @@ namespace cuppa
         return { x - offset.width, y - offset.height };
     }
 
+    enum struct ArcMode{ PIE, OPEN, CHORD };
+
     struct Angle
     {
         static constexpr auto FromRadian(float radian) { return Angle{radian}; }

@@ -8,6 +8,8 @@ C++ prototyping facilities (simple media management). Windows specific until fur
 
 println
 
+**We need a logger!!**
+
 random / noise
 
 loadImage
