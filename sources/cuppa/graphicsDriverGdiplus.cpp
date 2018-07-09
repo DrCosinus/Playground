@@ -187,13 +187,13 @@ namespace cuppa
                 graphics_->DrawPath( stroke_.get(), &path);
         }
 
-        void text(const char* c, int x, int y) override
+        void text(const char* c, Point2D pt) override
         {
             auto len = strlen(c);
             auto wcs = (WCHAR*)_malloca((len+1)*sizeof(WCHAR));
             decltype(len) ret;
             mbstowcs_s(&ret, wcs, len + 1, c, len+1);
-            graphics_->DrawString(wcs, static_cast<INT>(len), font_, PointF{static_cast<REAL>(x), static_cast<REAL>(y)}, fillBrush_.get());
+            graphics_->DrawString(wcs, static_cast<INT>(len), font_, toNative(pt), fillBrush_.get());
         }
 
         void resetMatrix() override

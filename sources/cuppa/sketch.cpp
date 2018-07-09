@@ -103,9 +103,9 @@ struct sketch : cuppa::app
                 auto v = 200.0f * pots[i] / pot_max + 1.0f;
                 rect({i*4_px, Pixel(-v*0.5f)}, {4_px, Pixel(v)});
             }
-            text(std::to_string(min).c_str(), 0, 0);
-            text(std::to_string(max).c_str(), 0, 20);
-            text(std::to_string(out_of_range_count*100.0f/count).c_str(), 0, 40);
+            text(std::to_string(min).c_str(), { 0_px, 0_px });
+            text(std::to_string(max).c_str(), { 0_px, 20_px });
+            text(std::to_string(out_of_range_count*100.0f/count).c_str(), { 0_px, 40_px });
         }
     }
 };

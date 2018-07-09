@@ -29,7 +29,7 @@ namespace cuppa
         virtual void arc(Point2D center, Move2D size, Angle start, Angle end, ArcMode mode) = 0;
         virtual void quad(Point2D pt1, Point2D pt2, Point2D pt3, Point2D pt4) = 0;
         virtual void triangle(Point2D pt1, Point2D pt2, Point2D pt3) = 0;
-        virtual void text(const char* c, int x, int y) = 0;
+        virtual void text(const char* c, Point2D pt) = 0;
 
         virtual void resetMatrix() = 0;
         virtual void pushMatrix() = 0;
