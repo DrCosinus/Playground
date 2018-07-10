@@ -15,6 +15,9 @@ namespace cuppa
 
     struct platformDriverMSWindows : platformDriverInterface
     {
+        platformDriverMSWindows() = default;
+        explicit platformDriverMSWindows(HWND _hWnd) : hWnd_{_hWnd} {}
+
         static auto getAppPtr(HWND hWnd) { return reinterpret_cast<app*>(GetWindowLongPtr(hWnd, GWLP_USERDATA)); }
 
         void setup(app& _app) override
@@ -35,15 +38,11 @@ namespace cuppa
             }
         }
 
-        void size(Pixel _width, Pixel _height) override
+        void size(Pixel /*_width*/, Pixel /*_height*/) override
         {
             // for now, we only handle initial width and height
             // TODO: handle SetWindowSize after the creation of the windows
-            width = _width;
-            height = _height;
         }
-        Pixel getWidth() const override { return width; }
-        Pixel getHeight() const override { return height; }
 
 private:
         void draw()
@@ -64,36 +63,53 @@ private:
 
         static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
+            auto platformDriver = platformDriverMSWindows{ hwnd };
             switch(msg)
             {
-                case WM_CREATE:
-                    SetTimer(hwnd, 1234, 16, (TIMERPROC)0);
-                    break;
-                case WM_TIMER:
-                // TODO: check the TIMER_ID
-                    {
-                        auto appPtr = getAppPtr(hwnd);
-                        if (appPtr)
-                            static_cast<platformDriverMSWindows*>(appPtr->platformDriver.get())->refreshWindow(hwnd);
-                    }
-                    break;
-                case WM_PAINT:
-                    {
-                        auto appPtr = getAppPtr(hwnd);
-                        if (appPtr)
-                            static_cast<platformDriverMSWindows*>(appPtr->platformDriver.get())->draw();
-                    }
-                    break;
-                case WM_CLOSE:
-                    DestroyWindow(hwnd);
-                    break;
-                case WM_DESTROY:
-                    PostQuitMessage(0);
-                    break;
-                default:
-                    return DefWindowProc(hwnd, msg, wParam, lParam);
+                case WM_CREATE:     platformDriver.onCreate();                                             break;
+                case WM_TIMER:      platformDriver.onTimer(wParam);                                        break;
+                case WM_PAINT:      platformDriver.onPaint();                                              break;
+                case WM_CLOSE:      platformDriver.onClose();                                              break;
+                case WM_DESTROY:    platformDriver.onDestroy();                                            break;
+                case WM_SIZE:       platformDriver.onSize({Pixel(LOWORD(lParam)), Pixel(HIWORD(lParam))}); break;
+                default:            return DefWindowProc(hwnd, msg, wParam, lParam);
             }
             return 0;
+        }
+
+        void onCreate()
+        {
+            SetTimer(hWnd_, 1234, 16, (TIMERPROC)0);
+        }
+
+        void onClose()
+        {
+            DestroyWindow(hWnd_);
+        }
+
+        void onDestroy()
+        {
+            PostQuitMessage(0);
+        }
+
+        void onTimer(UINT_PTR timerID)
+        {
+            // TODO: check the TIMER_ID
+            if (timerID==1234)
+            {
+                refreshWindow(hWnd_);
+            }
+        }
+
+        void onPaint()
+        {
+            draw();
+        }
+
+        void onSize(Direction newSize)
+        {
+            auto appPtr = getAppPtr(hWnd_);
+            appPtr->setSize(newSize);
         }
 
         void registerWindowClass(HINSTANCE hInstance)
@@ -121,7 +137,7 @@ private:
 
         void createAppWindow(HINSTANCE hInstance, app& _app)
         {
-            RECT rc{0,0,width.getAs<int>(), height.getAs<int>()};
+            RECT rc{0,0, _app.getWidth().getAs<int>(), _app.getHeight().getAs<int>()};
             AdjustWindowRectEx(&rc,WS_OVERLAPPEDWINDOW,FALSE, WS_EX_CLIENTEDGE);
             hWnd_ = CreateWindowEx(
                 WS_EX_CLIENTEDGE,
@@ -148,7 +164,6 @@ private:
         }
 
         HWND hWnd_ { 0 };
-        Pixel width = 240_px, height = 120_px;
     };
 
     std::unique_ptr<platformDriverInterface> createPlatformDriverMSWindows() { return std::make_unique<platformDriverMSWindows>(); }

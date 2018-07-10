@@ -14,7 +14,5 @@ namespace cuppa
         virtual void run() = 0;
 
         virtual void size(Pixel _width, Pixel _height) = 0;
-        virtual Pixel getWidth() const = 0;
-        virtual Pixel getHeight() const = 0;
     };
 } // namespace cuppa

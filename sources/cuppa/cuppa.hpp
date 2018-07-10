@@ -42,8 +42,13 @@ namespace cuppa
         void run();
 
     // environment
-        Pixel getWidth() const { return platformDriver->getWidth(); }
-        Pixel getHeight() const { return platformDriver->getHeight(); }
+        Pixel getWidth() const { return width; }
+        Pixel getHeight() const { return height; }
+        void setSize(Direction newSize)
+        {
+            width = newSize.width;
+            height = newSize.height;
+        }
 
         std::unique_ptr<graphicsDriverInterface> graphicsDriver;
         std::unique_ptr<platformDriverInterface> platformDriver;
@@ -61,7 +66,12 @@ namespace cuppa
         static constexpr Color Orange{ 255, 170, 85 };
 
     // environment
-        void size(Pixel _width, Pixel _height)  const   { platformDriver->size(_width, _height); }
+        void size(Pixel _width, Pixel _height)
+        {
+            width = _width;
+            height = _height;
+            platformDriver->size(_width, _height);
+        }
 
     // calculation
         static float remap(float value, range<float> from, range<float> to)
@@ -128,5 +138,7 @@ namespace cuppa
     // image
         Image loadImage(std::string_view filename)  const   {   return graphicsDriver->loadImage(filename); }
         void image(const Image& img, Point pt)      const   {   graphicsDriver->image(img, pt);             }
+    private:
+        Pixel width = 240_px, height = 120_px;
     };
 } // namespace wit
