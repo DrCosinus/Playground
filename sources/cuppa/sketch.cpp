@@ -42,8 +42,7 @@ struct sketch : cuppa::app
         scale(1+cos(angle*5)*0.1f);
         translate(translation);
         image(imgArrow, {0_px, 0_px});
-        stroke(Magenta); // stroke(Magenta, 5_px);
-        stroke(5_px);
+        stroke(Magenta, 5_px);
         fill(Magenta.ModulateAlpha(64));
         rect({148_px, 107_px},{296_px, 214_px}); // translate(image.getSize()*0.5f, image.getSize())
         resetMatrix();
@@ -65,7 +64,7 @@ struct sketch : cuppa::app
             x = -8_px;
         }
         fill(Color{101});
-        stroke(White);
+        stroke(White.ModulateAlpha(128), 2_px);
         ellipse({x,150_px},16_px);
 
         fill(Green);

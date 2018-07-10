@@ -78,8 +78,7 @@ namespace cuppa
         {
             strokeEnabled_ = true;
             strokeColor_ = toNative(color);
-            if (strokeEnabled_)
-                stroke_.reset( new Pen{ strokeColor_ });
+            stroke_->SetColor( strokeColor_ );
         }
 
         void stroke(Pixel _thickness) override

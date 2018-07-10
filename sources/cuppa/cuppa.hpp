@@ -103,6 +103,16 @@ namespace cuppa
         void stroke(Appliance appliance)            const   {   graphicsDriver->stroke(appliance);  }
         void stroke(Color color)                    const   {   graphicsDriver->stroke(color);      }
         void stroke(Pixel thickness)                const   {   graphicsDriver->stroke(thickness);  }
+        template<typename HEAD_TYPE, typename... TAIL_TYPES>
+        void stroke(HEAD_TYPE first, TAIL_TYPES... others)  const
+        {
+            stroke(first);
+            if constexpr(sizeof...(TAIL_TYPES)!=0)
+            {
+                stroke(others...);
+            }
+        }
+
         //void pushStroke()
         //void popStroke()
         //void resetStroke()
