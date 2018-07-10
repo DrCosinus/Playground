@@ -70,8 +70,6 @@ namespace cuppa
         return { x - offset.width, y - offset.height };
     }
 
-    enum struct ArcMode{ PIE, OPEN, CHORD };
-
     struct Color
     {
         using U8 = unsigned char;

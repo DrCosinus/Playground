@@ -9,6 +9,7 @@
 namespace cuppa
 {
     class app;
+    enum struct ArcMode{ PIE, OPEN, CHORD };
 
     struct graphicsDriverInterface
     {
