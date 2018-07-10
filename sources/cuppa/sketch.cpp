@@ -75,37 +75,36 @@ struct sketch : cuppa::app
 
         // random
         {
-            stroke(1_px);
+            stroke(Appliance::DISABLED);
             static std::size_t pots[100] = {0};
-            translate({ 250_px, 0_px});
             static float max = 0.0f;
             static float min = 1000.0f;
             static std::size_t count = 0;
             static std::size_t out_of_range_count = 0;
 
             pushMatrix();
-            for (auto alpha = 0.0_deg; alpha < 360_deg; alpha += 2_deg)
+            resetMatrix();
+            translate({ 150_px, 120_px});
+            auto alphaStep = 2_deg;
+            for (auto alpha = 0.0_deg; alpha < 360_deg; alpha += alphaStep)
             {
                 float r = randomGaussian()/3.5*50+50;
                 //float r = random(100);
                 min = std::min(min, r);
                 max = std::max(max, r);
                 count++;
-                resetMatrix();
-                rotate(alpha);
-                translate({ 150_px, 120_px});
                 if (r<0 || r>=100)
                 {
                     out_of_range_count++;
-                    stroke(Red);
-                    r = 200;
+                    fill(Red);
+                    r = 100;
                 }
                 else
                 {
-                    stroke(White);
+                    fill(White);
                     pots[(int)r]++;
                 }
-                line({ 0_px, 0_px }, { Pixel(r), 0_px });
+                arc({0_px, 0_px}, { Pixel(r*2),  Pixel(r*2) }, alpha, alpha + alphaStep, ArcMode::PIE);
             }
             popMatrix();
 
