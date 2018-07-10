@@ -71,6 +71,7 @@ namespace cuppa
         float ToDegree() const { return radian/PI*180.0f; }
         float ToTurn() const { return radian/PI; }
         auto operator-(Angle rhs) const { return Angle{radian - rhs.radian}; }
+        auto operator<(Angle rhs) const { return radian < rhs.radian; }
     private:
         static constexpr float PI = 3.1415926535897932384626433832795f;
 
