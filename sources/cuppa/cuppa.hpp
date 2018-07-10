@@ -32,6 +32,7 @@ namespace cuppa
         using Point = cuppa::Point;
         using Direction = cuppa::Direction;
         using Appliance = cuppa::Appliance;
+        using ArcMode = cuppa::ArcMode;
 
         app() = default;
         app(app&&) = default;
