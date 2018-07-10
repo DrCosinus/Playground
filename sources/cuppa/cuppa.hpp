@@ -1,5 +1,6 @@
 #pragma once
 
+#include "angle.hpp"
 #include "unit.hpp"
 #include "image.hpp"
 

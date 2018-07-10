@@ -1,10 +1,13 @@
 #pragma once
 
+#include <type_traits>
+
 namespace cuppa
 {
     struct Pixel
     {
-        explicit constexpr Pixel(float _value) : value_{_value} {}
+        template<typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+        explicit constexpr Pixel(T _value) : value_{static_cast<float>(_value)} {}
         constexpr auto operator-() const { return Pixel{-value_}; }
         template<typename T>
         T getAs() const { return static_cast<T>(value_); }
@@ -27,8 +30,8 @@ namespace cuppa
     };
 } // namespace cuppa
 
-constexpr auto operator"" _px(unsigned long long int _pixel) { return cuppa::Pixel{static_cast<float>(_pixel)}; }
-constexpr auto operator"" _px(long double _pixel) { return cuppa::Pixel{static_cast<float>(_pixel)}; }
+constexpr auto operator"" _px(unsigned long long int _pixel) { return cuppa::Pixel{_pixel}; }
+constexpr auto operator"" _px(long double _pixel) { return cuppa::Pixel{_pixel}; }
 
 namespace cuppa
 {
@@ -69,25 +72,6 @@ namespace cuppa
 
     enum struct ArcMode{ PIE, OPEN, CHORD };
 
-    struct Angle
-    {
-        static constexpr auto FromRadian(float radian) { return Angle{radian}; }
-        static constexpr auto FromDegree(float degree) { return Angle{degree/180.0f*PI}; }
-        static constexpr auto FromTurn(float turn) { return Angle{turn*PI}; }
-        constexpr auto operator-() const { return Angle{-radian}; }
-        constexpr auto operator+=(Angle arc) { radian += arc.radian; }
-        float ToRadian() const { return radian; }
-        float ToDegree() const { return radian/PI*180.0f; }
-        float ToTurn() const { return radian/PI; }
-        auto operator-(Angle rhs) const { return Angle{radian - rhs.radian}; }
-        auto operator<(Angle rhs) const { return radian < rhs.radian; }
-    private:
-        static constexpr float PI = 3.1415926535897932384626433832795f;
-
-        explicit constexpr Angle(float _radian) : radian{_radian} {}
-        float radian;
-    };
-
     struct Color
     {
         using U8 = unsigned char;
@@ -117,10 +101,3 @@ namespace cuppa
     };
 
 } // namespace cuppa
-
-constexpr auto operator"" _rad(unsigned long long int radian) { return cuppa::Angle::FromRadian(static_cast<float>(radian)); }
-constexpr auto operator"" _rad(long double radian) { return cuppa::Angle::FromRadian(static_cast<float>(radian)); }
-constexpr auto operator"" _deg(unsigned long long int degree) { return cuppa::Angle::FromDegree(static_cast<float>(degree)); }
-constexpr auto operator"" _deg(long double degree) { return cuppa::Angle::FromDegree(static_cast<float>(degree)); }
-constexpr auto operator"" _turn(unsigned long long int turn) { return cuppa::Angle::FromTurn(static_cast<float>(turn)); }
-constexpr auto operator"" _turn(long double turn) { return cuppa::Angle::FromTurn(static_cast<float>(turn)); }

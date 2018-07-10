@@ -9,7 +9,7 @@
         "path_version": "0",
         "status": "wip",
         "dependencies": [ "tdd", "wit" ],
-        "headers": [ "cuppa.hpp", "unit.hpp", "image.hpp", "graphicsDriverInterface.hpp", "platformDriverInterface.hpp" ],
+        "headers": [ "cuppa.hpp", "unit.hpp", "image.hpp", "graphicsDriverInterface.hpp", "platformDriverInterface.hpp", "angle.hpp" ],
         "sources": [ "cuppa.cpp", "sketch.cpp", "image.cpp", "graphicsDriverGdiplus.cpp", "platformDriverMSWindows.cpp" ],
         "libs": [ "user32.lib", "gdiplus.lib" ],
         "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe"
