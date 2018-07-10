@@ -10,6 +10,7 @@ namespace cuppa
 {
     class app;
     enum struct ArcMode{ PIE, OPEN, CHORD };
+    enum struct Appliance{ ENABLED, DISABLED };
 
     struct graphicsDriverInterface
     {
@@ -19,7 +20,7 @@ namespace cuppa
         virtual void draw(app& _app, DeviceContext _dc) = 0;
 
         virtual void background(Color color) = 0;
-        virtual void noStroke() = 0;
+        virtual void stroke(Appliance) = 0;
         virtual void stroke(Color color) = 0;
         virtual void stroke(Pixel _thickness) = 0;
         virtual void noFill() = 0;

@@ -21,9 +21,9 @@ namespace cuppa
         float ToTurn() const { return radian/PI; }
         auto operator-(Angle rhs) const { return Angle{radian - rhs.radian}; }
         auto operator<(Angle rhs) const { return radian < rhs.radian; }
-        auto cos() const { return cosf(radian); }
-        auto sin() const { return sinf(radian); }
-        auto tan() const { return tanf(radian); }
+        friend auto cos(Angle angle) { return cosf(angle.radian); }
+        friend auto sin(Angle angle) { return sinf(angle.radian); }
+        friend auto tan(Angle angle) { return tanf(angle.radian); }
     private:
         static constexpr float PI = 3.1415926535897932384626433832795f;
 

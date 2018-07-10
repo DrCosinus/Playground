@@ -69,9 +69,9 @@ namespace cuppa
             graphics_->Clear(clearColor_);
         }
 
-        void noStroke() override
+        void stroke(Appliance appliance) override
         {
-            strokeEnabled_ = false;
+            strokeEnabled_ = (appliance == Appliance::ENABLED);
         }
 
         void stroke(Color color) override

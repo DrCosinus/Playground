@@ -31,6 +31,7 @@ namespace cuppa
         using Image = cuppa::Image;
         using Point = cuppa::Point;
         using Direction = cuppa::Direction;
+        using Appliance = cuppa::Appliance;
 
         app() = default;
         app(app&&) = default;
@@ -99,9 +100,9 @@ namespace cuppa
     // colors: settings
         void background(Color color)                const   {   graphicsDriver->background(color);  }
 
-        void noStroke()                             const   {   graphicsDriver->noStroke();         }
+        void stroke(Appliance appliance)            const   {   graphicsDriver->stroke(appliance);  }
         void stroke(Color color)                    const   {   graphicsDriver->stroke(color);      }
-        void stroke(Pixel _thickness)               const   {   graphicsDriver->stroke(_thickness); }
+        void stroke(Pixel thickness)                const   {   graphicsDriver->stroke(thickness);  }
         //void pushStroke()
         //void popStroke()
         //void resetStroke()
