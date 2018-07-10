@@ -2,19 +2,149 @@
 
 C++ prototyping facilities (simple media management). Windows specific until further notice.
 
-## Thinkings
+## Functions
 
-### functions
+### Input
 
-println
+#### Gamepad
+
+support for gamepad
+
+[XInput and DirectInput](https://docs.microsoft.com/en-us/windows/desktop/xinput/xinput-and-directinput)
+
+#### Mouse
+
+- [ ] getMouseX
+- [ ] getMouseY
+- [ ] getMouseWheel
+- [ ] getMousePreviousX
+- [ ] getMousePreviousY
+- [ ] event mouseClicked(mousePosition, buttonStates)
+- [ ] event mouseMoved()
+- [ ] event mouseWheel()
+- [ ] event mousePressed()
+- [ ] event mouseReleased()
+- [ ] event mouseDragged()
+
+#### Keyboard
+
+- [ ] event keyPressed(keyCode)
+- [ ] event keyReleased(keyCode)
+
+support for time
+
+support for curve (bezier, spline...)
+
+#### Input Files
+
+- [ ] loadCSV
+- [ ] loadJSON
+- [ ] loadXML
+- [ ] loadBytes
+- [ ] loadStrings
+- [ ] parseJSON
+- [ ] parseXML
+
+#### Time & Date
+
+- [ ] day()
+- [ ] hour()
+- [ ] milliseconds()
+- [ ] minute()
+- [ ] month()
+- [ ] second()
+- [ ] year()
+- [ ] now()
+
+### Output
+
+#### Text
+
+- [ ] println
+- [ ] print
+- [ ] printArray
+
+#### Output Images
+
+- [ ] save
+
+#### Output Files
+
+- [ ] saveBytes
+- [ ] saveCVS
+- [ ] saveJSON
+- [ ] saveStrings
+- [ ] saveTable
+- [ ] saveXML
 
 **We need a logger!!**
 
-random / noise
+### Math
 
-loadImage
+#### Arithmetic
 
-image (drawImage)
+- [ ] abs
+- [ ] ceil
+- [ ] constrain
+- [ ] dist
+- [ ] exp
+- [ ] floor
+- [ ] lerp
+- [ ] log
+- [ ] mag
+- [ ] map
+- [ ] max
+- [ ] min
+- [ ] norm
+- [ ] pow
+- [ ] round
+- [ ] sq
+- [ ] sqrt
+
+#### Trigonometry
+
+- [x] Angle
+- [ ] cos
+- [ ] sin
+- [ ] tan
+- [ ] acos
+- [ ] asin
+- [ ] atan
+- [ ] atan2
+
+#### Random
+
+- [x] random
+- [x] randomGaussian
+- [ ] noise
+
+[Perlin noise](https://en.wikipedia.org/wiki/Perlin_noise)
+
+### Images
+
+- [x] loadImage
+- [x] image
+- [ ] createImage
+- [ ] pixels
+- [ ] updatePixels
+
+### Color
+
+- [x] background
+- [x] fill(Color/Appliance)
+- [x] stroke(Color/Thickness/Appliance)
+
+### Shape
+
+#### 2D Primitives
+
+- [x] arc
+- [x] ellipse
+- [x] line
+- [x] point
+- [x] quad
+- [x] rect
+- [x] triangle
 
 rect:
 
@@ -25,37 +155,19 @@ ellipse:
 
 - should support both (center, size) and (topLeftCorner, bottomRightCorner) construction parameter
 
-support for gamepad
+#### Curves
 
-support for time
+- [ ] bezier
+- [ ] curve
 
-support for curve (bezier, spline...)
+#### 3D Primitives
 
-#### text utilities
+- [ ] box
+- [ ] sphere
 
-loadcsv
+#### Vertices
 
-loadjson
-
-loadxml
-
-### events
-
-keyPressed
-
-mousePressed
-
-keyReleased
-
-mouseReleased
-
-### built in variables
-
-mousex, mousey
-
-pmousex, pmousey
-
-width, height
+...
 
 ### lib to be considered for integration
 
