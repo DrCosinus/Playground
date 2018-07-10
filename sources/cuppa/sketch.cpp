@@ -31,7 +31,7 @@ struct sketch : cuppa::app
     void draw() override
     {
         background(Black);
-        stroke(5_px);
+        stroke(5_px, White);
         line(previousMousePosition, mousePosition); // TODO: handle off screen positions
 
         constexpr Direction translation = {180_px, 400_px};
@@ -85,8 +85,8 @@ struct sketch : cuppa::app
             pushMatrix();
             resetMatrix();
             translate({ 150_px, 120_px});
-            auto alphaStep = 2_deg;
-            for (auto alpha = 0.0_deg; alpha < 360_deg; alpha += alphaStep)
+            constexpr auto alphaStep = 0.35_deg;
+            for (auto alpha = 0.0_deg; alpha < 360_deg - alphaStep/2; alpha += alphaStep)
             {
                 float r = randomGaussian()/3.5*50+50;
                 //float r = random(100);
@@ -111,12 +111,12 @@ struct sketch : cuppa::app
             resetMatrix();
             stroke(Appliance::DISABLED);
             fill(Yellow);
-            translate({350_px, 250_px});
+            translate({80_px, 220_px});
             auto pot_max = *std::max_element(std::begin(pots), std::end(pots));
             for (int i = 0; i < 100; ++i)
             {
                 auto v = 200.0f * pots[i] / pot_max + 1.0f;
-                rect({i*4_px, Pixel(-v*0.5f)}, {4_px, Pixel(v)});
+                rect({i*7_px, Pixel(-v*0.5f)}, {7_px, Pixel(v)});
             }
             text(std::to_string(min), { 0_px, 0_px });
             text(std::to_string(max), { 0_px, 20_px });
