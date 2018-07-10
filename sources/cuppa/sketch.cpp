@@ -13,6 +13,7 @@ struct sketch : cuppa::app
     Image imgDots;
     Pixel x = -8_px;
     Angle angle = 0_deg;
+    std::size_t clickCount = 0;
 
     void setup() override
     {
@@ -22,6 +23,10 @@ struct sketch : cuppa::app
     }
     void update() override
     {
+    }
+    void mouseClick(Point) override
+    {
+        ++clickCount;
     }
     void draw() override
     {
@@ -116,6 +121,10 @@ struct sketch : cuppa::app
             text(std::to_string(max), { 0_px, 20_px });
             text(std::to_string(out_of_range_count*100.0f/count), { 0_px, 40_px });
         }
+
+        resetMatrix();
+        fill(Yellow);
+        text(std::to_string(clickCount), { 0_px, 40_px });
     }
 };
 

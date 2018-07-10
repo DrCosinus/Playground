@@ -4,6 +4,9 @@
 
 #include <windows.h>
 
+#define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
+#define GET_Y_LPARAM(lp) ((int)(short)HIWORD(lp))
+
 namespace cuppa
 {
     static constexpr TCHAR windowClassName[] = TEXT("cuppaWindowClass");
@@ -72,6 +75,8 @@ private:
                 case WM_CLOSE:      platformDriver.onClose();                                              break;
                 case WM_DESTROY:    platformDriver.onDestroy();                                            break;
                 case WM_SIZE:       platformDriver.onSize({Pixel(LOWORD(lParam)), Pixel(HIWORD(lParam))}); break;
+                case WM_LBUTTONDOWN:platformDriver.onLeftMouseButtonDown({Pixel(GET_X_LPARAM(lParam)), Pixel(GET_Y_LPARAM(lParam))});    break;
+                case WM_LBUTTONUP:  platformDriver.onLeftMouseButtonUp({Pixel(GET_X_LPARAM(lParam)), Pixel(GET_Y_LPARAM(lParam))});      break;
                 default:            return DefWindowProc(hwnd, msg, wParam, lParam);
             }
             return 0;
@@ -110,6 +115,20 @@ private:
         {
             auto appPtr = getAppPtr(hWnd_);
             appPtr->setSize(newSize);
+        }
+
+        //Point leftMouseButtonDownPosition;
+        void onLeftMouseButtonDown(Point /*position*/)
+        {
+            //leftMouseButtonDownPosition = position;
+        }
+
+        void onLeftMouseButtonUp(Point position)
+        {
+            //if (leftMouseButtonDownPosition == position)
+            {
+                getAppPtr(hWnd_)->mouseClick(position);
+            }
         }
 
         void registerWindowClass(HINSTANCE hInstance)

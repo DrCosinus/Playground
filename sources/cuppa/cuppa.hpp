@@ -38,6 +38,7 @@ namespace cuppa
         virtual void setup() {}
         virtual void update() {}
         virtual void draw() {}
+        virtual void mouseClick(Point) {}
 
         void run();
 

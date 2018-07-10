@@ -9,6 +9,7 @@ namespace cuppa
         template<typename T>
         T getAs() const { return static_cast<T>(value_); }
 
+        bool operator==(Pixel rhs) const { return value_ == rhs.value_; }
         auto operator+(Pixel rhs) const { return Pixel{ value_ + rhs.value_ }; }
         Pixel& operator++() { value_+=1.0f; return *this; }
         Pixel operator++(int) { Pixel result{value_}; value_+=1.0f; return result; }
@@ -33,6 +34,7 @@ namespace cuppa
 
         Point operator+(Direction offset) const;
         Point operator-(Direction offset) const;
+        bool operator==(Point rhs) const { return x==rhs.x && y==rhs.y; }
 
         Pixel x;
         Pixel y;
