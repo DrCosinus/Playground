@@ -19,6 +19,7 @@ namespace cuppa
         float ToRadian() const { return radian; }
         float ToDegree() const { return radian/PI*180.0f; }
         float ToTurn() const { return radian/PI; }
+        auto operator+(Angle rhs) const { return Angle{radian + rhs.radian}; }
         auto operator-(Angle rhs) const { return Angle{radian - rhs.radian}; }
         auto operator*(float ratio) const { return Angle{radian * ratio}; }
         friend auto operator*(float ratio, Angle angle) { return angle * ratio; }
