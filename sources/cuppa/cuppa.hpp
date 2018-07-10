@@ -40,6 +40,9 @@ namespace cuppa
         virtual void draw() {}
         virtual void mouseClick(Point) {}
 
+        void setMousePosition(Point position) { previousMousePosition = mousePosition; mousePosition = position; }
+        Point mousePosition;
+        Point previousMousePosition;
         void run();
 
     // environment

@@ -32,10 +32,11 @@ namespace cuppa
 
         void run() override
         {
+            auto appPtr = getAppPtr(hWnd_);
             MSG Msg;
             while(GetMessage(&Msg, NULL, 0, 0) > 0)
             {
-                getAppPtr(hWnd_)->update();
+                appPtr->update();
                 TranslateMessage(&Msg);
                 DispatchMessage(&Msg);
             }
@@ -58,10 +59,20 @@ private:
             EndPaint(hWnd_, &ps);
         }
 
-        void refreshWindow(HWND _hWnd)
+        void refreshWindow()
         {
-            InvalidateRect(_hWnd, nullptr, FALSE);
-            UpdateWindow(_hWnd);
+            InvalidateRect(hWnd_, nullptr, FALSE);
+            UpdateWindow(hWnd_);
+            auto appPtr = getAppPtr(hWnd_);
+
+            POINT p;
+            if (GetCursorPos(&p))
+            {
+                if (ScreenToClient(hWnd_, &p))
+                {
+                    appPtr->setMousePosition({Pixel{p.x}, Pixel{p.y}});
+                }
+            }
         }
 
         static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -75,8 +86,9 @@ private:
                 case WM_CLOSE:      platformDriver.onClose();                                              break;
                 case WM_DESTROY:    platformDriver.onDestroy();                                            break;
                 case WM_SIZE:       platformDriver.onSize({Pixel(LOWORD(lParam)), Pixel(HIWORD(lParam))}); break;
-                case WM_LBUTTONDOWN:platformDriver.onLeftMouseButtonDown({Pixel(GET_X_LPARAM(lParam)), Pixel(GET_Y_LPARAM(lParam))});    break;
-                case WM_LBUTTONUP:  platformDriver.onLeftMouseButtonUp({Pixel(GET_X_LPARAM(lParam)), Pixel(GET_Y_LPARAM(lParam))});      break;
+                case WM_LBUTTONDOWN:platformDriver.onLeftMouseButtonDown({Pixel((lParam)), Pixel(GET_Y_LPARAM(lParam))});    break;
+                case WM_LBUTTONUP:  platformDriver.onLeftMouseButtonUp({Pixel((lParam)), Pixel(GET_Y_LPARAM(lParam))});      break;
+                //case WM_MOUSEMOVE:  platformDriver.onMouseMove({Pixel(LOWORD(lParam)), Pixel(HIWORD(lParam))}); break;
                 default:            return DefWindowProc(hwnd, msg, wParam, lParam);
             }
             return 0;
@@ -102,7 +114,7 @@ private:
             // TODO: check the TIMER_ID
             if (timerID==1234)
             {
-                refreshWindow(hWnd_);
+                refreshWindow();
             }
         }
 
@@ -130,6 +142,11 @@ private:
                 getAppPtr(hWnd_)->mouseClick(position);
             }
         }
+
+        // void onMouseMove(Point position)
+        // {
+        //     getAppPtr(hWnd_)->mouseMove(position);
+        // }
 
         void registerWindowClass(HINSTANCE hInstance)
         {

@@ -25,12 +25,19 @@ namespace cuppa
     private:
         float value_;
     };
+} // namespace cuppa
 
+constexpr auto operator"" _px(unsigned long long int _pixel) { return cuppa::Pixel{static_cast<float>(_pixel)}; }
+constexpr auto operator"" _px(long double _pixel) { return cuppa::Pixel{static_cast<float>(_pixel)}; }
+
+namespace cuppa
+{
     struct Direction;
 
     struct Point
     {
         /*implicit*/ constexpr Point(Pixel _x, Pixel _y) : x{_x}, y{_y}  { }
+        constexpr Point() : Point(0_px, 0_px) {}
 
         Point operator+(Direction offset) const;
         Point operator-(Direction offset) const;
@@ -110,9 +117,6 @@ namespace cuppa
     };
 
 } // namespace cuppa
-
-constexpr auto operator"" _px(unsigned long long int _pixel) { return cuppa::Pixel{static_cast<float>(_pixel)}; }
-constexpr auto operator"" _px(long double _pixel) { return cuppa::Pixel{static_cast<float>(_pixel)}; }
 
 constexpr auto operator"" _rad(unsigned long long int radian) { return cuppa::Angle::FromRadian(static_cast<float>(radian)); }
 constexpr auto operator"" _rad(long double radian) { return cuppa::Angle::FromRadian(static_cast<float>(radian)); }

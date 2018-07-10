@@ -30,9 +30,12 @@ struct sketch : cuppa::app
     }
     void draw() override
     {
+        background(Black);
+        stroke(5_px);
+        line(previousMousePosition, mousePosition); // TODO: handle off screen positions
+
         constexpr Direction translation = {180_px, 400_px};
         angle += 2_deg;
-        background(Black);
         resetMatrix();
         translate({-148_px, -107_px}); // translate(image.getSize()*-0.5f)
         rotate(angle);
