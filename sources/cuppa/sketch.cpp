@@ -28,11 +28,39 @@ struct sketch : cuppa::app
     {
         ++clickCount;
     }
+    struct MouseTracker
+    {
+        static constexpr std::size_t capacity = 15;
+        void push(Point pt)
+        {
+            history[nextIndex] = pt;
+            nextIndex = (nextIndex+1) % capacity;
+            if (count+1 < capacity)
+                count++;
+        }
+        void draw(sketch& s) const
+        {
+            for(std::size_t i = 0; i+1 < count; ++i)
+            {
+                s.stroke(Pixel{s.remap(i, { 0, count-1 }, { 5, 1 })}, Yellow.ModulateAlpha(remap(i, {0, count-1 }, {255, 16})));
+                //s.stroke(s.remap(i, { 0, count-1 }, { 5_px, 2_px }), remap(i, {0, count-1}, { Yellow, Yellow.ModulateAlpha(64) });
+                s.line(history[(nextIndex-i-1+capacity*2)%capacity], history[(nextIndex-i-2+capacity*2)%capacity]);
+            }
+            s.text(std::to_string(count), {10_px, 500_px});
+            s.text(std::to_string(nextIndex), {10_px, 520_px});
+        }
+    private:
+        Point history[capacity];
+        std::size_t nextIndex = 0;
+        std::size_t count = 0;
+    } mouseTracker;
     void draw() override
     {
         background(Black);
         stroke(5_px, White);
         line(previousMousePosition, mousePosition); // TODO: handle off screen positions
+        mouseTracker.push(mousePosition);
+        mouseTracker.draw(*this);
 
         constexpr Direction translation = {180_px, 400_px};
         angle += 2_deg;
@@ -85,8 +113,8 @@ struct sketch : cuppa::app
             pushMatrix();
             resetMatrix();
             translate({ 150_px, 120_px});
-            constexpr auto alphaStep = 0.35_deg;
-            for (auto alpha = 0.0_deg; alpha < 360_deg - alphaStep/2; alpha += alphaStep)
+            constexpr auto alphaStep = 1.5_deg;
+            for (auto alpha = 0.0_deg; alpha < 360_deg - alphaStep; alpha += alphaStep)
             {
                 float r = randomGaussian()/3.5*50+50;
                 //float r = random(100);
