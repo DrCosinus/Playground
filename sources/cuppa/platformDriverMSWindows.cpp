@@ -51,9 +51,18 @@ namespace cuppa
 private:
         void draw()
         {
+            auto appPtr = getAppPtr(hWnd_);
+            POINT p;
+            if (GetCursorPos(&p))
+            {
+                if (ScreenToClient(hWnd_, &p))
+                {
+                    appPtr->setMousePosition({Pixel{p.x}, Pixel{p.y}});
+                }
+            }
             PAINTSTRUCT ps;
             auto hdc = BeginPaint(hWnd_, &ps);
-            auto appPtr = getAppPtr(hWnd_);
+            //auto appPtr = getAppPtr(hWnd_);
             auto gfxDvrItf = appPtr->graphicsDriver.get();
             gfxDvrItf->draw(*appPtr, DeviceContext{hdc});
             EndPaint(hWnd_, &ps);
@@ -63,16 +72,6 @@ private:
         {
             InvalidateRect(hWnd_, nullptr, FALSE);
             UpdateWindow(hWnd_);
-            auto appPtr = getAppPtr(hWnd_);
-
-            POINT p;
-            if (GetCursorPos(&p))
-            {
-                if (ScreenToClient(hWnd_, &p))
-                {
-                    appPtr->setMousePosition({Pixel{p.x}, Pixel{p.y}});
-                }
-            }
         }
 
         static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
