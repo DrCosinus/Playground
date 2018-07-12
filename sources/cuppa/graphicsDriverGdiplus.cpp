@@ -61,7 +61,7 @@ namespace cuppa
 
         auto toNative(Point pt) { return PointF{pt.x.getAs<float>(), pt.y.getAs<float>()}; }
         auto toNative(Direction sz) { return SizeF{sz.width.getAs<float>(), sz.height.getAs<float>()}; }
-        auto toNative(Color col) { return GdiColor{ col.GetAlpha(), col.GetRed(), col.GetGreen(), col.GetBlue() }; }
+        auto toNative(Color col) { return GdiColor{ col.GetAlpha<BYTE>(), col.GetRed<BYTE>(), col.GetGreen<BYTE>(), col.GetBlue<BYTE>() }; }
 
         void background(Color color) override
         {

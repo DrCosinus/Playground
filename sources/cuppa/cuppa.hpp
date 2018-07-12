@@ -81,9 +81,27 @@ namespace cuppa
         }
 
     // calculation
-        static float remap(float value, range<float> from, range<float> to)
+        // remap
+        // Requirements:
+        // - we must be able to substract a T from another T, it returns a DIFF_T
+        // - a DIFF_T must be dividable by another DIFF_T and return a scalar (no unit)
+        // - we must be able to substract a U from another U, it returns a DIFF_U
+        // - a DIFF_U times a scalar must return a value to which be could add U and return a U
+        template<typename U, typename T>
+        static U remap(T value, range<T> from, range<U> to)
         {
-            return (value - from.min) * to.width() / from.width() + to.min;
+            if constexpr (std::is_integral_v<T>)
+                return to.min + to.width() * (static_cast<float>(value - from.min) / from.width());
+            else
+                return to.min + to.width() * ((value - from.min) / from.width());
+        }
+        template<typename T>
+        static float remap(T value, range<T> from, range<float> to)
+        {
+            if constexpr (std::is_integral_v<T>)
+                return to.min + to.width() * (static_cast<float>(value - from.min) / from.width());
+            else
+                return to.min + to.width() * ((value - from.min) / from.width());
         }
 
     // random

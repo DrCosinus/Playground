@@ -14,15 +14,16 @@ namespace cuppa
 
         bool operator==(Pixel rhs) const { return value_ == rhs.value_; }
         auto operator+(Pixel rhs) const { return Pixel{ value_ + rhs.value_ }; }
+        auto operator-(Pixel rhs) const { return Pixel{ value_ - rhs.value_ }; }
+        auto operator*(float ratio) const { return Pixel{ value_ * ratio }; }
+        friend auto operator*(float ratio, Pixel px) { return px * ratio; }
+
         Pixel& operator++() { value_+=1.0f; return *this; }
         Pixel operator++(int) { Pixel result{value_}; value_+=1.0f; return result; }
         Pixel& operator--() { value_-=1.0f; return *this; }
         Pixel operator--(int) { Pixel result{value_}; value_-=1.0f; return result; }
         Pixel& operator+=(Pixel rhs) { value_+=rhs.value_; return *this; } 
         Pixel& operator-=(Pixel rhs) { value_-=rhs.value_; return *this; } 
-        auto operator-(Pixel rhs) const { return Pixel{ value_ - rhs.value_ }; }
-        auto operator*(float ratio) const { return Pixel{ value_ * ratio }; }
-        friend auto operator*(float ratio, Pixel px) { return px * ratio; }
 
         auto operator<(Pixel rhs) const { return value_ < rhs.value_; }
     private:
@@ -72,30 +73,39 @@ namespace cuppa
 
     struct Color
     {
-        using U8 = unsigned char;
-        explicit constexpr Color(U8 _red, U8 _green, U8 _blue, U8 _alpha=255)
+        using COMPONENT = short;
+        using diff_type = Color;
+        explicit constexpr Color(COMPONENT _red, COMPONENT _green, COMPONENT _blue, COMPONENT _alpha=255)
         : alpha{ _alpha }, red{ _red }, green{ _green }, blue{ _blue }
         {}
-        explicit constexpr Color(U8 _gray, U8 _alpha=255)
+        explicit constexpr Color(COMPONENT _gray, COMPONENT _alpha=255)
         : Color{ _gray, _gray, _gray, _alpha }
         {}
 
-        constexpr Color ModulateAlpha(U8 _alpha) const
+        constexpr Color ModulateAlpha(COMPONENT _alpha) const
         {
-            return Color{ red, green, blue, U8(alpha * _alpha / 255) };
+            return Color{ red, green, blue, COMPONENT(alpha * _alpha / 255) };
         }
+
+        constexpr auto operator-(const Color& rhs) const { return diff_type{ red - rhs.red, green - rhs.green, blue - rhs.blue, alpha - rhs.alpha }; }
+        constexpr auto operator*(float scale) const { return Color{ static_cast<COMPONENT>(scale*red), static_cast<COMPONENT>(scale*green), static_cast<COMPONENT>(scale*blue), static_cast<COMPONENT>(scale*alpha) }; }
+        constexpr auto operator+(const diff_type& rhs) const { return Color{ red + rhs.red, green + rhs.green, blue + rhs.blue, alpha + rhs.alpha }; }
         // static constexpr auto FromGray(U8 gray) { return Color{ gray, 255 }; }
         // static constexpr auto FromRGB(U8 red, U8 green, U8 blue) { return Color{ red, green, blue, 255 }; }
         // static constexpr auto FromRGBA(U8 red, U8 green, U8 blue, U8 alpha) { return Color{ red, green, blue, alpha }; }
         //static constexpr auto FromHSV() { return Color{}; }
         //static constexpr auto FromHSB() { return Color{}; }
         //static constexpr unsigned int ToARGB32() { return 0U; }
-        U8 GetRed() const { return red; }
-        U8 GetGreen() const { return green; }
-        U8 GetBlue() const { return blue; }
-        U8 GetAlpha() const { return alpha; }
+        template<typename T>
+        T GetRed() const { return static_cast<T>(red); }
+        template<typename T>
+        T GetGreen() const { return static_cast<T>(green); }
+        template<typename T>
+        T GetBlue() const { return static_cast<T>(blue); }
+        template<typename T>
+        T GetAlpha() const { return static_cast<T>(alpha); }
     private:
-        U8 alpha, red, green, blue;
+        COMPONENT alpha, red, green, blue;
     };
 
 } // namespace cuppa

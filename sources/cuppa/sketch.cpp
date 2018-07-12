@@ -42,12 +42,9 @@ struct sketch : cuppa::app
         {
             for(std::size_t i = 0; i+1 < count; ++i)
             {
-                s.stroke(Pixel{s.remap(i, { 0, count-1 }, { 5, 1 })}, Yellow.ModulateAlpha(remap(i, {0, count-1 }, {255, 16})));
-                //s.stroke(s.remap(i, { 0, count-1 }, { 5_px, 2_px }), remap(i, {0, count-1}, { Yellow, Yellow.ModulateAlpha(64) });
+                s.stroke(s.remap<Pixel>(i, { 0, count-1 }, { 5_px, 2_px }), s.remap<Color>(i, { 0, count-1 }, { Yellow, Red.ModulateAlpha(64) }));
                 s.line(history[(nextIndex-i-1+capacity*2)%capacity], history[(nextIndex-i-2+capacity*2)%capacity]);
             }
-            s.text(std::to_string(count), {10_px, 500_px});
-            s.text(std::to_string(nextIndex), {10_px, 520_px});
         }
     private:
         Point history[capacity];
