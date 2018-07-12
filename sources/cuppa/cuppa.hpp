@@ -103,6 +103,13 @@ namespace cuppa
             else
                 return to.min + to.width() * ((value - from.min) / from.width());
         }
+        template<typename... Us, typename T>
+        static std::tuple<Us...> remap(T value, range<T> from, range<Us>... to)
+        {
+            auto f = (static_cast<float>(value - from.min) / from.width());
+            auto g = [f](auto r) { return r.min + r.width() * f; };
+            return { g(to)... };
+        }
 
     // random
         // returns a flot between 0 and 1 (1 not included)
@@ -131,6 +138,8 @@ namespace cuppa
                 stroke(others...);
             }
         }
+        template<typename... TYPES> // ok because types are unique
+        void stroke(std::tuple<TYPES...> tuple) const       {   stroke( std::get<TYPES>(tuple)... ); }
 
         //void pushStroke()
         //void popStroke()
