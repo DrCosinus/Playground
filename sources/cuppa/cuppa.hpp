@@ -8,6 +8,7 @@
 #include "platformDriverInterface.hpp"
 
 #include <string_view>
+#include <tuple>
 
 namespace cuppa
 {
@@ -138,8 +139,10 @@ namespace cuppa
                 stroke(others...);
             }
         }
-        template<typename... TYPES> // ok because types are unique
-        void stroke(std::tuple<TYPES...> tuple) const       {   stroke( std::get<TYPES>(tuple)... ); }
+        template<typename TUPLE, std::size_t... INDICES>
+        void stroke_helper(TUPLE&& tuple, std::index_sequence<INDICES...>) const { stroke( std::get<INDICES>(std::forward<TUPLE>(tuple))... ); }
+        template<typename TUPLE>
+        void stroke(TUPLE&& tuple) const       {   stroke_helper( std::forward<TUPLE>(tuple), std::make_index_sequence<std::tuple_size_v<std::remove_reference_t<TUPLE>>>{} ); }
 
         //void pushStroke()
         //void popStroke()
