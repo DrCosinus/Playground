@@ -81,6 +81,8 @@ namespace cuppa
             platformDriver->size(_width, _height);
         }
 
+        const gamepad& getGamepad(std::size_t padIndex) const { return platformDriver->getGamepad(padIndex); }
+
     // calculation
         // remap
         // Requirements:
@@ -157,6 +159,7 @@ namespace cuppa
     // shapes: 2D primitives
         void point(Point pt)                                                        const   {   graphicsDriver->point(pt);                              }
         void line(Point pt1, Point pt2)                                             const   {   graphicsDriver->line(pt1, pt2);                         }
+        void line(Point pt, Direction dir)                                          const   {   graphicsDriver->line(pt, pt+dir);                       }
         void rect(Point center, Direction size)                                     const   {   graphicsDriver->rect(center, size);                     }
         void ellipse(Point center, Direction size)                                  const   {   graphicsDriver->ellipse( center, size );                }
         void ellipse(Point center, Pixel diameter)                                  const   {   ellipse( center, { diameter, diameter } );              }

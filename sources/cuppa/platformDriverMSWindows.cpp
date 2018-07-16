@@ -7,8 +7,36 @@
 #define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
 #define GET_Y_LPARAM(lp) ((int)(short)HIWORD(lp))
 
+#include <Xinput.h>
+#include <iostream>
+
 namespace cuppa
 {
+    gamepad nullGamepad{ false, { 0_px, 0_px }, { 0_px, 0_px } };
+    gamepad gamepads[XUSER_MAX_COUNT];
+
+    void xinput_update()
+    {
+        DWORD dwResult;
+        for (DWORD i = 0; i < XUSER_MAX_COUNT; ++i)
+        {
+            XINPUT_STATE state;
+            ZeroMemory( &state, sizeof(XINPUT_STATE));
+
+            dwResult = XInputGetState( i, &state );
+            if (dwResult == ERROR_SUCCESS)
+            {
+                gamepads[i].connected = true;
+                gamepads[i].LeftPad = { Pixel{ state.Gamepad.sThumbLX / 32767.f}, Pixel{ state.Gamepad.sThumbLY / 32767.f } };
+                gamepads[i].RightPad = { Pixel{ state.Gamepad.sThumbRX / 32767.f}, Pixel{ state.Gamepad.sThumbRY / 32767.f } };
+            }
+            else
+            {
+                gamepads[i].connected = false;
+            }
+        }
+    }
+
     static constexpr TCHAR windowClassName[] = TEXT("cuppaWindowClass");
 
     void assertionError(const char* _message)
@@ -48,6 +76,11 @@ namespace cuppa
             // TODO: handle SetWindowSize after the creation of the windows
         }
 
+        const gamepad& getGamepad(std::size_t padIndex) override
+        {
+            return gamepads[padIndex];
+        }
+
 private:
         void draw()
         {
@@ -72,6 +105,7 @@ private:
         {
             InvalidateRect(hWnd_, nullptr, FALSE);
             UpdateWindow(hWnd_);
+            xinput_update();
         }
 
         static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)

@@ -62,9 +62,28 @@ struct sketch : cuppa::app
         mouseTracker.push(mousePosition);
         mouseTracker.draw(*this);
 
+        auto& gp = getGamepad(0);
+        if (gp.connected)
+        {
+            translate({ 550_px, 350_px });
+            fill(Color{ 51 });
+            stroke(Appliance::DISABLED);
+            ellipse( { 0_px, 0_px }, 80_px);
+            stroke(White, 5_px);
+            line( {0_px, 0_px}, gp.LeftPad.flipY() * 40 );
+            resetMatrix();
+
+            translate({ 650_px, 350_px });
+            fill(Color{ 51 });
+            stroke(Appliance::DISABLED);
+            ellipse( { 0_px, 0_px }, 80_px);
+            stroke(White, 5_px);
+            line( {0_px, 0_px}, gp.RightPad.flipY() * 40 );
+            resetMatrix();
+        }
+
         constexpr Direction translation = {180_px, 400_px};
         angle += 2_deg;
-        resetMatrix();
         translate({-148_px, -107_px}); // translate(image.getSize()*-0.5f)
         rotate(angle);
         scale(1+cos(angle*5)*0.1f);

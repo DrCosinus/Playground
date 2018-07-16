@@ -41,7 +41,7 @@ namespace cuppa
     struct Point
     {
         /*implicit*/ constexpr Point(Pixel _x, Pixel _y) : x{_x}, y{_y}  { }
-        constexpr Point() : Point(0_px, 0_px) {}
+        constexpr Point() : Point{ 0_px, 0_px } {}
 
         Point operator+(Direction offset) const;
         Point operator-(Direction offset) const;
@@ -55,8 +55,11 @@ namespace cuppa
     struct Direction
     {
         /*implicit*/ constexpr Direction(Pixel _width, Pixel _height) : width{_width}, height{_height}  { }
+        constexpr Direction() : Direction{ 0_px, 0_px } {}
 
         Direction operator*(float factor) const { return { width * factor, height * factor }; }
+
+        Direction flipY() const { return { width, -height }; }
 
         Pixel width;
         Pixel height;
