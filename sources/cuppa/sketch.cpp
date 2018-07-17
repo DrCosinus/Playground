@@ -62,15 +62,15 @@ struct sketch : cuppa::app
         mouseTracker.push(mousePosition);
         mouseTracker.draw(*this);
 
-        auto& gp = getGamepad(0);
-        if (gp.connected)
+        auto& gp = gamepad(0);
+        if (gp.connected())
         {
             translate({ 550_px, 350_px });
             fill(Color{ 51 });
             stroke(Appliance::DISABLED);
             ellipse( { 0_px, 0_px }, 80_px);
             stroke(White, 5_px);
-            line( {0_px, 0_px}, gp.LeftPad.flipY() * 40 );
+            line( {0_px, 0_px}, gp.leftStick().flipY() * 40 );
             resetMatrix();
 
             translate({ 650_px, 350_px });
@@ -78,7 +78,31 @@ struct sketch : cuppa::app
             stroke(Appliance::DISABLED);
             ellipse( { 0_px, 0_px }, 80_px);
             stroke(White, 5_px);
-            line( {0_px, 0_px}, gp.RightPad.flipY() * 40 );
+            line( {0_px, 0_px}, gp.rightStick().flipY() * 40 );
+            resetMatrix();
+
+            translate({ 750_px, 350_px });
+            stroke(1_px, White.ModulateAlpha(160));
+            fill(gp.buttonA()?Color{0,192,0}:Color{0,96,0});
+            ellipse( {0_px, 20_px}, 20_px);
+            fill(White.ModulateAlpha(128));
+            text("A", { -6_px, 20_px-8_px});
+
+            fill(gp.buttonB()?Color{192,0,0}:Color{96,0,0});
+            ellipse( {20_px, 0_px}, 20_px);
+            fill(White.ModulateAlpha(128));
+            text("B", { 20_px-6_px, -8_px});
+
+            fill(gp.buttonY()?Color{192,192,0}:Color{96,96,0});
+            ellipse( {0_px, -20_px}, 20_px);
+            fill(White.ModulateAlpha(128));
+            text("Y", { -6_px, -20_px-8_px});
+
+            fill(gp.buttonX()?Color{32,32,224}:Color{0,0,96});
+            ellipse( {-20_px, 0_px}, 20_px);
+            fill(White.ModulateAlpha(128));
+            text("X", { -20_px-6_px, -8_px});
+
             resetMatrix();
         }
 

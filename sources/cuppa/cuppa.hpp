@@ -81,7 +81,7 @@ namespace cuppa
             platformDriver->size(_width, _height);
         }
 
-        const gamepad& getGamepad(std::size_t padIndex) const { return platformDriver->getGamepad(padIndex); }
+        const gamepadInterface& gamepad(std::size_t padIndex) const { return platformDriver->gamepad(padIndex); }
 
     // calculation
         // remap

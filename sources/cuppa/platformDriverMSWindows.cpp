@@ -12,30 +12,43 @@
 
 namespace cuppa
 {
-    gamepad nullGamepad{ false, { 0_px, 0_px }, { 0_px, 0_px } };
-    gamepad gamepads[XUSER_MAX_COUNT];
-
-    void xinput_update()
+    struct gamepad : gamepadInterface
     {
-        DWORD dwResult;
-        for (DWORD i = 0; i < XUSER_MAX_COUNT; ++i)
-        {
-            XINPUT_STATE state;
-            ZeroMemory( &state, sizeof(XINPUT_STATE));
+        XINPUT_STATE state;
+        static constexpr DWORD invalidIndex = 0xFFFFFFFF;
+        DWORD userIndex = invalidIndex;
+        bool isConnected = false;
 
-            dwResult = XInputGetState( i, &state );
-            if (dwResult == ERROR_SUCCESS)
-            {
-                gamepads[i].connected = true;
-                gamepads[i].LeftPad = { Pixel{ state.Gamepad.sThumbLX / 32767.f}, Pixel{ state.Gamepad.sThumbLY / 32767.f } };
-                gamepads[i].RightPad = { Pixel{ state.Gamepad.sThumbRX / 32767.f}, Pixel{ state.Gamepad.sThumbRY / 32767.f } };
-            }
-            else
-            {
-                gamepads[i].connected = false;
-            }
+        void update()
+        {
+            Assert(userIndex!=invalidIndex);
+
+            //ZeroMemory( &state, sizeof(XINPUT_STATE));
+            isConnected = (XInputGetState( userIndex, &state ) == ERROR_SUCCESS);
         }
-    }
+
+        bool connected() const override
+        {
+            return isConnected;
+        }
+
+        bool buttonA() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_A);  }
+        bool buttonB() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_B);  }
+        bool buttonX() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_X);  }
+        bool buttonY() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_Y);  }
+
+        Direction leftStick() const override
+        {
+            return isConnected ? Direction{ Pixel{ state.Gamepad.sThumbLX / 32767.f}, Pixel{ state.Gamepad.sThumbLY / 32767.f } } : Direction{ 0_px, 0_px };
+        }
+
+        Direction rightStick() const override
+        {
+            return isConnected ? Direction{ Pixel{ state.Gamepad.sThumbRX / 32767.f}, Pixel{ state.Gamepad.sThumbRY / 32767.f } } : Direction{ 0_px, 0_px };
+        }
+    };
+
+    gamepad gamepads[XUSER_MAX_COUNT];
 
     static constexpr TCHAR windowClassName[] = TEXT("cuppaWindowClass");
 
@@ -56,6 +69,13 @@ namespace cuppa
             auto hInstance = GetModuleHandle(NULL);
             registerWindowClass(hInstance);
             createAppWindow(hInstance, _app);
+            {
+                DWORD i = 0;
+                for (auto& gamepad: gamepads)
+                {
+                    gamepad.userIndex = i++;
+                }
+            }
         }
 
         void run() override
@@ -76,7 +96,7 @@ namespace cuppa
             // TODO: handle SetWindowSize after the creation of the windows
         }
 
-        const gamepad& getGamepad(std::size_t padIndex) override
+        const gamepadInterface& gamepad(std::size_t padIndex) override
         {
             return gamepads[padIndex];
         }
@@ -105,7 +125,10 @@ private:
         {
             InvalidateRect(hWnd_, nullptr, FALSE);
             UpdateWindow(hWnd_);
-            xinput_update();
+            for(auto& gamepad: gamepads)
+            {
+                gamepad.update();
+            }
         }
 
         static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
