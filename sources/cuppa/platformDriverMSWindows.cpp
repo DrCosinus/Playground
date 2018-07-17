@@ -36,15 +36,25 @@ namespace cuppa
         bool buttonB() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_B);  }
         bool buttonX() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_X);  }
         bool buttonY() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_Y);  }
+        bool buttonDigitalUp() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP);  }
+        bool buttonDigitalLeft() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT);  }
+        bool buttonDigitalDown() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN);  }
+        bool buttonDigitalRight() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);  }
+        bool buttonStart() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_START);  }
+        bool buttonBack() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_BACK);  }
+        bool buttonLeftShoulder() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER);  }
+        bool buttonRightShoulder() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER);  }
+        bool buttonLeftThumb() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB);  }
+        bool buttonRightThumb() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB);  }
 
         Direction leftStick() const override
         {
-            return isConnected ? Direction{ Pixel{ state.Gamepad.sThumbLX / 32767.f}, Pixel{ state.Gamepad.sThumbLY / 32767.f } } : Direction{ 0_px, 0_px };
+            return isConnected ? Direction{ Pixel{ state.Gamepad.sThumbLX / 32767.f}, Pixel{ state.Gamepad.sThumbLY / 32767.f } } : Direction{ };
         }
 
         Direction rightStick() const override
         {
-            return isConnected ? Direction{ Pixel{ state.Gamepad.sThumbRX / 32767.f}, Pixel{ state.Gamepad.sThumbRY / 32767.f } } : Direction{ 0_px, 0_px };
+            return isConnected ? Direction{ Pixel{ state.Gamepad.sThumbRX / 32767.f}, Pixel{ state.Gamepad.sThumbRY / 32767.f } } : Direction{ };
         }
     };
 

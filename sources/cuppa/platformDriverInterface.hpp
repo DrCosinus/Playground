@@ -15,25 +15,19 @@ namespace cuppa
         virtual bool buttonB() const = 0;
         virtual bool buttonX() const = 0;
         virtual bool buttonY() const = 0;
-        // Direction LeftPad;
-        // Direction RightPad;
-        // bool connected : 1;
-        // bool buttonA : 1;
-        // bool buttonB : 1;
-        // bool buttonX : 1;
-        // bool buttonY : 1;
-        // bool buttonStart : 1;
-        // bool buttonBack : 1;
-        // bool buttonLeftShoulderButton : 1;
-        // bool buttonRightShoulderButton : 1;
+        virtual bool buttonDigitalUp() const = 0;
+        virtual bool buttonDigitalLeft() const = 0;
+        virtual bool buttonDigitalDown() const = 0;
+        virtual bool buttonDigitalRight() const = 0;
+        virtual bool buttonStart() const = 0;
+        virtual bool buttonBack() const = 0;
+        virtual bool buttonLeftShoulder() const = 0;
+        virtual bool buttonRightShoulder() const = 0;
+        virtual bool buttonLeftThumb() const = 0;
+        virtual bool buttonRightThumb() const = 0;
+
         // //bool buttonLeftTriggerButton : 1;
         // //bool buttonRightTriggerButton : 1;
-        // bool buttonLeftThumbButton : 1;
-        // bool buttonRightThumbButton : 1;
-        // bool buttonDigitalUp : 1;
-        // bool buttonDigitalLeft : 1;
-        // bool buttonDigitalDown : 1;
-        // bool buttonDigitalRight : 1;
     };
 
     struct platformDriverInterface

@@ -15,6 +15,8 @@ struct sketch : cuppa::app
     Angle angle = 0_deg;
     std::size_t clickCount = 0;
 
+    sketch() : gamepadTracker{ *this } {}
+
     void setup() override
     {
         size(800_px, 600_px);
@@ -54,6 +56,65 @@ struct sketch : cuppa::app
         std::size_t nextIndex = 0;
         std::size_t count = 0;
     } mouseTracker;
+
+    struct Gamepad
+    {
+        sketch& s;
+        explicit Gamepad(sketch& _s) : s{ _s } {}
+
+        void drawStick(Direction centerPosition, Direction stickDirection) const
+        {
+            s.pushMatrix();
+            s.translate(centerPosition);
+            s.fill(Color{ 51 });
+            s.stroke(Appliance::DISABLED);
+            s.ellipse( { }, 80_px);
+            s.stroke(White, 5_px);
+            s.line( {0_px, 0_px}, stickDirection.flipY() * 40 );
+            s.popMatrix();
+        }
+        void drawRoundButton(Direction centerPosition, bool isDown, std::string_view name, Color upColor, Color downColor) const
+        {
+            s.pushMatrix();
+            s.translate(centerPosition);
+            s.stroke(1_px, White.ModulateAlpha(160));
+            s.fill(isDown?downColor:upColor);
+            s.ellipse( { }, 20_px);
+            s.fill(White.ModulateAlpha(128));
+            s.text(name, { -6_px, -8_px});
+            s.popMatrix();
+        }
+        void draw() const
+        {
+            auto& gp = s.gamepad(0);
+            if (gp.connected())
+            {
+                s.pushMatrix();
+                s.translate({480_px, 230_px});
+                drawStick({ 70_px, 120_px }, gp.leftStick());
+                drawStick({ 170_px, 120_px }, gp.rightStick());
+
+                s.pushMatrix();
+                s.translate({230_px, 70_px});
+                drawRoundButton({0_px, 20_px}, gp.buttonA(), "A", Color{0,96,0}, Color{0,192,0});
+                drawRoundButton({20_px, 0_px}, gp.buttonB(), "B", Color{96,0,0}, Color{192,0,0});
+                drawRoundButton({-20_px, 0_px}, gp.buttonX(), "X", Color{0,0,96}, Color{32,32,224});
+                drawRoundButton({0_px, -20_px}, gp.buttonY(), "Y", Color{96,96,0}, Color{192,192,0});
+                s.popMatrix();
+
+                s.pushMatrix();
+                s.translate({10_px, 70_px});
+                drawRoundButton({0_px, 20_px}, gp.buttonDigitalDown(), "", Color{96}, Color{192});
+                drawRoundButton({20_px, 0_px}, gp.buttonDigitalRight(), "", Color{96}, Color{192});
+                drawRoundButton({-20_px, 0_px}, gp.buttonDigitalLeft(), "", Color{96}, Color{192});
+                drawRoundButton({0_px, -20_px}, gp.buttonDigitalUp(), "", Color{96}, Color{192});
+                s.popMatrix();
+
+                s.popMatrix();
+            }
+        }
+    } gamepadTracker;
+
     void draw() override
     {
         background(Black);
@@ -62,49 +123,7 @@ struct sketch : cuppa::app
         mouseTracker.push(mousePosition);
         mouseTracker.draw(*this);
 
-        auto& gp = gamepad(0);
-        if (gp.connected())
-        {
-            translate({ 550_px, 350_px });
-            fill(Color{ 51 });
-            stroke(Appliance::DISABLED);
-            ellipse( { 0_px, 0_px }, 80_px);
-            stroke(White, 5_px);
-            line( {0_px, 0_px}, gp.leftStick().flipY() * 40 );
-            resetMatrix();
-
-            translate({ 650_px, 350_px });
-            fill(Color{ 51 });
-            stroke(Appliance::DISABLED);
-            ellipse( { 0_px, 0_px }, 80_px);
-            stroke(White, 5_px);
-            line( {0_px, 0_px}, gp.rightStick().flipY() * 40 );
-            resetMatrix();
-
-            translate({ 750_px, 350_px });
-            stroke(1_px, White.ModulateAlpha(160));
-            fill(gp.buttonA()?Color{0,192,0}:Color{0,96,0});
-            ellipse( {0_px, 20_px}, 20_px);
-            fill(White.ModulateAlpha(128));
-            text("A", { -6_px, 20_px-8_px});
-
-            fill(gp.buttonB()?Color{192,0,0}:Color{96,0,0});
-            ellipse( {20_px, 0_px}, 20_px);
-            fill(White.ModulateAlpha(128));
-            text("B", { 20_px-6_px, -8_px});
-
-            fill(gp.buttonY()?Color{192,192,0}:Color{96,96,0});
-            ellipse( {0_px, -20_px}, 20_px);
-            fill(White.ModulateAlpha(128));
-            text("Y", { -6_px, -20_px-8_px});
-
-            fill(gp.buttonX()?Color{32,32,224}:Color{0,0,96});
-            ellipse( {-20_px, 0_px}, 20_px);
-            fill(White.ModulateAlpha(128));
-            text("X", { -20_px-6_px, -8_px});
-
-            resetMatrix();
-        }
+        gamepadTracker.draw();
 
         constexpr Direction translation = {180_px, 400_px};
         angle += 2_deg;
