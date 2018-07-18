@@ -23,6 +23,9 @@ namespace cuppa
         auto width() const { return max - min; }
     };
 
+    template<typename T>
+    range(T min, T max) -> range<T>;
+
     class app
     {
     public:
