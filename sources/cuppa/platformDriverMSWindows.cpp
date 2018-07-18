@@ -47,6 +47,9 @@ namespace cuppa
         bool buttonLeftThumb() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB);  }
         bool buttonRightThumb() const override   {   return isConnected && (state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB);  }
 
+        float leftTrigger() const override { return isConnected ? state.Gamepad.bLeftTrigger / 255.f : 0.f; }
+        float rightTrigger() const override { return isConnected ? state.Gamepad.bRightTrigger / 255.f : 0.f; }
+
         Direction leftStick() const override
         {
             return isConnected ? Direction{ Pixel{ state.Gamepad.sThumbLX / 32767.f}, Pixel{ state.Gamepad.sThumbLY / 32767.f } } : Direction{ };

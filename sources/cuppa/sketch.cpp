@@ -62,11 +62,11 @@ struct sketch : cuppa::app
         sketch& s;
         explicit Gamepad(sketch& _s) : s{ _s } {}
 
-        void drawStick(Direction centerPosition, Direction stickDirection) const
+        void drawStick(Direction centerPosition, Direction stickDirection, bool isDown) const
         {
             s.pushMatrix();
             s.translate(centerPosition);
-            s.fill(Color{ 51 });
+            s.fill(isDown ? Color{128} : Color{ 51 });
             s.stroke(Appliance::DISABLED);
             s.ellipse( { }, 80_px);
             s.stroke(White, 5_px);
@@ -95,6 +95,20 @@ struct sketch : cuppa::app
             s.text(name, {}, TextHAlign::CENTER, TextVAlign::MIDDLE);
             s.popMatrix();
         }
+        void drawGauge(Direction centerPosition, float gauge, std::string_view name, Color upColor, Color downColor) const
+        {
+            s.pushMatrix();
+            s.translate(centerPosition);
+            s.stroke(1_px, White.ModulateAlpha(160));
+            s.fill(upColor);
+            s.rect( { }, { 25_px, 15_px });
+            s.fill(downColor);
+            s.stroke(Appliance::ENABLED);
+            s.rect( { }, { Pixel{25*gauge}, 15_px });
+            s.fill(White.ModulateAlpha(128));
+            s.text(name, {}, TextHAlign::CENTER, TextVAlign::MIDDLE);
+            s.popMatrix();
+        }
 
         void draw() const
         {
@@ -103,8 +117,8 @@ struct sketch : cuppa::app
             {
                 s.pushMatrix();
                 s.translate({480_px, 230_px});
-                drawStick({10_px, 70_px}, gp.leftStick());
-                drawStick({ 170_px, 120_px }, gp.rightStick());
+                drawStick({10_px, 70_px}, gp.leftStick(), gp.buttonLeftThumb());
+                drawStick({ 170_px, 120_px }, gp.rightStick(), gp.buttonRightThumb());
 
                 s.pushMatrix();
                 s.translate({230_px, 70_px});
@@ -116,14 +130,20 @@ struct sketch : cuppa::app
 
                 s.pushMatrix();
                 s.translate({ 70_px, 120_px });
-                drawRoundButton({0_px, 20_px}, gp.buttonDigitalDown(), "", Color{32}, Color{128});
-                drawRoundButton({20_px, 0_px}, gp.buttonDigitalRight(), "", Color{32}, Color{128});
-                drawRoundButton({-20_px, 0_px}, gp.buttonDigitalLeft(), "", Color{32}, Color{128});
-                drawRoundButton({0_px, -20_px}, gp.buttonDigitalUp(), "", Color{32}, Color{128});
+                drawRoundButton({0_px, 20_px}, gp.buttonDigitalDown(), "V", Color{32}, Color{128});
+                drawRoundButton({20_px, 0_px}, gp.buttonDigitalRight(), ">", Color{32}, Color{128});
+                drawRoundButton({-20_px, 0_px}, gp.buttonDigitalLeft(), "<", Color{32}, Color{128});
+                drawRoundButton({0_px, -20_px}, gp.buttonDigitalUp(), "^", Color{32}, Color{128});
                 s.popMatrix();
 
                 drawSquareButton({ 90_px, 60_px}, gp.buttonBack(), "<-", Color{32}, Color{128} );
                 drawSquareButton({ 150_px, 60_px}, gp.buttonStart(), "->", Color{32}, Color{128} );
+
+                drawSquareButton({ 70_px, 28_px}, gp.buttonLeftShoulder(), "LB", Color{32}, Color{128} );
+                drawSquareButton({ 170_px, 28_px}, gp.buttonRightShoulder(), "RB", Color{32}, Color{128} );
+
+                drawGauge({ 70_px, 10_px}, gp.leftTrigger(), "LT", Color{32}, Color{128} );
+                drawGauge({ 170_px, 10_px}, gp.rightTrigger(), "RT", Color{32}, Color{128} );
                 s.popMatrix();
             }
         }

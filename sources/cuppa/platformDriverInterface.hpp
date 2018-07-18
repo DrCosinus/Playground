@@ -25,6 +25,8 @@ namespace cuppa
         virtual bool buttonRightShoulder() const = 0;
         virtual bool buttonLeftThumb() const = 0;
         virtual bool buttonRightThumb() const = 0;
+        virtual float leftTrigger() const = 0;
+        virtual float rightTrigger() const = 0;
 
         // //bool buttonLeftTriggerButton : 1;
         // //bool buttonRightTriggerButton : 1;
