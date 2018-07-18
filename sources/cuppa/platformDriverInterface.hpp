@@ -38,6 +38,7 @@ namespace cuppa
 
         virtual void setup(app& _app) = 0;
         virtual void run() = 0;
+        virtual void quit() = 0;
 
         virtual void size(Pixel _width, Pixel _height) = 0;
         virtual const gamepadInterface& gamepad(std::size_t padIndex) = 0;

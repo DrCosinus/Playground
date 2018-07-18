@@ -91,6 +91,11 @@ namespace cuppa
             }
         }
 
+        void quit()
+        {
+            DestroyWindow(hWnd_);
+        }
+
         void run() override
         {
             auto appPtr = getAppPtr(hWnd_);

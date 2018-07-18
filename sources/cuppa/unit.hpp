@@ -45,8 +45,10 @@ namespace cuppa
         /*implicit*/ constexpr Point(Pixel _x, Pixel _y) : x{_x}, y{_y}  { }
         constexpr Point() : Point{ 0_px, 0_px } {}
 
-        Point operator+(Direction offset) const;
-        Point operator-(Direction offset) const;
+        constexpr Point operator+(Direction offset) const;
+        constexpr Point operator-(Direction offset) const;
+        Point& operator+=(Direction offset);
+
         bool operator==(Point rhs) const { return x==rhs.x && y==rhs.y; }
 
         Pixel x;
@@ -67,13 +69,19 @@ namespace cuppa
         Pixel height;
     };
 
-    inline Point Point::operator+(Direction offset) const
+    inline constexpr Point Point::operator+(Direction offset) const
     {
         return { x + offset.width, y + offset.height };
     }
-    inline Point Point::operator-(Direction offset) const
+    inline constexpr Point Point::operator-(Direction offset) const
     {
         return { x - offset.width, y - offset.height };
+    }
+    inline Point& Point::operator+=(Direction offset)
+    {
+        x += offset.width;
+        y += offset.height;
+        return *this;
     }
 
     struct Color

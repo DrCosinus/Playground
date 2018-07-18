@@ -79,6 +79,7 @@ namespace cuppa
         static constexpr Color Orange{ 255, 170, 85 };
 
     // environment
+        void quit() const { platformDriver->quit(); }
         void size(Pixel _width, Pixel _height)
         {
             width = _width;
