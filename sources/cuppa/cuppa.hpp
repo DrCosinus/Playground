@@ -68,15 +68,52 @@ namespace cuppa
     protected:
         static constexpr float PI = 3.1415926535897932384626433832795f;
 
+    // PREDEFINED COLORS (https://en.wikipedia.org/wiki/Web_colors#X11_color_names)
         static constexpr Color White{ 255 };
+        static constexpr Color LightGray{ 211 };
+        static constexpr Color Silver{ 192 };
+        static constexpr Color DarkGray{ 169 };
+        static constexpr Color Gray{ 128 };
+        static constexpr Color DimGray{ 105 };
         static constexpr Color Black{ 0 };
+        // PINK COLORS
+        static constexpr Color Pink{ 255, 192, 203 };
+        // RED COLORS
         static constexpr Color Red{ 255, 0, 0 };
-        static constexpr Color Green{ 0, 255, 0 };
-        static constexpr Color Blue{ 0, 0, 255 };
-        static constexpr Color Magenta{ 255, 0, 255 };
-        static constexpr Color Cyan{ 0, 255, 255 };
+        static constexpr Color DarkRed{ 139, 0, 0 };
+        // ORANGE COLORS
+        static constexpr Color OrangeRed{ 255, 69, 0 };
+        static constexpr Color Coral{ 255, 127, 80 };
+        static constexpr Color DarkOrange{ 255, 140, 0 };
+        static constexpr Color Orange{ 255, 165, 0 };
+        // YELLOW COLORS
         static constexpr Color Yellow{ 255, 255, 0 };
-        static constexpr Color Orange{ 255, 170, 85 };
+        static constexpr Color Gold{ 255, 215, 0 };
+        // BROWN COLORS
+        static constexpr Color Goldenrod{ 218, 165, 32 };
+        static constexpr Color DarkGoldenrod{ 184, 134, 11 };
+        static constexpr Color SaddleBrown{ 139, 69, 19 };
+        static constexpr Color Sienna{ 160, 82, 45 };
+        static constexpr Color Brown{ 165, 42, 42 };
+        // GREEN COLORS
+        static constexpr Color Lime{ 0, 255, 0 };
+        static constexpr Color Green{ 0, 128, 0 };
+        static constexpr Color DarkGreen{ 0, 100, 0 };
+        // CYAN COLORS
+        static constexpr Color Cyan{ 0, 255, 255 };
+        static constexpr Color Aqua{ 0, 255, 255 };
+        // BLUE COLORS
+        static constexpr Color CornflowerBlue{ 100, 149, 237 };
+        static constexpr Color Blue{ 0, 0, 255 };
+        static constexpr Color MediumBlue{ 0, 0, 205 };
+        static constexpr Color DarkBlue{ 0, 0, 139 };
+        static constexpr Color Navy{ 0, 0, 128 };
+        // PURPLE, VIOLET AND MAGENTA COLORS
+        static constexpr Color Magenta{ 255, 0, 255 };
+        static constexpr Color Fuchsia{ 255, 0, 255 };
+        static constexpr Color DarkViolet{ 148, 0, 211 };
+        static constexpr Color Purple{ 128, 0, 128 };
+        static constexpr Color Indigo{ 75, 0, 130 };
 
     // environment
         void quit() const { platformDriver->quit(); }

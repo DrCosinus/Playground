@@ -28,6 +28,7 @@ namespace cuppa
         Pixel& operator-=(Pixel rhs) { value_-=rhs.value_; return *this; } 
 
         auto operator<(Pixel rhs) const { return value_ < rhs.value_; }
+        friend auto operator>(Pixel lhs, Pixel rhs) { return rhs < lhs; }
     private:
         float value_;
     };

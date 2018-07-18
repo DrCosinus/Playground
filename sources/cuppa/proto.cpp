@@ -10,7 +10,7 @@ namespace
         }
         void draw() override
         {
-            background(Color{100,149,237});
+            background(CornflowerBlue);
             fill(White);
             text("HELLO WORLD!", {});
             rect(pos, { 10_px, 10_px });
@@ -19,6 +19,10 @@ namespace
             if (pad.connected())
             {
                 pos += pad.leftStick().flipY() * 10;
+                if (pos.x<-5_px) pos.x += 810_px;
+                if (pos.x>805_px) pos.x -= 810_px;
+                if (pos.y<-5_px) pos.y += 610_px;
+                if (pos.y>605_px) pos.y -= 610_px;
             }
             if (pad.buttonBack())
             {
