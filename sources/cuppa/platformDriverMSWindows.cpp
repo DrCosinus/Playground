@@ -91,7 +91,7 @@ namespace cuppa
             }
         }
 
-        void quit()
+        void quit() override
         {
             DestroyWindow(hWnd_);
         }
