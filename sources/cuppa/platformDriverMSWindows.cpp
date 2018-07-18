@@ -50,14 +50,25 @@ namespace cuppa
         float leftTrigger() const override { return isConnected ? state.Gamepad.bLeftTrigger / 255.f : 0.f; }
         float rightTrigger() const override { return isConnected ? state.Gamepad.bRightTrigger / 255.f : 0.f; }
 
+        static float remapStick(SHORT stick, SHORT threshold)
+        {
+            auto absVal = static_cast<float>(abs(stick) - threshold);
+            absVal = absVal > 0 ? ( absVal / (32767 - threshold) ) : 0;
+            return stick >= 0 ? absVal : -absVal;
+        }
+
         Direction leftStick() const override
         {
-            return isConnected ? Direction{ Pixel{ state.Gamepad.sThumbLX / 32767.f}, Pixel{ state.Gamepad.sThumbLY / 32767.f } } : Direction{ };
+            //Assert(isConnected);
+            return { Pixel{ remapStick(state.Gamepad.sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) },
+                     Pixel{ remapStick(state.Gamepad.sThumbLY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) } };
         }
 
         Direction rightStick() const override
         {
-            return isConnected ? Direction{ Pixel{ state.Gamepad.sThumbRX / 32767.f}, Pixel{ state.Gamepad.sThumbRY / 32767.f } } : Direction{ };
+            //Assert(isConnected);
+            return { Pixel{ remapStick(state.Gamepad.sThumbRX, XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE) },
+                     Pixel{ remapStick(state.Gamepad.sThumbRY, XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE) } };
         }
     };
 
