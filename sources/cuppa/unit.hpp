@@ -15,8 +15,10 @@ namespace cuppa
         bool operator==(Pixel rhs) const { return value_ == rhs.value_; }
         auto operator+(Pixel rhs) const { return Pixel{ value_ + rhs.value_ }; }
         auto operator-(Pixel rhs) const { return Pixel{ value_ - rhs.value_ }; }
-        auto operator*(float ratio) const { return Pixel{ value_ * ratio }; }
-        friend auto operator*(float ratio, Pixel px) { return px * ratio; }
+        template<typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+        auto operator*(T ratio) const { return Pixel{ value_ * static_cast<float>(ratio) }; }
+        template<typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+        friend auto operator*(T ratio, Pixel px) { return px * ratio; }
 
         Pixel& operator++() { value_+=1.0f; return *this; }
         Pixel operator++(int) { Pixel result{value_}; value_+=1.0f; return result; }
