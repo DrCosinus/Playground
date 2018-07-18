@@ -16,6 +16,12 @@
 #include <malloc.h>
 #include <memory>
 
+using namespace Gdiplus;
+using GdiColor = Gdiplus::Color;
+using Color = cuppa::Color;
+using GdiImage = Gdiplus::Image;
+using Image = cuppa::Image;
+
 namespace cuppa
 {
     struct graphicsDriverGdiplus : graphicsDriverInterface
@@ -186,13 +192,28 @@ namespace cuppa
                 graphics_->DrawPath( stroke_.get(), &path);
         }
 
-        void text(std::string_view txt, Point pt) override
+        void text(std::string_view txt, Point pt, TextHAlign halign, TextVAlign valign) override
         {
+            StringFormat sf;
+            switch(halign)
+            {
+            default:
+            case TextHAlign::LEFT:    sf.SetAlignment(StringAlignment::StringAlignmentNear); break;
+            case TextHAlign::CENTER:  sf.SetAlignment(StringAlignment::StringAlignmentCenter); break;
+            case TextHAlign::RIGHT:   sf.SetAlignment(StringAlignment::StringAlignmentFar); break;
+            }
+            switch(valign)
+            {
+            default:
+            case TextVAlign::TOP:     sf.SetLineAlignment(StringAlignment::StringAlignmentNear); break;
+            case TextVAlign::MIDDLE:  sf.SetLineAlignment(StringAlignment::StringAlignmentCenter); break;
+            case TextVAlign::BOTTOM:  sf.SetLineAlignment(StringAlignment::StringAlignmentFar); break;
+            }
             auto len = txt.length();
             auto wcs = (WCHAR*)_malloca((len+1)*sizeof(WCHAR));
             std::transform(std::begin(txt), std::end(txt), wcs, [](char c){ WCHAR wc; mbtowc(&wc, &c, 1); return wc; });
             wcs[len] = L'\0';
-            graphics_->DrawString(wcs, static_cast<INT>(len), font_, toNative(pt), fillBrush_.get());
+            graphics_->DrawString(wcs, static_cast<INT>(len), font_, toNative(pt), &sf, fillBrush_.get());
         }
 
         void resetMatrix() override
@@ -282,25 +303,6 @@ namespace cuppa
         }
 
     private:
-        using Graphics = Gdiplus::Graphics;
-        using Bitmap = Gdiplus::Bitmap;
-        using REAL = Gdiplus::REAL;
-        using ARGB = Gdiplus::ARGB;
-        using Matrix = Gdiplus::Matrix;
-        using GdiColor = Gdiplus::Color;
-        using Pen = Gdiplus::Pen;
-        using Brush = Gdiplus::Brush;
-        using SolidBrush = Gdiplus::SolidBrush;
-        using Point = Gdiplus::Point;
-        using PointF = Gdiplus::PointF;
-        using SizeF = Gdiplus::SizeF;
-        using Rect = Gdiplus::Rect;
-        using RectF = Gdiplus::RectF;
-        using Font = Gdiplus::Font;
-        using FontFamily = Gdiplus::FontFamily;
-        using GraphicsPath = Gdiplus::GraphicsPath;
-        using GdiImage = Gdiplus::Image;
-
         Graphics*               graphics_ = nullptr;
         std::unique_ptr<Bitmap> drawBuffer_;
 

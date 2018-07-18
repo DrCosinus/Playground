@@ -11,6 +11,8 @@ namespace cuppa
     class app;
     enum struct ArcMode{ PIE, OPEN, CHORD };
     enum struct Appliance{ ENABLED, DISABLED };
+    enum struct TextHAlign{ LEFT, CENTER, RIGHT };
+    enum struct TextVAlign{ TOP, MIDDLE, BOTTOM };
 
     struct graphicsDriverInterface
     {
@@ -32,7 +34,7 @@ namespace cuppa
         virtual void arc(Point center, Direction size, Angle start, Angle end, ArcMode mode) = 0;
         virtual void quad(Point pt1, Point pt2, Point pt3, Point pt4) = 0;
         virtual void triangle(Point pt1, Point pt2, Point pt3) = 0;
-        virtual void text(std::string_view txt, Point pt) = 0;
+        virtual void text(std::string_view txt, Point pt, TextHAlign halign = TextHAlign::LEFT, TextVAlign valign = TextVAlign::TOP) = 0;
 
         virtual void resetMatrix() = 0;
         virtual void pushMatrix() = 0;

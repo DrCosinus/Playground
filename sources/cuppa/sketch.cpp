@@ -81,7 +81,7 @@ struct sketch : cuppa::app
             s.fill(isDown?downColor:upColor);
             s.ellipse( { }, 20_px);
             s.fill(White.ModulateAlpha(128));
-            s.text(name, { -6_px, -8_px});
+            s.text(name, {}, TextHAlign::CENTER, TextVAlign::MIDDLE);
             s.popMatrix();
         }
         void draw() const
@@ -91,7 +91,7 @@ struct sketch : cuppa::app
             {
                 s.pushMatrix();
                 s.translate({480_px, 230_px});
-                drawStick({ 70_px, 120_px }, gp.leftStick());
+                drawStick({10_px, 70_px}, gp.leftStick());
                 drawStick({ 170_px, 120_px }, gp.rightStick());
 
                 s.pushMatrix();
@@ -103,7 +103,7 @@ struct sketch : cuppa::app
                 s.popMatrix();
 
                 s.pushMatrix();
-                s.translate({10_px, 70_px});
+                s.translate({ 70_px, 120_px });
                 drawRoundButton({0_px, 20_px}, gp.buttonDigitalDown(), "", Color{96}, Color{192});
                 drawRoundButton({20_px, 0_px}, gp.buttonDigitalRight(), "", Color{96}, Color{192});
                 drawRoundButton({-20_px, 0_px}, gp.buttonDigitalLeft(), "", Color{96}, Color{192});

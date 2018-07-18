@@ -34,6 +34,8 @@ namespace cuppa
         using Direction = cuppa::Direction;
         using Appliance = cuppa::Appliance;
         using ArcMode = cuppa::ArcMode;
+        using TextHAlign = cuppa::TextHAlign;
+        using TextVAlign = cuppa::TextVAlign;
 
         app() = default;
         app(app&&) = default;
@@ -167,7 +169,8 @@ namespace cuppa
         void arc(Point center, Direction size, Angle start, Angle end)              const   {   arc(center, size, start, end, ArcMode::OPEN);           }
         void quad(Point pt1, Point pt2, Point pt3, Point pt4)                       const   {   graphicsDriver->quad( pt1, pt2, pt3, pt4);              }
         void triangle(Point pt1, Point pt2, Point pt3)                              const   {   graphicsDriver->triangle( pt1, pt2, pt3);               }
-        void text(std::string_view txt, Point pt)                                   const   {   graphicsDriver->text( txt, pt);                         }
+        void text(std::string_view txt, Point pt, TextHAlign halign = TextHAlign::LEFT, TextVAlign valign = TextVAlign::TOP) const
+        {   graphicsDriver->text( txt, pt, halign, valign); }
 
     // transforms
         void pushMatrix()   const   { graphicsDriver->pushMatrix();  }
