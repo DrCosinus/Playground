@@ -84,6 +84,18 @@ struct sketch : cuppa::app
             s.text(name, {}, TextHAlign::CENTER, TextVAlign::MIDDLE);
             s.popMatrix();
         }
+        void drawSquareButton(Direction centerPosition, bool isDown, std::string_view name, Color upColor, Color downColor) const
+        {
+            s.pushMatrix();
+            s.translate(centerPosition);
+            s.stroke(1_px, White.ModulateAlpha(160));
+            s.fill(isDown?downColor:upColor);
+            s.rect( { }, { 25_px, 15_px });
+            s.fill(White.ModulateAlpha(128));
+            s.text(name, {}, TextHAlign::CENTER, TextVAlign::MIDDLE);
+            s.popMatrix();
+        }
+
         void draw() const
         {
             auto& gp = s.gamepad(0);
@@ -104,12 +116,14 @@ struct sketch : cuppa::app
 
                 s.pushMatrix();
                 s.translate({ 70_px, 120_px });
-                drawRoundButton({0_px, 20_px}, gp.buttonDigitalDown(), "", Color{96}, Color{192});
-                drawRoundButton({20_px, 0_px}, gp.buttonDigitalRight(), "", Color{96}, Color{192});
-                drawRoundButton({-20_px, 0_px}, gp.buttonDigitalLeft(), "", Color{96}, Color{192});
-                drawRoundButton({0_px, -20_px}, gp.buttonDigitalUp(), "", Color{96}, Color{192});
+                drawRoundButton({0_px, 20_px}, gp.buttonDigitalDown(), "", Color{32}, Color{128});
+                drawRoundButton({20_px, 0_px}, gp.buttonDigitalRight(), "", Color{32}, Color{128});
+                drawRoundButton({-20_px, 0_px}, gp.buttonDigitalLeft(), "", Color{32}, Color{128});
+                drawRoundButton({0_px, -20_px}, gp.buttonDigitalUp(), "", Color{32}, Color{128});
                 s.popMatrix();
 
+                drawSquareButton({ 90_px, 60_px}, gp.buttonBack(), "<-", Color{32}, Color{128} );
+                drawSquareButton({ 150_px, 60_px}, gp.buttonStart(), "->", Color{32}, Color{128} );
                 s.popMatrix();
             }
         }
