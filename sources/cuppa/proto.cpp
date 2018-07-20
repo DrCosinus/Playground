@@ -4,15 +4,20 @@ namespace
 {
     struct proto : cuppa::app
     {
+        Font font;
         void setup() override
         {
             size( 800_px, 600_px );
+            font = loadFont("Consolas", 18);
+            textFont(font);
         }
         void draw() override
         {
-            background(CornflowerBlue);
-            fill(White);
+            background(Black);
+            fill(Green);
             text("HELLO WORLD!", {});
+            text("IWMO....II00", { 0_px, 18_px});
+
             rect(pos, { 10_px, 10_px });
 
             auto& pad = gamepad(0);
