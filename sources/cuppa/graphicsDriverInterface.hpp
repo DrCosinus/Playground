@@ -3,6 +3,7 @@
 #include "angle.hpp"
 #include "image.hpp"
 #include "unit.hpp"
+#include "font.hpp"
 
 #include <string_view>
 
@@ -34,6 +35,8 @@ namespace cuppa
         virtual void arc(Point center, Direction size, Angle start, Angle end, ArcMode mode) = 0;
         virtual void quad(Point pt1, Point pt2, Point pt3, Point pt4) = 0;
         virtual void triangle(Point pt1, Point pt2, Point pt3) = 0;
+        virtual Font loadFont(std::string_view name, std::size_t size) = 0;
+        virtual void textFont(const Font& font) = 0;
         virtual void text(std::string_view txt, Point pt, TextHAlign halign = TextHAlign::LEFT, TextVAlign valign = TextVAlign::TOP) = 0;
 
         virtual void resetMatrix() = 0;

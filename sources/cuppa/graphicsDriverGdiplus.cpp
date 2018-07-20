@@ -21,6 +21,8 @@ using GdiColor = Gdiplus::Color;
 using Color = cuppa::Color;
 using GdiImage = Gdiplus::Image;
 using Image = cuppa::Image;
+using GdiFont = Gdiplus::Font;
+using Font = cuppa::Image;
 
 namespace cuppa
 {
@@ -32,7 +34,8 @@ namespace cuppa
             fillBrush_.reset( new SolidBrush{ fillColor_ } );
             stroke_.reset( new Pen{ strokeColor_, strokeWeight_.getAs<float>() } );
 
-            font_ = new Font(L"Verdana", 10, Gdiplus::FontStyle::FontStyleRegular, Gdiplus::Unit::UnitPoint);
+            auto defaultFont = loadFont("Verdana", 10);
+            textFont(defaultFont);
         }
 
         void draw(app& _app, DeviceContext _dc /*HWND _hWnd, HDC _hdc*/) override
@@ -192,6 +195,21 @@ namespace cuppa
                 graphics_->DrawPath( stroke_.get(), &path);
         }
 
+        Font loadFont(std::string_view name, std::size_t size) override
+        {
+            auto len = name.length();
+            auto wcs = (WCHAR*)_malloca((len+1)*sizeof(WCHAR));
+            std::transform(std::begin(name), std::end(name), wcs, [](char c){ WCHAR wc; mbtowc(&wc, &c, 1); return wc; });
+            wcs[len] = L'\0';
+            return Font{ std::make_shared<GdiFont>(wcs, static_cast<REAL>(size), Gdiplus::FontStyle::FontStyleRegular, Gdiplus::Unit::UnitPoint) };
+        }
+
+        void textFont(const Font& font) override
+        {
+            //auto gdiFont = font.getNativeAs<std::shared_ptr<GdiFont>>().get();
+            font_ = font;
+        }
+
         void text(std::string_view txt, Point pt, TextHAlign halign, TextVAlign valign) override
         {
             StringFormat sf;
@@ -213,7 +231,8 @@ namespace cuppa
             auto wcs = (WCHAR*)_malloca((len+1)*sizeof(WCHAR));
             std::transform(std::begin(txt), std::end(txt), wcs, [](char c){ WCHAR wc; mbtowc(&wc, &c, 1); return wc; });
             wcs[len] = L'\0';
-            graphics_->DrawString(wcs, static_cast<INT>(len), font_, toNative(pt), &sf, fillBrush_.get());
+            auto gdiFont = font_.getNativeAs<std::shared_ptr<GdiFont>>().get();
+            graphics_->DrawString(wcs, static_cast<INT>(len), gdiFont, toNative(pt), &sf, fillBrush_.get());
         }
 
         void resetMatrix() override
@@ -275,29 +294,18 @@ namespace cuppa
             auto wcs = (WCHAR*)_malloca((len+1)*sizeof(WCHAR));
             std::transform(std::begin(filename), std::end(filename), wcs, [](char c){ WCHAR wc; mbtowc(&wc, &c, 1); return wc; });
             wcs[len] = L'\0';
-            auto gdiImage = std::make_shared<GdiImage>( wcs );
-            std::cout << gdiImage->GetWidth() << " x " << gdiImage->GetHeight() << " x " << gdiImage->GetPaletteSize() << std::endl;
-            std::cout << gdiImage->GetHorizontalResolution() << " x " << gdiImage->GetVerticalResolution() << std::endl;
-            SizeF sz;
-            gdiImage->GetPhysicalDimension(&sz);
-            std::cout << sz.Width << " x " << sz.Height << std::endl;
+            //auto gdiImage = std::make_shared<GdiImage>( wcs );
+            //std::cout << gdiImage->GetWidth() << " x " << gdiImage->GetHeight() << " x " << gdiImage->GetPaletteSize() << std::endl;
+            //std::cout << gdiImage->GetHorizontalResolution() << " x " << gdiImage->GetVerticalResolution() << std::endl;
+            //SizeF sz;
+            //gdiImage->GetPhysicalDimension(&sz);
+            //std::cout << sz.Width << " x " << sz.Height << std::endl;
             return Image{ std::make_shared<GdiImage>( wcs ) };
         }
 
         void image(const Image& img, Point pt) override
         {
             auto gdiImage = img.getNativeAs<std::shared_ptr<GdiImage>>().get();
-            // static bool once = true;
-            // if (once)
-            // {
-            //     std::cout << gdiImage->GetWidth() << " x " << gdiImage->GetHeight() << " x " << gdiImage->GetPaletteSize() << std::endl;
-            //     std::cout << gdiImage->GetHorizontalResolution() << " x " << gdiImage->GetVerticalResolution() << std::endl;
-            //     SizeF sz;
-            //     gdiImage->GetPhysicalDimension(&sz);
-            //     std::cout << sz.Width << " x " << sz.Height << std::endl;
-            //     once = false;
-            // }
-
             RectF rc{ toNative(pt), SizeF{static_cast<float>(gdiImage->GetWidth()),static_cast<float>(gdiImage->GetHeight())}};
             graphics_->DrawImage(img.getNativeAs<std::shared_ptr<GdiImage>>().get(), rc);
         }
@@ -317,7 +325,7 @@ namespace cuppa
 
         std::stack<Matrix>      matrixStack;
 
-        Font*                   font_ = nullptr;
+        Font                    font_;
 
         ULONG_PTR                       token;
         Gdiplus::GdiplusStartupInput    startupInput;

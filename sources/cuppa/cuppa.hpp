@@ -3,6 +3,7 @@
 #include "angle.hpp"
 #include "unit.hpp"
 #include "image.hpp"
+#include "font.hpp"
 
 #include "graphicsDriverInterface.hpp"
 #include "platformDriverInterface.hpp"
@@ -33,6 +34,7 @@ namespace cuppa
         using Pixel = cuppa::Pixel;
         using Angle = cuppa::Angle;
         using Image = cuppa::Image;
+        using Font = cuppa::Font;
         using Point = cuppa::Point;
         using Direction = cuppa::Direction;
         using Appliance = cuppa::Appliance;
@@ -210,6 +212,10 @@ namespace cuppa
         void arc(Point center, Direction size, Angle start, Angle end)              const   {   arc(center, size, start, end, ArcMode::OPEN);           }
         void quad(Point pt1, Point pt2, Point pt3, Point pt4)                       const   {   graphicsDriver->quad( pt1, pt2, pt3, pt4);              }
         void triangle(Point pt1, Point pt2, Point pt3)                              const   {   graphicsDriver->triangle( pt1, pt2, pt3);               }
+
+    // typography
+        Font loadFont(std::string_view name, std::size_t size) const {  return graphicsDriver->loadFont(name, size);    }
+        void textFont(const Font& font) const                        {  graphicsDriver->textFont(font);                 }
         void text(std::string_view txt, Point pt, TextHAlign halign = TextHAlign::LEFT, TextVAlign valign = TextVAlign::TOP) const
         {   graphicsDriver->text( txt, pt, halign, valign); }
 
