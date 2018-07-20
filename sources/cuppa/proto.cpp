@@ -7,16 +7,23 @@ namespace
         Font font;
         void setup() override
         {
-            size( 800_px, 600_px );
-            font = loadFont("Consolas", 18);
+            size( 640_px, 480_px );
+            font = loadFont("Consolas", 14);
             textFont(font);
         }
         void draw() override
         {
             background(Black);
             fill(Green);
-            text("HELLO WORLD!", {});
-            text("IWMO....II00", { 0_px, 18_px});
+            text("HELLO WORLD!", { 0_px, -3_px});
+            text("IWMO....II00", { 0_px, 12_px});
+            for(int row = 2; row < 32; ++row)
+            {
+                text("012345678901234567890123456789012345678901234567890123456789", { 0_px, 15_px*row-3_px});
+            }
+            // noFill();
+            // stroke(0.5_px, White);
+            // rect({320_px, 240_px}, {640_px, 480_px});
 
             rect(pos, { 10_px, 10_px });
 
