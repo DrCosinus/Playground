@@ -57,6 +57,7 @@ namespace cuppa
         void run();
 
     // environment
+        DeviceContext getDeviceContext() const { return platformDriver->getDeviceContext(); }
         Pixel getWidth() const { return width; }
         Pixel getHeight() const { return height; }
         void setSize(Direction newSize)
@@ -216,6 +217,7 @@ namespace cuppa
     // typography
         Font loadFont(std::string_view name, std::size_t size) const {  return graphicsDriver->loadFont(name, size);    }
         void textFont(const Font& font) const                        {  graphicsDriver->textFont(font);                 }
+        Direction textSize(std::string_view txt) const               {  return graphicsDriver->textSize(txt);           }
         void text(std::string_view txt, Point pt, TextHAlign halign = TextHAlign::LEFT, TextVAlign valign = TextVAlign::TOP) const
         {   graphicsDriver->text( txt, pt, halign, valign); }
 

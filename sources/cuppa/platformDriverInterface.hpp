@@ -1,6 +1,7 @@
 #pragma once
 
 #include "unit.hpp"
+#include "image.hpp" // for DeviceContext... what the shame :(
 
 namespace cuppa
 {
@@ -42,5 +43,6 @@ namespace cuppa
 
         virtual void size(Pixel _width, Pixel _height) = 0;
         virtual const gamepadInterface& gamepad(std::size_t padIndex) = 0;
+        virtual DeviceContext getDeviceContext() const = 0;
     };
 } // namespace cuppa

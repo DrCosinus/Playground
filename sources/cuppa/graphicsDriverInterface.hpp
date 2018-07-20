@@ -19,8 +19,8 @@ namespace cuppa
     {
         virtual ~graphicsDriverInterface() = default;
 
-        virtual void setup() = 0;
-        virtual void draw(app& _app, DeviceContext _dc) = 0;
+        virtual void setup(app& app) = 0;
+        virtual void draw(DeviceContext _dc) = 0;
 
         virtual void background(Color color) = 0;
         virtual void stroke(Appliance) = 0;
@@ -38,6 +38,7 @@ namespace cuppa
         virtual Font loadFont(std::string_view name, std::size_t size) = 0;
         virtual void textFont(const Font& font) = 0;
         virtual void text(std::string_view txt, Point pt, TextHAlign halign = TextHAlign::LEFT, TextVAlign valign = TextVAlign::TOP) = 0;
+        virtual Direction textSize(std::string_view txt) = 0;
 
         virtual void resetMatrix() = 0;
         virtual void pushMatrix() = 0;

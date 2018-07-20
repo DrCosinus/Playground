@@ -102,6 +102,11 @@ namespace cuppa
             }
         }
 
+        DeviceContext getDeviceContext() const override
+        {
+            return DeviceContext{ GetDC(hWnd_) };
+        }
+
         void quit() override
         {
             DestroyWindow(hWnd_);
@@ -144,9 +149,9 @@ private:
             }
             PAINTSTRUCT ps;
             auto hdc = BeginPaint(hWnd_, &ps);
-            //auto appPtr = getAppPtr(hWnd_);
+
             auto gfxDvrItf = appPtr->graphicsDriver.get();
-            gfxDvrItf->draw(*appPtr, DeviceContext{hdc});
+            gfxDvrItf->draw(DeviceContext{hdc});
             EndPaint(hWnd_, &ps);
         }
 
@@ -237,7 +242,7 @@ private:
         {
             WNDCLASSEX wc;
             wc.cbSize        = sizeof(WNDCLASSEX);
-            wc.style         = 0;
+            wc.style         = CS_CLASSDC;
             wc.lpfnWndProc   = WndProc;
             wc.cbClsExtra    = 0;
             wc.cbWndExtra    = 0;

@@ -25,7 +25,7 @@ namespace cuppa
         platformDriver = createPlatformDriverMSWindows();
 
         graphicsDriver = createGraphicsDriverGdiplus();
-        graphicsDriver->setup();
+        graphicsDriver->setup(*this);
 
         setup();
         platformDriver->setup(*this);

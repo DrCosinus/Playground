@@ -28,8 +28,9 @@ namespace cuppa
 {
     struct graphicsDriverGdiplus : graphicsDriverInterface
     {
-        void setup() override
+        void setup(app& _app) override
         {
+            app_ = &_app;
             Gdiplus::GdiplusStartup(&token, &startupInput, NULL);
             fillBrush_.reset( new SolidBrush{ fillColor_ } );
             stroke_.reset( new Pen{ strokeColor_, strokeWeight_.getAs<float>() } );
@@ -38,7 +39,7 @@ namespace cuppa
             textFont(defaultFont);
         }
 
-        void draw(app& _app, DeviceContext _dc /*HWND _hWnd, HDC _hdc*/) override
+        void draw(DeviceContext _dc) override
         {
             Assert(graphics_==nullptr);
             auto hdc = _dc.getNativeAs<HDC>();
@@ -47,8 +48,8 @@ namespace cuppa
             // GetClientRect(_hWnd, &rc);
             // auto rcWidth = static_cast<UINT>( rc.right-rc.left );
             // auto rcHeight = static_cast<UINT>( rc.bottom-rc.top );
-            auto rcWidth = _app.getWidth().getAs<UINT>();
-            auto rcHeight = _app.getHeight().getAs<UINT>();
+            auto rcWidth = app_->getWidth().getAs<UINT>();
+            auto rcHeight = app_->getHeight().getAs<UINT>();
 
             if (drawBuffer_==nullptr || drawBuffer_->GetWidth() != rcWidth || drawBuffer_->GetHeight() != rcHeight)
             {
@@ -60,7 +61,7 @@ namespace cuppa
             drawGraphics.SetCompositingMode(Gdiplus::CompositingMode::CompositingModeSourceOver);
             drawGraphics.SetSmoothingMode(Gdiplus::SmoothingMode::SmoothingModeHighQuality);
 
-            _app.draw();
+            app_->draw();
             graphics.SetInterpolationMode(Gdiplus::InterpolationMode::InterpolationModeLowQuality);
             graphics.SetCompositingMode(Gdiplus::CompositingMode::CompositingModeSourceCopy);
             graphics.SetSmoothingMode(Gdiplus::SmoothingMode::SmoothingModeHighSpeed);
@@ -201,12 +202,11 @@ namespace cuppa
             auto wcs = (WCHAR*)_malloca((len+1)*sizeof(WCHAR));
             std::transform(std::begin(name), std::end(name), wcs, [](char c){ WCHAR wc; mbtowc(&wc, &c, 1); return wc; });
             wcs[len] = L'\0';
-            return Font{ std::make_shared<GdiFont>(wcs, static_cast<REAL>(size), Gdiplus::FontStyle::FontStyleRegular, Gdiplus::Unit::UnitPoint) };
+            return Font{ std::make_shared<GdiFont>(wcs, static_cast<REAL>(size), Gdiplus::FontStyle::FontStyleRegular, Gdiplus::Unit::UnitPixel) };
         }
 
         void textFont(const Font& font) override
         {
-            //auto gdiFont = font.getNativeAs<std::shared_ptr<GdiFont>>().get();
             font_ = font;
         }
 
@@ -233,6 +233,23 @@ namespace cuppa
             wcs[len] = L'\0';
             auto gdiFont = font_.getNativeAs<std::shared_ptr<GdiFont>>().get();
             graphics_->DrawString(wcs, static_cast<INT>(len), gdiFont, toNative(pt), &sf, fillBrush_.get());
+        }
+
+        Direction textSize(std::string_view txt) override
+        {
+            auto len = txt.length();
+            auto wcs = (WCHAR*)_malloca((len+1)*sizeof(WCHAR));
+            std::transform(std::begin(txt), std::end(txt), wcs, [](char c){ WCHAR wc; mbtowc(&wc, &c, 1); return wc; });
+            wcs[len] = L'\0';
+            auto gdiFont = font_.getNativeAs<std::shared_ptr<GdiFont>>().get();
+            RectF boundingBox;
+
+            auto hdc = app_->getDeviceContext().getNativeAs<HDC>();
+            auto g = Graphics{ hdc };
+            StringFormat sf;
+            sf.SetFormatFlags(StringFormatFlags::StringFormatFlagsNoClip | StringFormatFlags::StringFormatFlagsNoWrap);
+            g.MeasureString(wcs,static_cast<INT>(len), gdiFont, RectF{0,0,32768,32768}, &sf, &boundingBox);
+            return Direction{ Pixel{ boundingBox.Width }, Pixel{ boundingBox.Height } };
         }
 
         void resetMatrix() override
@@ -311,6 +328,7 @@ namespace cuppa
         }
 
     private:
+        app*                    app_ = nullptr;
         Graphics*               graphics_ = nullptr;
         std::unique_ptr<Bitmap> drawBuffer_;
 
