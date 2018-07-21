@@ -16,13 +16,19 @@ namespace
             static constexpr std::size_t rows = 30;
             std::size_t caret_col = 0;
             std::size_t caret_row = 0;
-            char buffer[cols*rows];
+            struct cell
+            {
+                char character = ' ';
+                unsigned char color = 1;
+            };
+            cell buffer[cols*rows];
             Font font;
             std::size_t idleTime = 0;
             std::size_t characterTime = 0;
             std::size_t lineTime = 0;
+            unsigned char caret_color = 1;
 
-            std::size_t count = 0;
+            std::size_t caretBlinkCounter = 0;
             bool interactive = false;
             std::queue<std::string_view> scripts;
 
@@ -47,29 +53,43 @@ namespace
                         idleTime = 0;
                 }
                 updateScripts();
-                auto memo = caret_row;
-                caret_row = 10;
-                writeLine("millisecond from start:");
-                writeLine(std::to_string(getMillisFromMark()));
-                caret_row = memo;
+                // auto memo = caret_row;
+                // caret_row = 10;
+                // writeLine("millisecond from start:");
+                // writeLine(std::to_string(getMillisFromMark()));
+                // caret_row = memo;
                 textFont(font);
                 fill(Lime);
-                for(size_t row = 0; row < rows; ++row)
+                int index = 0;
+                for(auto& c: buffer)
                 {
-                    text({buffer+row*cols, cols}, { 0_px, 16_px * row});
+                    int row = index / cols;
+                    int col = index - row * cols;
+                    Color color;
+                    switch(c.color)
+                    {
+                        case 1: color = Lime; break;
+                        case 2: color = Red; break;
+                        case 3: color = Yellow; break;
+                        case 4: color = White; break;
+                        default: color = Blue; break;
+                    }
+                    fill(color);
+                    text({ &c.character, 1 }, { 8_px * col, 16_px * row});
+                    ++index;
                 }
                 fill(Lime);
-                count = (count+1)%60;
-                if (count < 30)
+                caretBlinkCounter = (caretBlinkCounter+1)%60;
+                if (caretBlinkCounter < 30)
                 {
-                    rect({ 5_px+ 8_px * caret_col, 8_px+16_px * caret_row}, { 10_px, 14_px });
+                    rect({ 6_px+ 8_px * caret_col, 8_px+16_px * caret_row}, { 8_px, 16_px });
                 }
             }
 
             void writeLine(std::string_view line)
             {
                 auto subline = line.substr(0, cols);
-                std::copy(std::begin(subline), std::end(subline), buffer+caret_row*cols);
+                std::transform(std::begin(subline), std::end(subline), buffer+caret_row*cols, [caret_color=caret_color](auto c){ return cell{ c, caret_color }; } );
                 caret_row++;
             }
 
@@ -108,19 +128,27 @@ namespace
                                     case 'P': // /Pxyz: pause immediately for xyz milliseconds
                                         idleTime = value;
                                         break;
-                                    case 'C': // /Cxyz: setup pause time between each characters
+                                    case 'D': // /Dxyz: setup delay time between each characters
                                         characterTime = value;
                                         break;
-                                    case 'N': // /N:
+                                    case 'C': // /Cxyz: set the following characters color
+                                        caret_color = static_cast<decltype(caret_color)>(value);
+                                        break;
+                                    case 'N': // /N: new line
                                         caret_col = 0;
                                         caret_row++;
+                                        break;
+                                    case 'S': // /S: scroll up
+                                        std::copy( buffer + cols, buffer + rows * cols, buffer);
+                                        std::fill( buffer + (rows-1)*cols, buffer + rows * cols, cell{ ' ', caret_color });
+                                        idleTime = characterTime;
                                         break;
                                 }
                                 line = line.substr(j+1);
                                 continue;
                             }
                         }
-                        buffer[caret_col+caret_row*cols] = line[0];
+                        buffer[caret_col+caret_row*cols] = { line[0], caret_color };
                         caret_col++;
                         if (caret_col==cols)
                         {
@@ -128,8 +156,8 @@ namespace
                             caret_row++;
                         }
                         line = line.substr(1);
-                        if (!line.empty())
-                            idleTime = characterTime;
+                        idleTime = characterTime;
+                        caretBlinkCounter = 0;
                     }
                     if (line.empty())
                         scripts.pop();
@@ -142,13 +170,23 @@ namespace
             Console* console;
             std::string_view header[6] =
             {
-                "/P500:DrCosinus -- PotAuJeu - v12.23b,/N:/P300:"
+                "/P500:PotAuJeu early prototype- v12.23b,/N:/P300:"
                 "Copyright (C) 1972-2018, DrCosinus Systems Corporation, INC./N:/P300:"
                 "/N:"
                 "DRCSNS PRTBLPRO2.0 Deluxe ACPI BIOS Rev 1008/N:/P300:"
                 "/N:"
-                "Main Processor:/P200: DRC Powertron(tm) 23Mhz/N:/P500:",
-                "/C1:12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890/C0:"
+                "Main Processor:/P200: DRC Powertron(tm) /C4:23Mhz/C1:/N:/P500:"
+                "/N:"
+                "Connecting to store/D100:......../D1:............/D: /C3:OK/C1:/N:"
+                "Downloading loot boxes/D100:............./D1:..../D: /C3:OK/C1:/N:"
+                "Checking micro transactions/D100:..../D1:......../D: /C3:OK/C1:/N:"
+                "Procedural world generation/D100:.........../D1:./D: /C3:OK/C1:/N:"
+                "Systemic gameplay init/D100:............../D1:.../D: /C3:OK/C1:/N:"
+                "Retrieving Blockchains list/D100:......./D1:...../D: /C3:OK/C1:/N:"
+                "Sound/D100:....../D1:............................/D: /C2:FAILURE/C1:/N:"
+                "3D HD Graphics/D100:..../D1:...................../D: /C2:FAILURE/C1:/N:"
+                "Modern Gameplay/D100:.../D1:...................../D: /C2:FAILURE/C1:/N:"
+                "/D80:/S:/S:/S:/S:/S:/S:/S:/S:/S:/S:/S:/S:/S:/S:/S:/S:"
             };
             void boot()
             {
