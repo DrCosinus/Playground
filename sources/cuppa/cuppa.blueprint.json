@@ -9,8 +9,8 @@
         "path_version": "0",
         "status": "wip",
         "dependencies": [ "tdd", "wit" ],
-        "headers": [ "*.hpp" ],
-        "sources": [ "*.cpp" ],
+        "headers": [ "*.hpp", "proto/*.hpp" ],
+        "sources": [ "*.cpp", "proto/*.cpp" ],
         "libs": [ "user32.lib", "gdiplus.lib", "xinput.lib" ],
         "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe"
     }

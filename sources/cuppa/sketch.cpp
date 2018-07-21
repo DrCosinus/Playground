@@ -8,7 +8,7 @@
 #if CURRENT == DEMO
 #include "demo.hpp"
 #elif CURRENT == PROTO
-#include "proto.hpp"
+#include "proto/proto.hpp"
 #else
 #error "Unknown App kind"
 #endif
