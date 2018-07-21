@@ -76,7 +76,11 @@
         "*.h": "cpp",
         "*.hpp": "cpp",
         "random": "cpp",
-        "queue": "cpp"
+        "queue": "cpp",
+        "future": "cpp",
+        "atomic": "cpp",
+        "condition_variable": "cpp",
+        "mutex": "cpp"
     },
     "markdownlint.config": {
         "MD013": false,

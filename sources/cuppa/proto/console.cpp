@@ -4,6 +4,7 @@
 #include "../cuppa.hpp"
 
 #include <iostream>
+#include <string>
 
 using namespace cuppa;
 
@@ -19,6 +20,18 @@ namespace proto
         std::cout << p.width.getAs<float>() << "x" << p.height.getAs<float>() << std::endl;
         p = textSize("12345678901234567890123456789012345678901234567890123456789012345678901234567890\n0");
         std::cout << p.width.getAs<float>() << "x" << p.height.getAs<float>() << std::endl;
+    }
+
+    Color toColor(unsigned char colorCode)
+    {
+        switch(colorCode)
+        {
+            case 1:  return Lime;
+            case 2:  return Red;
+            case 3:  return Yellow;
+            case 4:  return White;
+            default: return Blue;
+        }
     }
 
     void Console::draw()
@@ -38,20 +51,11 @@ namespace proto
         {
             int row = index / cols;
             int col = index - row * cols;
-            Color color;
-            switch(c.color)
-            {
-                case 1: color = Lime; break;
-                case 2: color = Red; break;
-                case 3: color = Yellow; break;
-                case 4: color = White; break;
-                default: color = Blue; break;
-            }
-            fill(color);
+            fill(toColor(c.color));
             text({ &c.character, 1 }, { 8_px * col, 16_px * row});
             ++index;
         }
-        fill(Lime);
+        fill(toColor(caret_color));
         caretBlinkCounter = (caretBlinkCounter+1)%60;
         if (caretBlinkCounter < 30)
         {
@@ -166,18 +170,15 @@ namespace proto
         }
     }
 
-    void Console::pushChar(char)
+    void Console::pushChar(char c)
     {
-    }
-
-    void Console::pushKeyCode(short keyCode)
-    {
+        writeLine( 1, std::to_string(c));
         if (ready())
         {
             caretBlinkCounter = 0;
-            if ((keyCode>='A' && keyCode<='Z') || (keyCode>='0' && keyCode<='9') || keyCode==' ')
+            if (c >= ' ' || c < 0)
             {
-                buffer[caret_col+caret_row*cols] = { static_cast<char>(keyCode), caret_color };
+                buffer[caret_col+caret_row*cols] = { c, caret_color };
                 caret_col++;
                 if(caret_col>=cols)
                 {
@@ -187,47 +188,52 @@ namespace proto
                         scrollup();
                 }
             }
-            else
+        }
+    }
+
+    void Console::pushKeyCode(short keyCode)
+    {
+        writeLine( 0, std::to_string(keyCode));
+        if (ready())
+        {
+            switch(keyCode)
             {
-                switch(keyCode)
+            case 8: // BACK
+                if (caret_row != 0 || caret_col != 0)
                 {
-                case 8: // BACK
-                    if (caret_row != 0 || caret_col != 0)
+                    if (caret_col==0)
                     {
-                        if (caret_col==0)
-                        {
-                            caret_col = cols;
-                            caret_row--;
-                        }
-                        caret_col--;
-                        buffer[caret_col+cols*caret_row].character = ' ';
+                        caret_col = cols;
+                        caret_row--;
                     }
-                    break;
-                case 46: // DEL
-                    if (caret_col<cols-1)
-                        std::copy(buffer+caret_row*cols+caret_col+1,buffer+(caret_row+1)*cols,buffer+caret_row*cols+caret_col);
-                    buffer[(caret_row+1)*cols-1].character = ' ';
-                    break;
-                case 13: // RETURN
-                    {
-                        std::string str(cols, ' ');
-                        std::transform(buffer+caret_row*cols, buffer+(caret_row+1)*cols,std::begin(str), [](cell c) { return c.character; });
-                        auto strview = std::string_view(str);
-                        strview.remove_prefix(strview.find_first_not_of(' '));
-                        strview.remove_suffix(strview.size()-1-strview.find_last_not_of(' '));
-                        scrolldown();
-                        caret_col = 0;
-                        caret_row++;
-                        if (caret_row == rows)
-                            scrollup();
-                        os->interpret(strview);
-                    }
-                    break;
-                case 37:    if (caret_col == 0) {   caret_col = cols;    }   caret_col--;   break;
-                case 38:    if (caret_row == 0) {   caret_row = rows;    }   caret_row--;   break;
-                case 39:    caret_col++; if (caret_col == cols) {   caret_col = 0;    }     break;
-                case 40:    caret_row++; if (caret_row == rows) {   caret_row = 0;    }     break;
+                    caret_col--;
+                    buffer[caret_col+cols*caret_row].character = ' ';
                 }
+                break;
+            case 46: // DEL
+                if (caret_col<cols-1)
+                    std::copy(buffer+caret_row*cols+caret_col+1,buffer+(caret_row+1)*cols,buffer+caret_row*cols+caret_col);
+                buffer[(caret_row+1)*cols-1].character = ' ';
+                break;
+            case 13: // RETURN
+                {
+                    std::string str(cols, ' ');
+                    std::transform(buffer+caret_row*cols, buffer+(caret_row+1)*cols,std::begin(str), [](cell c) { return c.character; });
+                    auto strview = std::string_view(str);
+                    strview.remove_prefix(strview.find_first_not_of(' '));
+                    strview.remove_suffix(strview.size()-1-strview.find_last_not_of(' '));
+                    scrolldown();
+                    caret_col = 0;
+                    caret_row++;
+                    if (caret_row == rows)
+                        scrollup();
+                    os->interpret(strview);
+                }
+                break;
+            case 37:    if (caret_col == 0) {   caret_col = cols;    }   caret_col--;   break;
+            case 38:    if (caret_row == 0) {   caret_row = rows;    }   caret_row--;   break;
+            case 39:    caret_col++; if (caret_col == cols) {   caret_col = 0;    }     break;
+            case 40:    caret_row++; if (caret_row == rows) {   caret_row = 0;    }     break;
             }
         }
     }

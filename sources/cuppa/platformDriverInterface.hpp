@@ -44,5 +44,8 @@ namespace cuppa
         virtual void size(Pixel _width, Pixel _height) = 0;
         virtual const gamepadInterface& gamepad(std::size_t padIndex) = 0;
         virtual DeviceContext getDeviceContext() const = 0;
+
+        virtual void beep(int frequency, int duration) = 0;
+        virtual void systemBeep(int type) = 0;
     };
 } // namespace cuppa

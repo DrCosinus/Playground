@@ -35,6 +35,11 @@ namespace cuppa
     inline DeviceContext getDeviceContext() { return platformDriver->getDeviceContext(); }
     inline void quit() { platformDriver->quit(); }
     inline const gamepadInterface& gamepad(std::size_t padIndex)  { return platformDriver->gamepad(padIndex); }
+    inline bool isDigit(char c) { return c >= '0' && c <= '9'; }
+    inline bool isLower(char c) { return ( c >= 'a' && c <= 'z' ); }
+    inline bool isUpper(char c) { return ( c >= 'A' && c <= 'Z' ); }
+    inline bool isAlpha(char c) { return isLower(c) || isUpper(c); }
+    inline bool isAlphaNum(char c) { return isAlpha(c) || isDigit(c); }
 
     // time & date
     inline std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
@@ -121,6 +126,10 @@ namespace cuppa
     // image
     inline Image loadImage(std::string_view filename)  {   return graphicsDriver->loadImage(filename); }
     inline void image(const Image& img, Point pt)      {   graphicsDriver->image(img, pt);             }
+
+    // sound
+    inline void beep(int frequency, int duration)       { platformDriver->beep(frequency, duration); }
+    inline void systemBeep(int type)                    { platformDriver->systemBeep(type);          }
 
     // calculation
     inline constexpr float PI = 3.1415926535897932384626433832795f;

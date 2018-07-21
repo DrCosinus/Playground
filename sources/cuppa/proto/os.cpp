@@ -1,6 +1,9 @@
 #include "os.hpp"
 
 #include "console.hpp"
+#include "../cuppa.hpp"
+
+using namespace cuppa;
 
 namespace proto
 {
@@ -41,15 +44,72 @@ namespace proto
         );
     }
 
-    void OS::interpret(std::string_view command)
+    int getInteger(std::string_view& view, int defaultValue)
     {
-        if (command == "HELP")
+        if (!view.empty() && isDigit(view[0]))
+        {
+            int value = 0;
+            std::size_t i = 0;
+            while(i < view.size() && isDigit(view[i]))
+            {
+                value = value * 10 + (view[i++] - '0');
+            }
+            if (i==view.size() || view[i]==' ')
+            {
+                view.remove_prefix(i);
+                if (i<view.size())
+                {
+                    view.remove_prefix(view.find_first_not_of(' '));
+                }
+                return value;
+            }
+        }
+        return defaultValue;
+    }
+
+    void OS::interpret(std::string_view commandline)
+    {
+        auto pos = commandline.find_first_of(' ');
+        std::string_view command;
+        if (pos == std::string_view::npos)
+        {
+            command = commandline;
+            commandline = std::string_view{};
+        }
+        else
+        {
+            command = commandline.substr(0, pos);
+            commandline.remove_prefix(pos);
+            commandline.remove_prefix(commandline.find_first_not_of(' '));
+        }
+
+        if (command == "help")
         {
             console->writeScript("popo/N:");
         }
-        else if (command == "CLS")
+        else if (command == "cls")
         {
             console->clearScreen();
+        }
+        else  if (command == "beep")
+        {
+            auto frequency = getInteger(commandline, 523);
+            auto duration = getInteger(commandline, 500);
+            beep(frequency, duration);
+        }
+        else  if (command == "mb")
+        {
+            auto type = getInteger(commandline, 0);
+            systemBeep(type);
+        }
+        else if ( command == "quit")
+        {
+            quit();
+        }
+        else if ( command == "color")
+        {
+            auto color = getInteger(commandline, 1);
+            console->caret_color = static_cast<unsigned char>(color);
         }
     }
 

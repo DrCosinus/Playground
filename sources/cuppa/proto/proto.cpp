@@ -49,13 +49,11 @@ namespace proto
 
         void keyDown(short keyCode) override
         {
-            std::cout << "KeyCode: " << int(keyCode) << std::endl;
             console.pushKeyCode(keyCode);
         }
 
         void keyChar(char c) override
         {
-            std::cout << "Char: " << int(c) << std::endl;
             console.pushChar(c);
         }
 

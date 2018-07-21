@@ -9,6 +9,7 @@
 
 #include <Xinput.h>
 #include <iostream>
+#include <thread>
 
 namespace cuppa
 {
@@ -136,6 +137,15 @@ namespace cuppa
             return gamepads[padIndex];
         }
 
+        void beep(int frequency, int duration) override
+        {
+            std::thread([frequency, duration]{ Beep( frequency, duration ); }).detach();
+        }
+
+        void systemBeep(int type) override
+        {
+            MessageBeep(type);
+        }
 private:
         void draw()
         {
