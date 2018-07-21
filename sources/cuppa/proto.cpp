@@ -2,6 +2,7 @@
 
 #include <string>
 #include <iostream>
+#include <queue>
 
 using namespace cuppa;
 
@@ -13,13 +14,17 @@ namespace
         {
             static constexpr std::size_t cols = 80;
             static constexpr std::size_t rows = 30;
+            std::size_t caret_col = 0;
             std::size_t caret_row = 0;
             char buffer[cols*rows];
             Font font;
+            std::size_t idleTime = 0;
+            std::size_t characterTime = 0;
+            std::size_t lineTime = 0;
 
             std::size_t count = 0;
             bool interactive = false;
-            std::string_view script;
+            std::queue<std::string_view> scripts;
 
             Console()
             {
@@ -34,10 +39,18 @@ namespace
             }
             void draw()
             {
+                if (idleTime > 0)
+                {
+                    if (idleTime > 16)
+                        idleTime -= 16;
+                    else
+                        idleTime = 0;
+                }
+                updateScripts();
                 auto memo = caret_row;
                 caret_row = 10;
-                writeline("millisecond from start:");
-                writeline(std::to_string(getMillisFromMark()));
+                writeLine("millisecond from start:");
+                writeLine(std::to_string(getMillisFromMark()));
                 caret_row = memo;
                 textFont(font);
                 fill(Lime);
@@ -45,31 +58,113 @@ namespace
                 {
                     text({buffer+row*cols, cols}, { 0_px, 16_px * row});
                 }
+                fill(Lime);
                 count = (count+1)%60;
                 if (count < 30)
                 {
-                    rect({ 5_px, 8_px+16_px * caret_row}, { 10_px, 14_px });
+                    rect({ 5_px+ 8_px * caret_col, 8_px+16_px * caret_row}, { 10_px, 14_px });
                 }
             }
-            void writeline(std::string_view line)
+
+            void writeLine(std::string_view line)
             {
                 auto subline = line.substr(0, cols);
                 std::copy(std::begin(subline), std::end(subline), buffer+caret_row*cols);
                 caret_row++;
+            }
+
+            void writeScript(std::string_view line)
+            {
+                scripts.push(line);
+            }
+
+            void updateScripts()
+            {
+                if (idleTime == 0 && !scripts.empty())
+                {
+                    auto& line = scripts.front();
+                    //auto subline = line.substr(0, cols);
+                    //std::copy(std::begin(subline), std::end(subline), buffer+caret_row*cols);
+
+                    for(int i = 0; !line.empty() && idleTime==0; ++i)
+                    {
+                        if (line[0]=='/' && line.size()>1)
+                        {
+                            switch(line[1])
+                            {
+                                case 'P': // /Pxyz: pause immediately for xyz milliseconds
+                                case 'C': // /Cxyz: setup pause time between each characters
+                                    {
+                                        auto j = 2u;
+                                        std::size_t t = 0;
+                                        while (line.size()>j && line[j]>='0' && line[j]<='9')
+                                        {
+                                            t = 10 * t + (line[j++]-'0');
+                                        }
+                                        if (line.size()>j && line[j]==':')
+                                        {
+                                            switch(line[1])
+                                            {
+                                            case 'P':
+                                                idleTime = t;
+                                                break;
+                                            case 'C':
+                                                characterTime = t;
+                                                break;
+                                            }
+                                            line = line.substr(j+1);
+                                            continue;
+                                        }
+                                    }
+                                    break;
+                                case 'N': // /N:
+                                        if (line.size()>2 && line[2]==':')
+                                        {
+                                            caret_col = 0;
+                                            caret_row++;
+                                            line = line.substr(3);
+                                            continue;
+                                        }
+                                    break;
+                            }
+                        }
+                        buffer[caret_col+caret_row*cols] = line[0];
+                        caret_col++;
+                        if (caret_col==cols)
+                        {
+                            caret_col = 0;
+                            caret_row++;
+                        }
+                        line = line.substr(1);
+                        if (!line.empty())
+                            idleTime = characterTime;
+                    }
+                    if (line.empty())
+                        scripts.pop();
+                }
             }
         };
 
         struct OS
         {
             Console* console;
+            std::string_view header[6] =
+            {
+                "/P500:DrCosinus -- PotAuJeu - v12.23b,/N:/P300:"
+                "Copyright (C) 1972-2018, DrCosinus Systems Corporation, INC./N:/P300:"
+                "/N:"
+                "DRCSNS PRTBLPRO2.0 Deluxe ACPI BIOS Rev 1008/N:/P300:"
+                "/N:"
+                "Main Processor:/P200: DRC Powertron(tm) 23Mhz/N:/P500:",
+                "/C1:12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890/C0:"
+            };
             void boot()
             {
-                console->writeline("DrCosinus -- PotAuJeu - v12.23b, ");
-                console->writeline("Copyright (C) 1972-2018, DrCosinus Systems Corporation, INC.");
-                console->writeline(" ");
-                console->writeline("DRCSNS PRTBLPRO2.0 Deluxe ACPI BIOS Rev 1008");
-                console->writeline(" ");
-                console->writeline("Main Processor : DRC Powertron(tm) 23Mhz");
+                for(auto& sv: header)
+                {
+                    console->writeScript(sv);
+                }
+
             }
             void setup(Console& _console)
             {
