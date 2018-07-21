@@ -178,6 +178,9 @@ private:
                 case WM_SIZE:       platformDriverMS->onSize({Pixel(LOWORD(lParam)), Pixel(HIWORD(lParam))}); break;
                 case WM_LBUTTONDOWN:platformDriverMS->onLeftMouseButtonDown({Pixel((lParam)), Pixel(GET_Y_LPARAM(lParam))});    break;
                 case WM_LBUTTONUP:  platformDriverMS->onLeftMouseButtonUp({Pixel((lParam)), Pixel(GET_Y_LPARAM(lParam))});      break;
+                case WM_KEYDOWN:    platformDriverMS->onKeyDown(static_cast<short>(wParam));    break;
+                case WM_KEYUP:      platformDriverMS->onKeyUp(static_cast<short>(wParam));      break;
+                case WM_CHAR:       platformDriverMS->onChar(static_cast<char>(wParam));        break;
                 //case WM_MOUSEMOVE:  platformDriverMS->onMouseMove({Pixel(LOWORD(lParam)), Pixel(HIWORD(lParam))}); break;
                 default:            return DefWindowProc(hwnd, msg, wParam, lParam);
             }
@@ -237,6 +240,22 @@ private:
         // {
         //     getAppPtr(hWnd_)->mouseMove(position);
         // }
+
+        void onKeyDown(short virtualKeyCode)
+        {
+            getAppPtr(hWnd_)->keyDown(virtualKeyCode);
+        }
+
+        void onKeyUp(short virtualKeyCode)
+        {
+            getAppPtr(hWnd_)->keyUp(virtualKeyCode);
+
+        }
+
+        void onChar(char character)
+        {
+            getAppPtr(hWnd_)->keyChar(character);
+        }
 
         void registerWindowClass(HINSTANCE hInstance)
         {

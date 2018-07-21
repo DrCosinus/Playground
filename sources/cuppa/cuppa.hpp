@@ -165,6 +165,9 @@ namespace cuppa
         virtual void update() {}
         virtual void draw() {}
         virtual void mouseClick(Point) {}
+        virtual void keyUp(short) {}
+        virtual void keyDown(short) {}
+        virtual void keyChar(char) {}
 
         void setMousePosition(Point position) { previousMousePosition = mousePosition; mousePosition = position; }
         Point mousePosition;
