@@ -89,6 +89,7 @@ namespace cuppa
     {
         using COMPONENT = short;
         using diff_type = Color;
+        Color() = default;
         explicit constexpr Color(COMPONENT _red, COMPONENT _green, COMPONENT _blue, COMPONENT _alpha=255)
         : alpha{ _alpha }, red{ _red }, green{ _green }, blue{ _blue }
         {}
@@ -119,7 +120,7 @@ namespace cuppa
         template<typename T>
         T GetAlpha() const { return static_cast<T>(alpha); }
     private:
-        COMPONENT alpha, red, green, blue;
+        COMPONENT alpha = 255, red = 255, green = 255, blue = 255;
     };
 
     // PREDEFINED COLORS (https://en.wikipedia.org/wiki/Web_colors#X11_color_names)
