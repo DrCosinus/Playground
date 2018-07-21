@@ -7,7 +7,7 @@ using namespace cuppa;
 
 namespace
 {
-    struct proto : app
+    namespace fantasy
     {
         struct Console
         {
@@ -16,51 +16,75 @@ namespace
             std::size_t caret_row = 0;
             char buffer[cols*rows];
             Font font;
-            proto* g;
+
             std::size_t count = 0;
+            bool interactive = false;
+            std::string_view script;
 
             Console()
             {
             }
-            void setup(proto& _proto)
+            void setup()
             {
-                g = &_proto;
-                font = g->loadFont("Consolas", 14);
-                auto p = g->textSize("1");
+                font = loadFont("Consolas", 14);
+                auto p = textSize("1");
                 std::cout << p.width.getAs<float>() << "x" << p.height.getAs<float>() << std::endl;
-                p = g->textSize("12345678901234567890123456789012345678901234567890123456789012345678901234567890\n0");
+                p = textSize("12345678901234567890123456789012345678901234567890123456789012345678901234567890\n0");
                 std::cout << p.width.getAs<float>() << "x" << p.height.getAs<float>() << std::endl;
-                writeline("Hello World!");
-                writeline("DrCosinOS");
+                writeline("DrCosinus -- PotAuJeu - v12.23b, ");
+                writeline("Copyright (C) 1972-2018, DrCosinus Systems Corporation, INC.");
+                writeline(" ");
+                writeline("DRCSNS PRTBLPRO2.0 Deluxe ACPI BIOS Rev 1008");
+                writeline(" ");
+                writeline("Main Processor : DRC Powertron(tm) 23Mhz");
             }
             void draw()
             {
-                g->textFont(font);
-                g->fill(Green);
+                textFont(font);
+                fill(Lime);
                 for(size_t row = 0; row < rows; ++row)
                 {
-                    g->text({buffer+row*cols, cols}, { 0_px, 16_px * row});
+                    text({buffer+row*cols, cols}, { 0_px, 16_px * row});
                 }
                 count = (count+1)%60;
                 if (count < 30)
                 {
-                    g->rect({ 5_px, 8_px+16_px * caret_row}, { 10_px, 14_px });
+                    rect({ 5_px, 8_px+16_px * caret_row}, { 10_px, 14_px });
                 }
             }
             void writeline(std::string_view line)
             {
-                auto subline = line.substr(0, 40);
+                auto subline = line.substr(0, cols);
                 std::copy(std::begin(subline), std::end(subline), buffer+caret_row*cols);
                 caret_row++;
             }
         };
 
-        Console console;
+        struct FantasyOs
+        {
+            void boot()
+            {
+
+            }
+            void setup()
+            {
+                boot();
+            }
+            void draw()
+            {
+
+            }
+        };
+    } // namespace fantasy
+
+    struct proto : app
+    {
+        fantasy::Console console;
 
         void setup() override
         {
             size( 800_px, 600_px );
-            console.setup(*this);
+            console.setup();
         }
 
         void draw() override

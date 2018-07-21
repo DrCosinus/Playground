@@ -122,4 +122,51 @@ namespace cuppa
         COMPONENT alpha, red, green, blue;
     };
 
+    // PREDEFINED COLORS (https://en.wikipedia.org/wiki/Web_colors#X11_color_names)
+    inline constexpr Color White{ 255 };
+    inline constexpr Color LightGray{ 211 };
+    inline constexpr Color Silver{ 192 };
+    inline constexpr Color DarkGray{ 169 };
+    inline constexpr Color Gray{ 128 };
+    inline constexpr Color DimGray{ 105 };
+    inline constexpr Color Black{ 0 };
+    // PINK COLORS
+    inline constexpr Color Pink{ 255, 192, 203 };
+    // RED COLORS
+    inline constexpr Color Red{ 255, 0, 0 };
+    inline constexpr Color DarkRed{ 139, 0, 0 };
+    // ORANGE COLORS
+    inline constexpr Color OrangeRed{ 255, 69, 0 };
+    inline constexpr Color Coral{ 255, 127, 80 };
+    inline constexpr Color DarkOrange{ 255, 140, 0 };
+    inline constexpr Color Orange{ 255, 165, 0 };
+    // YELLOW COLORS
+    inline constexpr Color Yellow{ 255, 255, 0 };
+    inline constexpr Color Gold{ 255, 215, 0 };
+    // BROWN COLORS
+    inline constexpr Color Goldenrod{ 218, 165, 32 };
+    inline constexpr Color DarkGoldenrod{ 184, 134, 11 };
+    inline constexpr Color SaddleBrown{ 139, 69, 19 };
+    inline constexpr Color Sienna{ 160, 82, 45 };
+    inline constexpr Color Brown{ 165, 42, 42 };
+    // GREEN COLORS
+    inline constexpr Color Lime{ 0, 255, 0 };
+    inline constexpr Color Green{ 0, 128, 0 };
+    inline constexpr Color DarkGreen{ 0, 100, 0 };
+    // CYAN COLORS
+    inline constexpr Color Cyan{ 0, 255, 255 };
+    inline constexpr Color Aqua{ 0, 255, 255 };
+    // BLUE COLORS
+    inline constexpr Color CornflowerBlue{ 100, 149, 237 };
+    inline constexpr Color Blue{ 0, 0, 255 };
+    inline constexpr Color MediumBlue{ 0, 0, 205 };
+    inline constexpr Color DarkBlue{ 0, 0, 139 };
+    inline constexpr Color Navy{ 0, 0, 128 };
+    // PURPLE, VIOLET AND MAGENTA COLORS
+    inline constexpr Color Magenta{ 255, 0, 255 };
+    inline constexpr Color Fuchsia{ 255, 0, 255 };
+    inline constexpr Color DarkViolet{ 148, 0, 211 };
+    inline constexpr Color Purple{ 128, 0, 128 };
+    inline constexpr Color Indigo{ 75, 0, 130 };
+
 } // namespace cuppa

@@ -30,12 +30,14 @@ namespace cuppa
         setup();
         platformDriver->setup(*this);
         platformDriver->run();
+        platformDriver = nullptr;
+        graphicsDriver = nullptr;
     }
 
     std::default_random_engine engine{ std::random_device()() };
     std::uniform_real_distribution<float> uniform_distribution{ 0.0f, 1.0f };
     std::normal_distribution<float> normal_distribution{ };
 
-    float app::random() const { return uniform_distribution(engine); }
-    float app::randomGaussian() const { return normal_distribution(engine); }
+    float random() { return uniform_distribution(engine); }
+    float randomGaussian() { return normal_distribution(engine); }
 } // namespace cuppa

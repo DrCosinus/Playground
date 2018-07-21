@@ -4,19 +4,19 @@
 #include <memory>
 #include <string>
 
+using namespace cuppa;
+
 namespace
 {
-    struct demo : cuppa::app
+    struct demo : app
     {
-        using cuppa::app::app;
+        using app::app;
 
         Image imgArrow;
         Image imgDots;
         Pixel x = -8_px;
         Angle angle = 0_deg;
         std::size_t clickCount = 0;
-
-        demo() : gamepadTracker{ *this } {}
 
         void setup() override
         {
@@ -41,15 +41,15 @@ namespace
                 if (count+1 < capacity)
                     count++;
             }
-            void draw(demo& s) const
+            void draw() const
             {
                 for(std::size_t i = 0; i+1 < count; ++i)
                 {
-                    s.stroke(s.remap<Pixel, Color>(i, { 0, count-1 }, { 5_px, 2_px }, { Yellow, Red.ModulateAlpha(64) }));
-                    // auto[pixel, color] = s.remap<Pixel, Color>(i, { 0, count-1 }, { 5_px, 2_px }, { Yellow, Red.ModulateAlpha(64) });
-                    // s.stroke(pixel, color);
-                    //s.stroke(s.remap<Pixel>(i, { 0, count-1 }, { 5_px, 2_px }), s.remap<Color>(i, { 0, count-1 }, { Yellow, Red.ModulateAlpha(64) }));
-                    s.line(history[(nextIndex-i-1+capacity*2)%capacity], history[(nextIndex-i-2+capacity*2)%capacity]);
+                    stroke(remap<Pixel, Color>(i, { 0, count-1 }, { 5_px, 2_px }, { Yellow, Red.ModulateAlpha(64) }));
+                    // auto[pixel, color] = remap<Pixel, Color>(i, { 0, count-1 }, { 5_px, 2_px }, { Yellow, Red.ModulateAlpha(64) });
+                    // stroke(pixel, color);
+                    // stroke(s.remap<Pixel>(i, { 0, count-1 }, { 5_px, 2_px }), s.remap<Color>(i, { 0, count-1 }, { Yellow, Red.ModulateAlpha(64) }));
+                    line(history[(nextIndex-i-1+capacity*2)%capacity], history[(nextIndex-i-2+capacity*2)%capacity]);
                 }
             }
         private:
@@ -60,82 +60,79 @@ namespace
 
         struct Gamepad
         {
-            demo& s;
-            explicit Gamepad(demo& _s) : s{ _s } {}
-
             void drawStick(Direction centerPosition, Direction stickDirection, bool isDown) const
             {
-                s.pushMatrix();
-                s.translate(centerPosition);
-                s.fill(isDown ? Color{128} : Color{ 51 });
-                s.stroke(Appliance::DISABLED);
-                s.ellipse( { }, 80_px);
-                s.stroke(White, 5_px);
-                s.line( {0_px, 0_px}, stickDirection.flipY() * 40 );
-                s.popMatrix();
+                pushMatrix();
+                translate(centerPosition);
+                fill(isDown ? Color{128} : Color{ 51 });
+                stroke(Appliance::DISABLED);
+                ellipse( { }, 80_px);
+                stroke(White, 5_px);
+                line( {0_px, 0_px}, stickDirection.flipY() * 40 );
+                popMatrix();
             }
             void drawRoundButton(Direction centerPosition, bool isDown, std::string_view name, Color upColor, Color downColor) const
             {
-                s.pushMatrix();
-                s.translate(centerPosition);
-                s.stroke(1_px, White.ModulateAlpha(160));
-                s.fill(isDown?downColor:upColor);
-                s.ellipse( { }, 20_px);
-                s.fill(White.ModulateAlpha(128));
-                s.text(name, {}, TextHAlign::CENTER, TextVAlign::MIDDLE);
-                s.popMatrix();
+                pushMatrix();
+                translate(centerPosition);
+                stroke(1_px, White.ModulateAlpha(160));
+                fill(isDown?downColor:upColor);
+                ellipse( { }, 20_px);
+                fill(White.ModulateAlpha(128));
+                text(name, {}, TextHAlign::CENTER, TextVAlign::MIDDLE);
+                popMatrix();
             }
             void drawSquareButton(Direction centerPosition, bool isDown, std::string_view name, Color upColor, Color downColor) const
             {
-                s.pushMatrix();
-                s.translate(centerPosition);
-                s.stroke(1_px, White.ModulateAlpha(160));
-                s.fill(isDown?downColor:upColor);
-                s.rect( { }, { 25_px, 15_px });
-                s.fill(White.ModulateAlpha(128));
-                s.text(name, {}, TextHAlign::CENTER, TextVAlign::MIDDLE);
-                s.popMatrix();
+                pushMatrix();
+                translate(centerPosition);
+                stroke(1_px, White.ModulateAlpha(160));
+                fill(isDown?downColor:upColor);
+                rect( { }, { 25_px, 15_px });
+                fill(White.ModulateAlpha(128));
+                text(name, {}, TextHAlign::CENTER, TextVAlign::MIDDLE);
+                popMatrix();
             }
             void drawGauge(Direction centerPosition, float gauge, std::string_view name, Color upColor, Color downColor) const
             {
-                s.pushMatrix();
-                s.translate(centerPosition);
-                s.stroke(1_px, White.ModulateAlpha(160));
-                s.fill(upColor);
-                s.rect( { }, { 25_px, 15_px });
-                s.fill(downColor);
-                s.stroke(Appliance::ENABLED);
-                s.rect( { }, { Pixel{25*gauge}, 15_px });
-                s.fill(White.ModulateAlpha(128));
-                s.text(name, {}, TextHAlign::CENTER, TextVAlign::MIDDLE);
-                s.popMatrix();
+                pushMatrix();
+                translate(centerPosition);
+                stroke(1_px, White.ModulateAlpha(160));
+                fill(upColor);
+                rect( { }, { 25_px, 15_px });
+                fill(downColor);
+                stroke(Appliance::ENABLED);
+                rect( { }, { Pixel{25*gauge}, 15_px });
+                fill(White.ModulateAlpha(128));
+                text(name, {}, TextHAlign::CENTER, TextVAlign::MIDDLE);
+                popMatrix();
             }
 
             void draw() const
             {
-                auto& gp = s.gamepad(0);
+                auto& gp = gamepad(0);
                 if (gp.connected())
                 {
-                    s.pushMatrix();
-                    s.translate({480_px, 230_px});
+                    pushMatrix();
+                    translate({480_px, 230_px});
                     drawStick({10_px, 70_px}, gp.leftStick(), gp.buttonLeftThumb());
                     drawStick({ 170_px, 120_px }, gp.rightStick(), gp.buttonRightThumb());
 
-                    s.pushMatrix();
-                    s.translate({230_px, 70_px});
+                    pushMatrix();
+                    translate({230_px, 70_px});
                     drawRoundButton({0_px, 20_px}, gp.buttonA(), "A", Color{0,96,0}, Color{0,192,0});
                     drawRoundButton({20_px, 0_px}, gp.buttonB(), "B", Color{96,0,0}, Color{192,0,0});
                     drawRoundButton({-20_px, 0_px}, gp.buttonX(), "X", Color{0,0,96}, Color{32,32,224});
                     drawRoundButton({0_px, -20_px}, gp.buttonY(), "Y", Color{96,96,0}, Color{192,192,0});
-                    s.popMatrix();
+                    popMatrix();
 
-                    s.pushMatrix();
-                    s.translate({ 70_px, 120_px });
+                    pushMatrix();
+                    translate({ 70_px, 120_px });
                     drawRoundButton({0_px, 20_px}, gp.buttonDigitalDown(), "V", Color{32}, Color{128});
                     drawRoundButton({20_px, 0_px}, gp.buttonDigitalRight(), ">", Color{32}, Color{128});
                     drawRoundButton({-20_px, 0_px}, gp.buttonDigitalLeft(), "<", Color{32}, Color{128});
                     drawRoundButton({0_px, -20_px}, gp.buttonDigitalUp(), "^", Color{32}, Color{128});
-                    s.popMatrix();
+                    popMatrix();
 
                     drawSquareButton({ 90_px, 60_px}, gp.buttonBack(), "<-", Color{32}, Color{128} );
                     drawSquareButton({ 150_px, 60_px}, gp.buttonStart(), "->", Color{32}, Color{128} );
@@ -145,7 +142,7 @@ namespace
 
                     drawGauge({ 70_px, 10_px}, gp.leftTrigger(), "LT", Color{32}, Color{128} );
                     drawGauge({ 170_px, 10_px}, gp.rightTrigger(), "RT", Color{32}, Color{128} );
-                    s.popMatrix();
+                    popMatrix();
                 }
             }
         } gamepadTracker;
@@ -156,7 +153,7 @@ namespace
             stroke(5_px, White);
             line(previousMousePosition, mousePosition); // TODO: handle off screen positions
             mouseTracker.push(mousePosition);
-            mouseTracker.draw(*this);
+            mouseTracker.draw();
 
             gamepadTracker.draw();
 
@@ -255,7 +252,7 @@ namespace
     };
 } // anonymous namespace
 
-std::unique_ptr<cuppa::app> createDemo()
+std::unique_ptr<app> createDemo()
 {
     return std::make_unique<demo>();
 }

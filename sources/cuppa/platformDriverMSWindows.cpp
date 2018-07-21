@@ -12,7 +12,7 @@
 
 namespace cuppa
 {
-    struct gamepad : gamepadInterface
+    struct xgamepad : gamepadInterface
     {
         XINPUT_STATE state;
         static constexpr DWORD invalidIndex = 0xFFFFFFFF;
@@ -72,7 +72,7 @@ namespace cuppa
         }
     };
 
-    gamepad gamepads[XUSER_MAX_COUNT];
+    xgamepad gamepads[XUSER_MAX_COUNT];
 
     static constexpr TCHAR windowClassName[] = TEXT("cuppaWindowClass");
 
@@ -83,8 +83,9 @@ namespace cuppa
 
     struct platformDriverMSWindows : platformDriverInterface
     {
-        platformDriverMSWindows() = default;
-        explicit platformDriverMSWindows(HWND _hWnd) : hWnd_{_hWnd} {}
+        //platformDriverMSWindows() = default;
+        ~platformDriverMSWindows() override = default;
+        //explicit platformDriverMSWindows(HWND _hWnd) : hWnd_{_hWnd} {}
 
         static auto getAppPtr(HWND hWnd) { return reinterpret_cast<app*>(GetWindowLongPtr(hWnd, GWLP_USERDATA)); }
 
@@ -150,7 +151,7 @@ private:
             PAINTSTRUCT ps;
             auto hdc = BeginPaint(hWnd_, &ps);
 
-            auto gfxDvrItf = appPtr->graphicsDriver.get();
+            auto gfxDvrItf = graphicsDriver.get();
             gfxDvrItf->draw(DeviceContext{hdc});
             EndPaint(hWnd_, &ps);
         }
@@ -167,18 +168,19 @@ private:
 
         static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
-            auto platformDriver = platformDriverMSWindows{ hwnd };
+            //auto platformDriver = platformDriverMSWindows{ hwnd };
+            auto platformDriverMS = static_cast<platformDriverMSWindows*>(platformDriver.get());
             switch(msg)
             {
-                case WM_CREATE:     platformDriver.onCreate();                                             break;
-                case WM_TIMER:      platformDriver.onTimer(wParam);                                        break;
-                case WM_PAINT:      platformDriver.onPaint();                                              break;
-                case WM_CLOSE:      platformDriver.onClose();                                              break;
-                case WM_DESTROY:    platformDriver.onDestroy();                                            break;
-                case WM_SIZE:       platformDriver.onSize({Pixel(LOWORD(lParam)), Pixel(HIWORD(lParam))}); break;
-                case WM_LBUTTONDOWN:platformDriver.onLeftMouseButtonDown({Pixel((lParam)), Pixel(GET_Y_LPARAM(lParam))});    break;
-                case WM_LBUTTONUP:  platformDriver.onLeftMouseButtonUp({Pixel((lParam)), Pixel(GET_Y_LPARAM(lParam))});      break;
-                //case WM_MOUSEMOVE:  platformDriver.onMouseMove({Pixel(LOWORD(lParam)), Pixel(HIWORD(lParam))}); break;
+                case WM_CREATE:     platformDriverMS->onCreate();                                             break;
+                case WM_TIMER:      platformDriverMS->onTimer(wParam);                                        break;
+                case WM_PAINT:      platformDriverMS->onPaint();                                              break;
+                case WM_CLOSE:      platformDriverMS->onClose();                                              break;
+                case WM_DESTROY:    platformDriverMS->onDestroy();                                            break;
+                case WM_SIZE:       platformDriverMS->onSize({Pixel(LOWORD(lParam)), Pixel(HIWORD(lParam))}); break;
+                case WM_LBUTTONDOWN:platformDriverMS->onLeftMouseButtonDown({Pixel((lParam)), Pixel(GET_Y_LPARAM(lParam))});    break;
+                case WM_LBUTTONUP:  platformDriverMS->onLeftMouseButtonUp({Pixel((lParam)), Pixel(GET_Y_LPARAM(lParam))});      break;
+                //case WM_MOUSEMOVE:  platformDriverMS->onMouseMove({Pixel(LOWORD(lParam)), Pixel(HIWORD(lParam))}); break;
                 default:            return DefWindowProc(hwnd, msg, wParam, lParam);
             }
             return 0;

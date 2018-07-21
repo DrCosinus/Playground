@@ -244,7 +244,7 @@ namespace cuppa
             auto gdiFont = font_.getNativeAs<std::shared_ptr<GdiFont>>().get();
             RectF boundingBox;
 
-            auto hdc = app_->getDeviceContext().getNativeAs<HDC>();
+            auto hdc = getDeviceContext().getNativeAs<HDC>();
             auto g = Graphics{ hdc };
             StringFormat sf;
             sf.SetFormatFlags(StringFormatFlags::StringFormatFlagsNoClip | StringFormatFlags::StringFormatFlagsNoWrap);
