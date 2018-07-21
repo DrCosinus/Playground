@@ -88,44 +88,36 @@ namespace
 
                     for(int i = 0; !line.empty() && idleTime==0; ++i)
                     {
-                        if (line[0]=='/' && line.size()>1)
+                        // commands are /Lxyz: where
+                        // - L is a single character coding the command
+                        // - xyz is an optional positive integral value
+                        // - colon character
+                        // consequently command are at least 3 characters long
+                        if (line[0]=='/' && line.size()>2)
                         {
-                            switch(line[1])
+                            auto j = 2u;
+                            std::size_t value = 0;
+                            while (line.size()>j && line[j]>='0' && line[j]<='9')
                             {
-                                case 'P': // /Pxyz: pause immediately for xyz milliseconds
-                                case 'C': // /Cxyz: setup pause time between each characters
-                                    {
-                                        auto j = 2u;
-                                        std::size_t t = 0;
-                                        while (line.size()>j && line[j]>='0' && line[j]<='9')
-                                        {
-                                            t = 10 * t + (line[j++]-'0');
-                                        }
-                                        if (line.size()>j && line[j]==':')
-                                        {
-                                            switch(line[1])
-                                            {
-                                            case 'P':
-                                                idleTime = t;
-                                                break;
-                                            case 'C':
-                                                characterTime = t;
-                                                break;
-                                            }
-                                            line = line.substr(j+1);
-                                            continue;
-                                        }
-                                    }
-                                    break;
-                                case 'N': // /N:
-                                        if (line.size()>2 && line[2]==':')
-                                        {
-                                            caret_col = 0;
-                                            caret_row++;
-                                            line = line.substr(3);
-                                            continue;
-                                        }
-                                    break;
+                                value = 10 * value + (line[j++]-'0');
+                            }
+                            if (line.size()>j && line[j]==':')
+                            {
+                                switch(line[1])
+                                {
+                                    case 'P': // /Pxyz: pause immediately for xyz milliseconds
+                                        idleTime = value;
+                                        break;
+                                    case 'C': // /Cxyz: setup pause time between each characters
+                                        characterTime = value;
+                                        break;
+                                    case 'N': // /N:
+                                        caret_col = 0;
+                                        caret_row++;
+                                        break;
+                                }
+                                line = line.substr(j+1);
+                                continue;
                             }
                         }
                         buffer[caret_col+caret_row*cols] = line[0];
