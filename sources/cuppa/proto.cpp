@@ -31,15 +31,14 @@ namespace
                 std::cout << p.width.getAs<float>() << "x" << p.height.getAs<float>() << std::endl;
                 p = textSize("12345678901234567890123456789012345678901234567890123456789012345678901234567890\n0");
                 std::cout << p.width.getAs<float>() << "x" << p.height.getAs<float>() << std::endl;
-                writeline("DrCosinus -- PotAuJeu - v12.23b, ");
-                writeline("Copyright (C) 1972-2018, DrCosinus Systems Corporation, INC.");
-                writeline(" ");
-                writeline("DRCSNS PRTBLPRO2.0 Deluxe ACPI BIOS Rev 1008");
-                writeline(" ");
-                writeline("Main Processor : DRC Powertron(tm) 23Mhz");
             }
             void draw()
             {
+                auto memo = caret_row;
+                caret_row = 10;
+                writeline("millisecond from start:");
+                writeline(std::to_string(getMillisFromMark()));
+                caret_row = memo;
                 textFont(font);
                 fill(Lime);
                 for(size_t row = 0; row < rows; ++row)
@@ -60,17 +59,24 @@ namespace
             }
         };
 
-        struct FantasyOs
+        struct OS
         {
+            Console* console;
             void boot()
             {
-
+                console->writeline("DrCosinus -- PotAuJeu - v12.23b, ");
+                console->writeline("Copyright (C) 1972-2018, DrCosinus Systems Corporation, INC.");
+                console->writeline(" ");
+                console->writeline("DRCSNS PRTBLPRO2.0 Deluxe ACPI BIOS Rev 1008");
+                console->writeline(" ");
+                console->writeline("Main Processor : DRC Powertron(tm) 23Mhz");
             }
-            void setup()
+            void setup(Console& _console)
             {
+                console = &_console;
                 boot();
             }
-            void draw()
+            void update()
             {
 
             }
@@ -80,11 +86,13 @@ namespace
     struct proto : app
     {
         fantasy::Console console;
+        fantasy::OS fos;
 
         void setup() override
         {
             size( 800_px, 600_px );
             console.setup();
+            fos.setup(console);
         }
 
         void draw() override
