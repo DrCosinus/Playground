@@ -8,6 +8,7 @@
 #include "graphicsDriverInterface.hpp"
 #include "platformDriverInterface.hpp"
 
+#include <chrono>
 #include <string_view>
 #include <tuple>
 
@@ -34,6 +35,11 @@ namespace cuppa
     inline DeviceContext getDeviceContext() { return platformDriver->getDeviceContext(); }
     inline void quit() { platformDriver->quit(); }
     inline const gamepadInterface& gamepad(std::size_t padIndex)  { return platformDriver->gamepad(padIndex); }
+
+    // time & date
+    inline std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
+    inline auto markTime() { startTime = std::chrono::high_resolution_clock::now(); }
+    inline auto getMillisFromMark() { return std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now() - startTime).count(); }
 
     // typography
     inline Font loadFont(std::string_view name, std::size_t size) {  return graphicsDriver->loadFont(name, size);    }

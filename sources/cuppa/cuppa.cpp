@@ -21,6 +21,7 @@ namespace cuppa
     void app::run()
     {
         // Commandline: __argc, __argv
+        markTime();
 
         platformDriver = createPlatformDriverMSWindows();
 

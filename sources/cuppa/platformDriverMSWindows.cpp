@@ -150,9 +150,7 @@ private:
             }
             PAINTSTRUCT ps;
             auto hdc = BeginPaint(hWnd_, &ps);
-
-            auto gfxDvrItf = graphicsDriver.get();
-            gfxDvrItf->draw(DeviceContext{hdc});
+            graphicsDriver->draw(DeviceContext{hdc});
             EndPaint(hWnd_, &ps);
         }
 
@@ -172,7 +170,7 @@ private:
             auto platformDriverMS = static_cast<platformDriverMSWindows*>(platformDriver.get());
             switch(msg)
             {
-                case WM_CREATE:     platformDriverMS->onCreate();                                             break;
+                case WM_CREATE:     platformDriverMS->onCreate(hwnd);                                         break;
                 case WM_TIMER:      platformDriverMS->onTimer(wParam);                                        break;
                 case WM_PAINT:      platformDriverMS->onPaint();                                              break;
                 case WM_CLOSE:      platformDriverMS->onClose();                                              break;
@@ -186,9 +184,9 @@ private:
             return 0;
         }
 
-        void onCreate()
+        void onCreate(HWND _hWnd)
         {
-            SetTimer(hWnd_, 1234, 16, (TIMERPROC)0);
+            SetTimer(_hWnd, 1234, 16, (TIMERPROC)0);
         }
 
         void onClose()
