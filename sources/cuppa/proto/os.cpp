@@ -9,6 +9,7 @@ namespace proto
 {
     namespace
     {
+        [[maybe_unused]]
         std::string_view note =
             "Ce week-end, j'aurai participé à un Game Jam organisé par un You-Tuber fan de truc chelou, ukulélé et de fromage."
             "Il est bien gentil, mais quand le thème est tombé ça a été la douche froide. Franchement il est sérieux ?"
@@ -109,7 +110,7 @@ namespace proto
         else if ( command == "color")
         {
             auto color = getInteger(commandline, 1);
-            console->caret_color = static_cast<unsigned char>(color);
+            console->caretColor( static_cast<Console::color_code_type>(color) );
         }
     }
 

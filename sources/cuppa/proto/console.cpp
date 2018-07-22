@@ -55,11 +55,11 @@ namespace proto
             text({ &c.character, 1 }, { 8_px * col, 16_px * row});
             ++index;
         }
-        fill(toColor(caret_color));
-        caretBlinkCounter = (caretBlinkCounter+1)%60;
-        if (caretBlinkCounter < 30)
+        fill(toColor(caret.colorCode));
+        caret.blinkCounter = (caret.blinkCounter+1)%60;
+        if (caret.blinkCounter < 30)
         {
-            rect({ 6_px+ 8_px * caret_col, 8_px+16_px * caret_row}, { 8_px, 16_px });
+            rect({ 6_px+ 8_px * caret.col, 8_px+16_px * caret.row}, { 8_px, 16_px });
         }
     }
 
@@ -68,10 +68,10 @@ namespace proto
         return scripts.empty() && idleTime==0;
     }
 
-    void Console::writeLine(std::size_t row, std::string_view line)
+    void Console::writeLine(coord_type row, std::string_view line)
     {
         auto subline = line.substr(0, cols);
-        std::transform(std::begin(subline), std::end(subline), buffer+row*cols, [caret_color=caret_color](auto c){ return cell{ c, caret_color }; } );
+        std::transform(std::begin(subline), std::end(subline), buffer+row*cols, [colorCode=caret.colorCode](auto c){ return cell{ c, colorCode }; } );
     }
 
     void Console::writeScript(std::string_view line)
@@ -82,24 +82,24 @@ namespace proto
     void Console::scrollup()
     {
         std::copy( buffer + cols, buffer + rows * cols, buffer);
-        std::fill( buffer + (rows-1)*cols, buffer + rows * cols, cell{ ' ', caret_color });
-        if (caret_row>0)
-            --caret_row;
+        std::fill( buffer + (rows-1)*cols, buffer + rows * cols, cell{ ' ', caret.colorCode });
+        if (caret.row>0)
+            --caret.row;
     }
 
     void Console::scrolldown()
     {
-        std::copy( buffer + (caret_row+1) * cols, buffer + (rows-1) * cols, buffer + (caret_row+2) * cols);
-        std::fill( buffer + (caret_row+1)*cols, buffer + (caret_row+2) * cols, cell{ ' ', caret_color });
+        std::copy( buffer + (caret.row + 1) * cols, buffer + (rows - 1) * cols, buffer + (caret.row + 2) * cols);
+        std::fill( buffer + (caret.row + 1 ) *cols, buffer + (caret.row + 2) * cols, cell{ ' ', caret.colorCode });
     }
 
     void Console::clearScreen()
     {
-        std::fill(buffer, buffer+cols*rows, cell{ ' ', caret_color});
-        caret_col = caret_row = 0;
+        std::fill(buffer, buffer+cols*rows, cell{ ' ', caret.colorCode});
+        caret.col = caret.row = 0;
     }
 
-    void Console::triggerEvent(std::size_t eventID)
+    void Console::triggerEvent(event_type eventID)
     {
         os->onConsoleEvent(eventID);
     }
@@ -136,11 +136,12 @@ namespace proto
                                 characterTime = value;
                                 break;
                             case 'C': // /Cxyz: set the following characters color
-                                caret_color = static_cast<decltype(caret_color)>(value);
+                                caret.colorCode = static_cast<decltype(caret.colorCode)>(value);
                                 break;
                             case 'N': // /N: new line
-                                caret_col = 0;
-                                caret_row++;
+                                caret.col = 0;
+                                caret.row++;
+                                idleTime = lineTime;
                                 break;
                             case 'S': // /S: scroll up
                                 scrollup();
@@ -154,16 +155,16 @@ namespace proto
                         continue;
                     }
                 }
-                buffer[caret_col+caret_row*cols] = { line[0], caret_color };
-                caret_col++;
-                if (caret_col==cols)
+                buffer[caret.col+caret.row*cols] = { line[0], caret.colorCode };
+                caret.col++;
+                if (caret.col==cols)
                 {
-                    caret_col = 0;
-                    caret_row++;
+                    caret.col = 0;
+                    caret.row++;
                 }
                 line = line.substr(1);
                 idleTime = characterTime;
-                caretBlinkCounter = 0;
+                caret.blinkCounter = 0;
             }
             if (line.empty())
                 scripts.pop();
@@ -175,16 +176,16 @@ namespace proto
         writeLine( 1, std::to_string(c));
         if (ready())
         {
-            caretBlinkCounter = 0;
+            caret.blinkCounter = 0;
             if (c >= ' ' || c < 0)
             {
-                buffer[caret_col+caret_row*cols] = { c, caret_color };
-                caret_col++;
-                if(caret_col>=cols)
+                buffer[caret.col+caret.row*cols] = { c, caret.colorCode };
+                caret.col++;
+                if(caret.col>=cols)
                 {
-                    caret_col = 0;
-                    caret_row++;
-                    if (caret_row>=rows)
+                    caret.col = 0;
+                    caret.row++;
+                    if (caret.row>=rows)
                         scrollup();
                 }
             }
@@ -199,41 +200,41 @@ namespace proto
             switch(keyCode)
             {
             case 8: // BACK
-                if (caret_row != 0 || caret_col != 0)
+                if (caret.row != 0 || caret.col != 0)
                 {
-                    if (caret_col==0)
+                    if (caret.col==0)
                     {
-                        caret_col = cols;
-                        caret_row--;
+                        caret.col = cols;
+                        caret.row--;
                     }
-                    caret_col--;
-                    buffer[caret_col+cols*caret_row].character = ' ';
+                    caret.col--;
+                    buffer[caret.col+cols*caret.row].character = ' ';
                 }
                 break;
             case 46: // DEL
-                if (caret_col<cols-1)
-                    std::copy(buffer+caret_row*cols+caret_col+1,buffer+(caret_row+1)*cols,buffer+caret_row*cols+caret_col);
-                buffer[(caret_row+1)*cols-1].character = ' ';
+                if (caret.col<cols-1)
+                    std::copy(buffer+caret.row*cols+caret.col+1,buffer+(caret.row+1)*cols,buffer+caret.row*cols+caret.col);
+                buffer[(caret.row+1)*cols-1].character = ' ';
                 break;
             case 13: // RETURN
                 {
                     std::string str(cols, ' ');
-                    std::transform(buffer+caret_row*cols, buffer+(caret_row+1)*cols,std::begin(str), [](cell c) { return c.character; });
+                    std::transform(buffer+caret.row*cols, buffer+(caret.row+1)*cols,std::begin(str), [](cell c) { return c.character; });
                     auto strview = std::string_view(str);
                     strview.remove_prefix(strview.find_first_not_of(' '));
                     strview.remove_suffix(strview.size()-1-strview.find_last_not_of(' '));
                     scrolldown();
-                    caret_col = 0;
-                    caret_row++;
-                    if (caret_row == rows)
+                    caret.col = 0;
+                    caret.row++;
+                    if (caret.row == rows)
                         scrollup();
                     os->interpret(strview);
                 }
                 break;
-            case 37:    if (caret_col == 0) {   caret_col = cols;    }   caret_col--;   break;
-            case 38:    if (caret_row == 0) {   caret_row = rows;    }   caret_row--;   break;
-            case 39:    caret_col++; if (caret_col == cols) {   caret_col = 0;    }     break;
-            case 40:    caret_row++; if (caret_row == rows) {   caret_row = 0;    }     break;
+            case 37:    if (caret.col == 0) {   caret.col = cols;    }   caret.col--;   break;
+            case 38:    if (caret.row == 0) {   caret.row = rows;    }   caret.row--;   break;
+            case 39:    caret.col++; if (caret.col == cols) {   caret.col = 0;    }     break;
+            case 40:    caret.row++; if (caret.row == rows) {   caret.row = 0;    }     break;
             }
         }
     }
