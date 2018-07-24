@@ -245,7 +245,7 @@ namespace cuppa
             RectF boundingBox;
 
             auto hdc = getDeviceContext().getNativeAs<HDC>();
-            auto g = Graphics{ hdc };
+            Graphics g{ hdc };
             StringFormat sf;
             sf.SetFormatFlags(StringFormatFlags::StringFormatFlagsNoClip | StringFormatFlags::StringFormatFlagsNoWrap);
             g.MeasureString(wcs,static_cast<INT>(len), gdiFont, RectF{0,0,32768,32768}, &sf, &boundingBox);
