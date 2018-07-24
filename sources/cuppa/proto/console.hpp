@@ -39,6 +39,7 @@ namespace proto
         void pushKeyCode(short keyCode);
 
         void caretColor(color_code_type colorCode) { caret.colorCode = colorCode; }
+        char& ref(coord_type col, coord_type row) { return buffer[col+row*cols].character; }
     private:
         struct caret_info
         {

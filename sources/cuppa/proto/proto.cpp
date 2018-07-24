@@ -26,6 +26,10 @@ namespace proto
         void draw() override
         {
             scale( 780 / 640.f, 580 / 480.f );
+            console.ref( 72, 0) = gamepad(0).connected() ? '0' : '-';
+            console.ref( 73, 0) = gamepad(1).connected() ? '1' : '-';
+            console.ref( 74, 0) = gamepad(2).connected() ? '2' : '-';
+            console.ref( 75, 0) = gamepad(3).connected() ? '3' : '-';
             translate({ 10_px, 10_px });
             background(Black);
             console.draw();
