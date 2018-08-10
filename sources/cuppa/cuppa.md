@@ -270,4 +270,123 @@ $
 
 ObjectToWorld x World ToCam
 
+## TODO
+
+### Tech features
+
+- Model View Controller (MVC)
+- Finite State Machine (CompileTime & Coordinated)
+- Entity Components System (CompileTime)
+- Gamepad (XInput & DInput)
+- Pathfind (A* & Navmesh)
+- Collision & Physics
+- Network & sockets, multi local
+- Debug/Log (format{})
+- Math: 3D Vector & Matrices
+- Generation: Perlin noise
+- Toggle fullscreen
+- Store and restore last window position
+- Retrieve data folder location
+- Prodecural design facilities
+- Determinism facitities
+- Buildtask: Intermediary Folder management
+
+#### Model View Controller
+
+  +-------+                           +------------+
+  | MODEL |<----------updates---------| CONTROLLER |
+  +-------+<-+                     +->+------------+
+             |              writes/|     |
+        reads|          manipulates|     |warn of a change
+             |                     |     |(event)
+             |     +------+--------+     |
+             +-----| VIEW |<-------------+
+                   +------+
+
+### Game references
+
+#### C64/Amiga Games
+
+Pipe mania
+Qix
+C64 Hacker
+Sokoban
+Super sprint
+Outrun
+Cinemaware: TV Sport/It cames from the desert/Rocket ranger/DSefender of the crown
+Sorcery+/Cauldron
+H.E.R.O
+Kill watt
+TrailBlazzer
+pengo
+Pacman
+Druid
+Boulder Dash
+Detroit (jeu d'entreprise de voiture)
+Gauntlet
+Frogger
+Snake/Tron
+
+#### Colleco Games
+
+Carnival
+Deluxe galaga/ GORF / Zaxxon
+Dig Dug
+Lady Bug (Colleco)
+Time Pilot
+Q-bert
+
+#### GBA Games
+
+- Kuru Kuru Kururin
+- Mr Driller
+
+#### Modern Games
+
+- Braid
+- Fez => 2D/3D + alphabet arithmetic
+- Super Hot => time mechanics
+- Zachtronics: manuel PDF
+- Jump step step...
+- Lumo
+- Agar.io
+- Spelunkny
+- Steamword Dig
+- Echochrome / Monument valley => Optical illusions
+- Celeste: multiple level of accessebility
+- Axiom verge
+- Bastion: Narration, world build under player feet
+- Dicey Dungeons
+- Dark souls/bloodborn: ghost/marks
+
+#### Genres
+
+- Match3
+- CoreWar
+- Flipper
+- Tower defense
+- Picross
+- Tetris => Tricky Tower
+- Classic boardgames: Go, Connect 4, Game of Hex, Tic tac toe
+- Minesweeper
+- Columns
+- breakout: Arkanoid
+- Pong => Wind Jammer
+- Battle Royal
+- Clicker
+
+#### Features
+
+- Collectables
+- Signs & Feebacks
+- ARG (augmented reality game)
+
+#### Editors
+
+- [TyranoBuilder](https://steamcdn-a.akamaihd.net/steam/apps/345370/ss_d61c7b4fdfea79150e593d99caf248283a754715.jpg?t=1471008910)
+- [Articy](https://steamcdn-a.akamaihd.net/steam/apps/570090/ss_cc84d4f0fac55778a548e30af10a544fe56b6769.jpg?t=1514994067)
+- [Smile Game Builder](https://steamcdn-a.akamaihd.net/steam/apps/256702501/movie480.webm?t=1512121109)
+
+Solstice
+
 [Back to README](../../README.md)
