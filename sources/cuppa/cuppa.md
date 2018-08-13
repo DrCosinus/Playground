@@ -307,25 +307,28 @@ ObjectToWorld x World ToCam
 
 #### C64/Amiga Games
 
-Pipe mania
-Qix
-C64 Hacker
-Sokoban
-Super sprint
-Outrun
-Cinemaware: TV Sport/It cames from the desert/Rocket ranger/DSefender of the crown
-Sorcery+/Cauldron
-H.E.R.O
-Kill watt
-TrailBlazzer
-pengo
-Pacman
-Druid
-Boulder Dash
-Detroit (jeu d'entreprise de voiture)
-Gauntlet
-Frogger
-Snake/Tron
+- Pipe mania
+- Qix
+- C64 Hacker
+- Sokoban
+- Super sprint
+- Outrun
+- Cinemaware: TV Sport/It cames from the desert/Rocket ranger/DSefender of the crown
+- Sorcery+/Cauldron
+- H.E.R.O
+- Kill watt
+- TrailBlazzer
+- pengo
+- Pacman
+- Druid
+- Boulder Dash
+- Detroit (jeu d'entreprise de voiture)
+- Gauntlet
+- Frogger
+- Snake/Tron
+- hat-trick
+- lode runner
+- lock'n'chase (mattel intellivision)
 
 #### Colleco Games
 
@@ -358,6 +361,8 @@ Q-bert
 - Bastion: Narration, world build under player feet
 - Dicey Dungeons
 - Dark souls/bloodborn: ghost/marks
+- fairune
+- witch & knight
 
 #### Genres
 
