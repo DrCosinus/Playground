@@ -25,8 +25,8 @@ namespace cuppa
         constexpr auto operator*(T ratio) const { return Angle{radian * static_cast<float>(ratio)}; }
         template<typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
         constexpr auto operator/(T ratio) const { return Angle{radian / static_cast<float>(ratio)}; }
-        template<typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
-        friend constexpr auto operator*(T ratio, Angle angle) { return angle * static_cast<float>(ratio); }
+        template<typename T>
+        friend constexpr auto operator*(std::enable_if_t<std::is_arithmetic_v<T>, T> ratio, Angle angle) { return angle * static_cast<float>(ratio); }
         constexpr auto operator<(Angle rhs) const { return radian < rhs.radian; }
         friend auto cos(Angle angle) { return cosf(angle.radian); }
         friend auto sin(Angle angle) { return sinf(angle.radian); }
