@@ -318,40 +318,129 @@ ObjectToWorld x World ToCam
 
 ### Game references
 
-#### C64/Amiga Games
+#### Mattel Intellivision
 
-- Pipe mania
-- Qix
-- C64 Hacker
-- Sokoban
-- Super sprint
-- Outrun
-- Cinemaware: TV Sport/It cames from the desert/Rocket ranger/DSefender of the crown
-- Sorcery+/Cauldron
-- H.E.R.O
-- Kill watt
-- TrailBlazzer
-- pengo
-- Pacman
-- Druid
-- Boulder Dash
-- Detroit (jeu d'entreprise de voiture)
-- Gauntlet
-- Frogger
-- Snake/Tron
-- hat-trick
-- lode runner
-- lock'n'chase (mattel intellivision)
-- frog'n'bog (mattel intellivision)
+- Burger time
+- Frog'n'bog
+- Lock'n'chase
+- Shark shark
+- Venture
 
 #### Colleco Games
 
-Carnival
-Deluxe galaga/ GORF / Zaxxon
-Dig Dug
-Lady Bug (Colleco)
-Time Pilot
-Q-bert
+- Carnival
+- Dig Dug
+- Donkey Kong
+- Donkey Kong Jr
+- GORF
+- Lady Bug
+- MrDo
+- Q-bert
+- Smurf
+- Time Pilot
+- Turbo
+- Zaxxon
+
+#### C64
+
+- Attack of the mutant castle
+- Aztec CHallenge
+- Barbarians
+- Bard's tale
+- Beach Head
+- Bomb jack
+- Boulder Dash
+- Bruce Lee
+- Cauldron
+- Centipede
+- Choplifter
+- Commando
+- Decathlon
+- Deluxe galaga
+- Druid
+- Ego
+- Frogger
+- Gauntlet
+- Hacker
+- Hard ball
+- hat-trick
+- H.E.R.O
+- Impossible Mission
+- Jet set willy
+- Karateka
+- Klax
+- Kill watt
+- Law of the West
+- Last Ninja
+- Last V8
+- LCP
+- Lemmings
+- lode runner
+- Manic miner
+- Marble Madness
+- Master of the lamp
+- Nebulus
+- Miner 1049er
+- Indiana Jones (Fate of atlantis, Last Crusade)
+- One on One
+- Outrun
+- Pacman
+- Paper boy
+- Paranoid
+- pengo
+- Pipe mania
+- Pirate (sid meyer)
+- Pitfall
+- Pole Position
+- Puzznic
+- Qix
+- Snake/Tron
+- Sokoban
+- Solo Flight
+- Sorcery+
+- Spy hunter
+- Spy vs Spy
+- Summer Games (winter, california, world)
+- Super sprint
+- TrailBlazzer
+- Uridium
+
+#### Amiga
+
+- 10th frame
+- Al quadim
+- Another world
+- Battle Squadron
+- Bubble bobble
+- Cinemaware: TV Sport/It cames from the desert/Rocket ranger/DSefender of the crown
+- Detroit (jeu d'entreprise de voiture)
+- Dungeon master
+- Dynablaster (bomberman)
+- Eye of th e beholder
+- Flash back
+- Hang out
+- Hybris
+- Killing Game Show
+- LeaderBoard
+- Les Voyageurs du temps
+- Lotus Turbo Esprit
+- Operation Stealth
+- Pang
+- Populus
+- Port of Call
+- Powerplay: the game of the gods
+- Prince of Persia
+- New zealand story
+- Nitro
+- Pinball Dreams/Illusion/Fantasy
+- Rainbow Islands
+- Shadow of the beast
+- Speed Ball 2
+- Super Cars
+- Turrican
+- UFO
+- Wizball
+- Xenon 2
 
 #### GBA Games
 
@@ -360,46 +449,61 @@ Q-bert
 
 #### Modern Games
 
-- Braid
-- Fez => 2D/3D + alphabet arithmetic
-- Super Hot => time mechanics
-- Zachtronics: manuel PDF
-- Jump step step...
-- Lumo
 - Agar.io
-- Spelunkny
-- Steamword Dig
-- Echochrome / Monument valley => Optical illusions
-- Celeste: multiple level of accessebility
 - Axiom verge
 - Bastion: Narration, world build under player feet
-- Dicey Dungeons
+- Braid
+- Celeste: multiple level of accessebility
 - Dark souls/bloodborn: ghost/marks
+- Dicey Dungeons
+- Echochrome / Monument valley => Optical illusions
 - fairune
-- witch & knight
+- Fez => 2D/3D + alphabet arithmetic
+- Jump step step...
+- Lumo
+- Okami
+- Ratchet'n'Clank serie
 - shadow of the colossus/ico
+- Spelunkny
+- Steamword Dig
+- Super Hot => time mechanics
+- Super Meat Boy
+- witch & knight
 
 #### Genres
 
-- Match3
+- action adventure
+- Battle Royal
+- breakout: Arkanoid
+- Classic boardgames: Go, Connect 4, Game of Hex, Tic tac toe
+- Clicker
+- Columns
 - CoreWar
 - Flipper
-- Tower defense
-- Picross
-- Tetris => Tricky Tower
-- Classic boardgames: Go, Connect 4, Game of Hex, Tic tac toe
+- Igavania
+- Japanese Role Playing Game
+- Match3
 - Minesweeper
-- Columns
-- breakout: Arkanoid
+- patchinko
+- platform
+- Picross
+- Programmation
 - Pong => Wind Jammer
-- Battle Royal
-- Clicker
+- Real Time Strategy
+- Roguelike
+- Roguelite
+- Role Playing Game
+- shmup
+- Tetris => Tricky Tower
+- Tower defense
+- Zachtronics: manuel PDF
 
 #### Features
 
 - Collectables
 - Signs & Feebacks
 - ARG (augmented reality game)
+- Skill tree
 
 #### Editors
 
