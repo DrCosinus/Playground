@@ -293,6 +293,7 @@ ObjectToWorld x World ToCam
 
 #### Model View Controller
 
+```plaintext
   +-------+                           +------------+
   | MODEL |<----------updates---------| CONTROLLER |
   +-------+<-+                     +->+------------+
@@ -302,6 +303,18 @@ ObjectToWorld x World ToCam
              |     +------+--------+     |
              +-----| VIEW |<-------------+
                    +------+
+```
+
+### Prototypes
+
+- [ ] Deminer
+- [ ] Frogger
+- [ ] Frog'n'bog
+- [ ] Tetris
+- [ ] Columns
+- [ ] Snake
+- [ ] Arkanoid
+- [ ] Sokoban/Box
 
 ### Game references
 
@@ -329,6 +342,7 @@ ObjectToWorld x World ToCam
 - hat-trick
 - lode runner
 - lock'n'chase (mattel intellivision)
+- frog'n'bog (mattel intellivision)
 
 #### Colleco Games
 
@@ -363,6 +377,7 @@ Q-bert
 - Dark souls/bloodborn: ghost/marks
 - fairune
 - witch & knight
+- shadow of the colossus/ico
 
 #### Genres
 
