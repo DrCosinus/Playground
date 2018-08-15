@@ -1,4 +1,4 @@
-#include "cuppa.hpp"
+#include "cuppa/cuppa.hpp"
 
 #define DEMO  0x44454D4F
 #define PROTO 0x50524F54

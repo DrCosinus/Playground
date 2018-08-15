@@ -3,6 +3,8 @@
 #include "console.hpp"
 #include "os.hpp"
 
+#include <cuppa/cuppa.hpp>
+
 #include <string>
 #include <iostream>
 #include <queue>

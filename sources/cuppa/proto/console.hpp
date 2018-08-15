@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../font.hpp"
+#include <cuppa/font.hpp>
 
 #include <cstddef>
 #include <queue>

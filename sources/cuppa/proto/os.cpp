@@ -1,7 +1,7 @@
 #include "os.hpp"
 
 #include "console.hpp"
-#include "../cuppa.hpp"
+#include <cuppa/cuppa.hpp>
 
 using namespace cuppa;
 
