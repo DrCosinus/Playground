@@ -54,12 +54,13 @@ namespace proto
             }
             {
                 resetMatrix();
+                constexpr auto scale = 16.0f;
                 auto x = 0_px;
-                auto y = noise(x / getWidth()) * getHeight();
+                auto y = noise(x / getWidth() * scale) * getHeight();
                 stroke(Red, 3_px);
                 for (auto x2 = 1_px; x2 < getWidth(); ++x2)
                 {
-                    auto y2 = noise(x2 / getWidth()) * getHeight();
+                    auto y2 = noise(x2 / getWidth() * scale) * getHeight();
                     line({x, y}, Point{x2, y2}); // to do: Point should accept (int, float) arguments std::common_type
                     x = x2;
                     y = y2;
