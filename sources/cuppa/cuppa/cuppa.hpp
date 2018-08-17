@@ -116,6 +116,8 @@ namespace cuppa
     float random();
     inline float random(float high)             { return high * random(); }
     inline float random(float low, float high)  { return low + ( high - low ) * random(); }
+    float noise(float x);
+    float noise(float x, float y);
 
     // returns a float from a series of number having a mean of 0 and standard deviation of 1
     // - 68%   of numbers are between -1 and 1
@@ -161,6 +163,16 @@ namespace cuppa
         auto f = (static_cast<float>(value - from.min) / from.width());
         auto g = [f](auto r) { return r.min + r.width() * f; };
         return { g(to)... };
+    }
+    // Requierements:
+    // - we must be able to substract a T from another T, it returns a DIFF_T
+    // - a DIFF_T times a scalar must return a DIFF_T
+    // - a T plus a DIFF_T must return a T
+    // - alpha should ne in the reange [0, 1] but it is not checked
+    template<typename T>
+    inline T lerp(T begin, T end, float alpha)
+    {
+        return begin + alpha * (end-begin);
     }
 
     class app

@@ -3,6 +3,8 @@
 #include "console.hpp"
 #include <cuppa/cuppa.hpp>
 
+#include <iostream>
+
 using namespace cuppa;
 
 namespace proto
@@ -22,6 +24,7 @@ namespace proto
             "/P500:PotAuJeu early prototype- v12.23b,/N:/P300:"
             "Copyright (C) 1972-2018, DrCosinus Systems Corporation, INC./N:/P300:"
             "/N:"
+#if 0
             "DRCSNS PRTBLPRO2.0 Deluxe ACPI BIOS Rev 1008/N:/P300:"
             "/N:"
             "Main Processor:/P200: DRC At0tron(tm) /C4:23Mhz/C1:/N:/P500:"
@@ -41,6 +44,7 @@ namespace proto
             "Sound/D75:....../D: /C2:FAILURE/C1:/N:"
             "3D HD Graphics/D75:..../D: /C2:FAILURE/C1:/N:"
             "Inovating Gameplay/D75:......./D: /C2:FAILURE/C1:/N:"
+#endif
             "/E100:"
         );
     }
@@ -111,6 +115,28 @@ namespace proto
         {
             auto color = getInteger(commandline, 1);
             console->caretColor( static_cast<Console::color_code_type>(color) );
+        }
+        else if ( command == "perlin")
+        {
+            //auto color = getInteger(commandline, 1);
+            std::cout << "perlin noise:" << std::endl;
+            float pmin = 1000, pmax = -1000, sum = 0;
+            auto count = 0u;
+            for (auto f = 0.0f; f <= 256.0f; f += 0.1f)
+            {
+                auto p = noise(f);
+                sum += p;
+                count++;
+                if (p > pmax)
+                    pmax = p;
+                if (p < pmin)
+                    pmin = p;
+            }
+            std::cout << "min: " << pmin << std::endl;
+            std::cout << "max: " << pmax << std::endl;
+            std::cout << "mean: " << (sum/count) << std::endl;
+
+            //console-> caretColor( static_cast<Console::color_code_type>(color) );
         }
     }
 

@@ -27,6 +27,7 @@ namespace proto
 
         void draw() override
         {
+            stroke(Appliance::DISABLED);
             scale( 780 / 640.f, 580 / 480.f );
             console.ref( 72, 0) = gamepad(0).connected() ? '0' : '-';
             console.ref( 73, 0) = gamepad(1).connected() ? '1' : '-';
@@ -50,6 +51,18 @@ namespace proto
             if (pad.buttonBack())
             {
                 quit();
+            }
+            {
+                auto x = 0_px;
+                auto y = noise(x / getWidth()) * getHeight();
+                stroke(Red, 3_px);
+                for (auto x2 = 1_px; x2 < getWidth(); ++x2)
+                {
+                    auto y2 = noise(x2 / getWidth()) * getHeight();
+                    line({x, y}, Point{x2, y2}); // to do: Point should accept (int, float) arguments std::common_type
+                    x = x2;
+                    y = y2;
+                }
             }
         }
 
