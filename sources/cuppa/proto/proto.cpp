@@ -53,6 +53,7 @@ namespace proto
                 quit();
             }
             {
+                resetMatrix();
                 auto x = 0_px;
                 auto y = noise(x / getWidth()) * getHeight();
                 stroke(Red, 3_px);
