@@ -504,6 +504,7 @@ ObjectToWorld x World ToCam
 - Signs & Feebacks
 - ARG (augmented reality game)
 - Skill tree
+- Mode photo
 
 #### Editors
 
