@@ -17,12 +17,13 @@ namespace cuppa
     void Assert(bool _condition, const char* _message);
     inline void Assert(bool _condition) { Assert(_condition, "Assert without description"); }
 
-    template<typename T>
+    template <typename T>
     struct range
     {
         T min;
         T max;
         auto width() const { return max - min; }
+        auto widthPortion(float ratio) const { return static_cast<decltype(max - min)>((max - min) * ratio); }
     };
 
     template<typename T>
@@ -148,9 +149,9 @@ namespace cuppa
     inline U remap(T value, range<T> from, range<U> to)
     {
         if constexpr (std::is_integral_v<T>)
-            return to.min + to.width() * (static_cast<float>(value - from.min) / from.width());
+            return to.min + to.widthPortion(static_cast<float>(value - from.min) / from.width());
         else
-            return to.min + to.width() * ((value - from.min) / from.width());
+            return to.min +to.widthPortion((value - from.min) / from.width());
     }
     template<typename T>
     inline float remap(T value, range<T> from, range<float> to)
