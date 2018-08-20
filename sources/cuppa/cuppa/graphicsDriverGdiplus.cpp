@@ -15,6 +15,7 @@
 #include <iostream> // todo: need a logger!!
 #include <malloc.h>
 #include <memory>
+#include <vector>
 
 using namespace Gdiplus;
 using GdiColor = Gdiplus::Color;
@@ -194,6 +195,33 @@ namespace cuppa
                 graphics_->FillPath( fillBrush_.get(), &path );
             if (strokeEnabled_)
                 graphics_->DrawPath( stroke_.get(), &path);
+        }
+
+        bool shapeBuilding = false;
+        std::vector<PointF> shapeVertices;
+
+        void beginShape() override
+        {
+            Assert(!shapeBuilding);
+            shapeVertices.clear();
+            shapeBuilding = true;
+        }
+
+        void endShape() override
+        {
+            Assert(shapeBuilding);
+            shapeBuilding = false;
+            GraphicsPath shape;
+            shape.AddLines(&shapeVertices.front(), (INT)shapeVertices.size());
+            if (fillEnabled_)
+                graphics_->FillPath( fillBrush_.get(), &shape );
+            if (strokeEnabled_)
+                graphics_->DrawPath( stroke_.get(), &shape);
+        }
+
+        void vertex(Point pt) override
+        {
+            shapeVertices.emplace_back(pt.x.getAs<float>(), pt.y.getAs<float>());
         }
 
         Font loadFont(std::string_view name, std::size_t size) override
