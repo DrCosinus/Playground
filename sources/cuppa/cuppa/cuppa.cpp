@@ -98,7 +98,7 @@ namespace cuppa
 
         auto a = permutation[xi];
         auto b = permutation[(xi + 1) & 255];
-        return lerp(grad(a, xf), grad(b, xf - 1), u) + 0.5f;
+        return lerp(grad(a, xf), grad(b, xf - 1), u);
     }
 
     float noise(float x, float y)
