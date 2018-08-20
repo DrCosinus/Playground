@@ -146,6 +146,9 @@ support for curve (bezier, spline...)
 - [x] rect
 - [x] triangle
 
+Pseudo types: Center, Corner to allow functions overloads rect(Corner, Corner) or rect(Center, Size), rect(Corner, Size)
+
+
 rect:
 
 - should support rounded corners
