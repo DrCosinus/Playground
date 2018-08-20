@@ -20,6 +20,8 @@ namespace cuppa
         template<typename T>
         friend auto operator*(T ratio, std::enable_if_t<std::is_arithmetic_v<T>, Pixel> px) { return px * ratio; }
         auto operator/(Pixel rhs) const { return value_ / rhs.value_; }
+        template<typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+        auto operator/(T divider) { return Pixel( value_/divider ); } // possible division by zero
 
         Pixel& operator++() { value_+=1.0f; return *this; }
         Pixel operator++(int) { Pixel result{value_}; value_+=1.0f; return result; }
