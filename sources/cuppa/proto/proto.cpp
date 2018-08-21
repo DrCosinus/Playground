@@ -125,14 +125,15 @@ namespace proto
 
         void perlinTest2()
         {
-            constexpr auto scale = 5.0f;
+            constexpr auto scale = 20.0f;
+            constexpr auto step = 5_px;
             stroke(Appliance::DISABLED);
             auto min = 100.0f;
             auto max = -100.0f;
             static auto z = 0.0f;
-            for (auto y = 0_px; y < getHeight(); y += 10_px)
+            for (auto y = 0_px; y < getHeight(); y += step)
             {
-                for (auto x = 0_px; x < getWidth(); x += 10_px)
+                for (auto x = 0_px; x < getWidth(); x += step)
                 {
                     auto value = noise(x / getWidth() * scale, y / getHeight() * scale, z);
                     if (value>max) max = value;
@@ -140,7 +141,7 @@ namespace proto
                     auto intensity = remap<int>( value, {-1.0, 1.0f}, {0, 256});
                     auto col = Color(static_cast<Color::COMPONENT>(intensity));
                     fill(col);
-                    rect({x, y}, {9_px, 9_px});
+                    rect({x, y}, {step, step});
                 }
             }
             z += 0.03f;
