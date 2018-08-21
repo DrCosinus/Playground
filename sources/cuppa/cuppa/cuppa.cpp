@@ -158,16 +158,6 @@ namespace cuppa
             return t * t * t * ( 10 + t * (-15 + t * 6));
         }
 
-        // static float grad(int hash, float x)
-        // {
-        //     switch( hash & 1 )
-        //     {
-        //         case 0x00: return x;
-        //         case 0x01: return -x;
-        //         default: return 0; // never happens
-        //     }
-        // }
-
         static float grad(int hash, float x, float y = 0.0f, float z = 0.0f)
         {
             switch (hash & 0xF)
