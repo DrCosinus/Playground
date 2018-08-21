@@ -99,6 +99,10 @@ namespace cuppa
         explicit constexpr Color(COMPONENT _gray, COMPONENT _alpha=255)
         : Color{ _gray, _gray, _gray, _alpha }
         {}
+        template<typename T, typename = std::enable_if_t<std::is_convertible_v<T, COMPONENT>>>
+        explicit constexpr Color(T _gray, COMPONENT _alpha=255)
+        : Color{ static_cast<COMPONENT>(_gray), _alpha }
+        {}
 
         constexpr Color ModulateAlpha(COMPONENT _alpha) const
         {
