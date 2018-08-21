@@ -129,19 +129,21 @@ namespace proto
             stroke(Appliance::DISABLED);
             auto min = 100.0f;
             auto max = -100.0f;
-            for (auto y = 0_px; y < getHeight(); y += 20_px)
+            static auto z = 0.0f;
+            for (auto y = 0_px; y < getHeight(); y += 10_px)
             {
-                for (auto x = 0_px; x < getWidth(); x += 20_px)
+                for (auto x = 0_px; x < getWidth(); x += 10_px)
                 {
-                    auto value = noise(x / getWidth() * scale, y / getHeight() * scale);
+                    auto value = noise(x / getWidth() * scale, y / getHeight() * scale, z);
                     if (value>max) max = value;
                     if (value<min) min = value;
                     auto intensity = remap<int>( value, {-1.0, 1.0f}, {0, 256});
                     auto col = Color(static_cast<Color::COMPONENT>(intensity));
                     fill(col);
-                    rect({x, y}, {19_px, 19_px});
+                    rect({x, y}, {9_px, 9_px});
                 }
             }
+            z += 0.03f;
             fill(Blue);
             textFont(bigFont);
             text(std::to_string(min), { 10_px, 110_px });
