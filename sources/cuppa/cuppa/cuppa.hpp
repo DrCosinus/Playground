@@ -122,6 +122,7 @@ namespace cuppa
     inline float random(float low, float high)  { return low + ( high - low ) * random(); }
     float noise(float x);
     float noise(float x, float y);
+    float noise(float x, float y, float z);
 
     // returns a float from a series of number having a mean of 0 and standard deviation of 1
     // - 68%   of numbers are between -1 and 1
