@@ -58,9 +58,9 @@ namespace cuppa
             }
             Graphics drawGraphics{ drawBuffer_.get() };
             graphics_ = &drawGraphics;
-            drawGraphics.SetInterpolationMode(Gdiplus::InterpolationMode::InterpolationModeHighQuality);
+            drawGraphics.SetInterpolationMode(Gdiplus::InterpolationMode::InterpolationModeLowQuality);
             drawGraphics.SetCompositingMode(Gdiplus::CompositingMode::CompositingModeSourceOver);
-            drawGraphics.SetSmoothingMode(Gdiplus::SmoothingMode::SmoothingModeHighQuality);
+            drawGraphics.SetSmoothingMode(Gdiplus::SmoothingMode::SmoothingModeHighSpeed);
 
             app_->draw();
             graphics.SetInterpolationMode(Gdiplus::InterpolationMode::InterpolationModeLowQuality);
