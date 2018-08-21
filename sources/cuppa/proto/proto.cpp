@@ -33,12 +33,14 @@ namespace proto
     {
         Console console;
         OS fos;
+        Font bigFont;
 
         void setup() override
         {
             size( 800_px, 600_px );
             console.setup(fos);
             fos.setup(console);
+            bigFont = loadFont("Arial", 48);
         }
 
         void draw() override
@@ -69,50 +71,81 @@ namespace proto
                 quit();
             }
             {
-                resetMatrix();
-                static auto offset = 0.0f;
-                constexpr auto scale = 32.0f;
-                stroke(Red, 3_px);
-                noFill();
-                auto min = 5.0f, max = -5.0f;
-                beginShape();
-                constexpr auto bucketCount = 50;
-                int buckets[bucketCount] = { 0 };
-                int fullerBucketSize = 0;
-                int fullerBucketIndex = 0;
-                for (auto x = 0_px; x < getWidth(); x+=0.3_px)
+                perlinTest2();
+                perlinTest();
+            }
+        }
+
+        void perlinTest()
+        {
+            resetMatrix();
+            static auto offset = 0.0f;
+            constexpr auto scale = 32.0f;
+            stroke(Red, 3_px);
+            noFill();
+            auto min = 5.0f, max = -5.0f;
+            beginShape();
+            constexpr auto bucketCount = 50;
+            int buckets[bucketCount] = { 0 };
+            int fullerBucketSize = 0;
+            int fullerBucketIndex = 0;
+            for (auto x = 0_px; x < getWidth(); x+=0.3_px)
+            {
+                auto fy = octave(x / getWidth() * scale + offset);
+                auto y = fy * getHeight();
+                if ( fy < min ) min = fy;
+                if ( fy > max ) max = fy;
+                vertex(Point{x, y});
+                auto bucketIndex = remap<int>(fy, { 0.0f, 1.0f }, { 0u, bucketCount });
+                auto bucketSize = ++buckets[bucketIndex];
+                if (bucketSize > fullerBucketSize)
                 {
-                    auto fy = octave(x / getWidth() * scale + offset);
-                    auto y = fy * getHeight();
-                    if ( fy < min ) min = fy;
-                    if ( fy > max ) max = fy;
-                    vertex(Point{x, y});
-                    auto bucketIndex = remap<int>(fy, { 0.0f, 1.0f }, { 0u, bucketCount });
-                    auto bucketSize = ++buckets[bucketIndex];
-                    if (bucketSize > fullerBucketSize)
-                    {
-                        fullerBucketIndex = bucketIndex;
-                        fullerBucketSize = bucketSize;
-                    }
-                }
-                endShape();
-                fill(Red);
-                static auto bigFont = loadFont("Arial", 48);
-                textFont(bigFont);
-                text(std::to_string(min), { 10_px, 10_px });
-                text(std::to_string(max), { 10_px, 60_px });
-                offset += 0.01f;
-                stroke(Blue);
-                fill(Blue.ModulateAlpha(127));
-                for(auto bucketIndex = 0; bucketIndex < bucketCount; ++bucketIndex)
-                {
-                    auto x = remap<Pixel>(bucketIndex, {0u, bucketCount}, {0_px, getWidth()});
-                    auto w = getWidth() / bucketCount;
-                    auto h = remap<Pixel>(buckets[bucketIndex], { 0, fullerBucketSize}, { 0_px, getHeight() });
-                    auto y = getHeight() - h;
-                    rect({x+w/2, y+h/2}, {w, h});
+                    fullerBucketIndex = bucketIndex;
+                    fullerBucketSize = bucketSize;
                 }
             }
+            endShape();
+            fill(Red);
+
+            textFont(bigFont);
+            text(std::to_string(min), { 10_px, 10_px });
+            text(std::to_string(max), { 10_px, 60_px });
+            offset += 0.01f;
+            stroke(Blue);
+            fill(Blue.ModulateAlpha(127));
+            for(auto bucketIndex = 0; bucketIndex < bucketCount; ++bucketIndex)
+            {
+                auto x = remap<Pixel>(bucketIndex, {0u, bucketCount}, {0_px, getWidth()});
+                auto w = getWidth() / bucketCount;
+                auto h = remap<Pixel>(buckets[bucketIndex], { 0, fullerBucketSize}, { 0_px, getHeight() });
+                auto y = getHeight() - h;
+                rect({x+w/2, y+h/2}, {w, h});
+            }
+        }
+
+        void perlinTest2()
+        {
+            constexpr auto scale = 5.0f;
+            stroke(Appliance::DISABLED);
+            auto min = 100.0f;
+            auto max = -100.0f;
+            for (auto y = 0_px; y < getHeight(); y += 20_px)
+            {
+                for (auto x = 0_px; x < getWidth(); x += 20_px)
+                {
+                    auto value = noise(x / getWidth() * scale, y / getHeight() * scale);
+                    if (value>max) max = value;
+                    if (value<min) min = value;
+                    auto intensity = remap<int>( value, {-1.0, 1.0f}, {0, 256});
+                    auto col = Color(static_cast<Color::COMPONENT>(intensity));
+                    fill(col);
+                    rect({x, y}, {19_px, 19_px});
+                }
+            }
+            fill(Blue);
+            textFont(bigFont);
+            text(std::to_string(min), { 10_px, 110_px });
+            text(std::to_string(max), { 10_px, 160_px });
         }
 
         template<std::size_t N>
