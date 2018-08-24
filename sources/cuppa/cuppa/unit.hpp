@@ -105,7 +105,7 @@ namespace cuppa
         using diff_type = ColorT<DIFF_COMPONENT>;
         ColorT() = default;
         explicit constexpr ColorT(COMPONENT _red, COMPONENT _green, COMPONENT _blue, COMPONENT _alpha=255)
-        : alpha{ _alpha }, red{ _red }, green{ _green }, blue{ _blue }
+        : blue{ _blue }, green{ _green }, red{ _red }, alpha{ _alpha }
         {}
         explicit constexpr ColorT(COMPONENT _gray, COMPONENT _alpha=255)
         : ColorT{ _gray, _gray, _gray, _alpha }
@@ -145,7 +145,7 @@ namespace cuppa
         template<typename T>
         T GetAlpha() const { return static_cast<T>(alpha); }
     private:
-        COMPONENT alpha = 255, red = 255, green = 255, blue = 255;
+        COMPONENT blue = 255, green = 255, red = 255, alpha = 255;
     };
 
     using Color = ColorT<unsigned char>;

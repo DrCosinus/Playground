@@ -381,9 +381,9 @@ namespace cuppa
             Assert(status == Status::Ok);
         }
 
-        unsigned int* getPixels() override
+        Color* getPixels() override
         {
-            return static_cast<unsigned int*>(bitmapData.Scan0);
+            return static_cast<Color*>(bitmapData.Scan0);
         }
 
     private:

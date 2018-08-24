@@ -58,7 +58,7 @@ namespace cuppa
         virtual Image createImage(Direction size) = 0;
         virtual void loadPixels(const Image& img) = 0;
         virtual void updatePixels(const Image& img) = 0;
-        virtual unsigned int* getPixels() = 0;
+        virtual Color* getPixels() = 0;
         // to replace Color* by an object with Color& operator[](std::size_t) embedding underlying native object
     };
 }

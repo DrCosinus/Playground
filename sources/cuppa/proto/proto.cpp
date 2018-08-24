@@ -143,7 +143,7 @@ namespace proto
                     auto px = x / getWidth() * scale;
                     auto py = y / getHeight() * scale;
                     auto value = noise(px, py, z)
-                     + noise(px * 2, py * 2, z * 2) / 2  
+                     + noise(px * 2, py * 2, z * 2) / 2
                      + noise(px * 4, py * 4, z * 4) / 4
                      + noise(px * 8, py * 8, z * 8) / 8;
                     if (value>max) max = value;
@@ -152,9 +152,7 @@ namespace proto
                     else if (value<-1) value = -1;
                     auto intensity = remap<int>( value, {-1.0, 1.0f}, {0, 256});
                     auto col = Color{intensity};
-                    // fill(col);
-                    *(pixels++) = col.ToARGB32();
-                    //rect({x - step * 0.5f, y - step * 0.5f}, {step, step});
+                    *(pixels++) = col;
                 }
             }
             updatePixels(perlinImg);

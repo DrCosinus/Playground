@@ -136,7 +136,7 @@ namespace cuppa
     inline Image createImage(Direction size)            {   return graphicsDriver->createImage(size);   }
     inline void loadPixels(const Image& img)            {   graphicsDriver->loadPixels(img);            }
     inline void updatePixels(const Image& img)          {   graphicsDriver->updatePixels(img);          }
-    inline unsigned int* getPixels()                    {   return graphicsDriver->getPixels();         }
+    inline Color* getPixels()                           {   return graphicsDriver->getPixels();         }
 
     // sound
     inline void beep(int frequency, int duration)       { platformDriver->beep(frequency, duration); }
