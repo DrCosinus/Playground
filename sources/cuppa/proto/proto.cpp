@@ -34,6 +34,7 @@ namespace proto
         Console console;
         OS fos;
         Font bigFont;
+        Image perlinImg;
 
         void setup() override
         {
@@ -41,6 +42,7 @@ namespace proto
             console.setup(fos);
             fos.setup(console);
             bigFont = loadFont("Arial", 48);
+            perlinImg = createImage({800_px, 600_px});
         }
 
         void draw() override
@@ -72,7 +74,7 @@ namespace proto
             }
             {
                 perlinTest2();
-                perlinTest();
+                //perlinTest();
             }
         }
 
@@ -125,26 +127,39 @@ namespace proto
 
         void perlinTest2()
         {
+            resetMatrix();
             constexpr auto scale = 20.0f;
-            constexpr auto step = 5_px;
+            constexpr auto step = 1_px;
             stroke(Appliance::DISABLED);
             auto min = 100.0f;
             auto max = -100.0f;
             static auto z = 0.0f;
+            loadPixels(perlinImg);
+            auto pixels = getPixels();
             for (auto y = 0_px; y < getHeight(); y += step)
             {
                 for (auto x = 0_px; x < getWidth(); x += step)
                 {
-                    auto value = noise(x / getWidth() * scale, y / getHeight() * scale, z);
+                    auto px = x / getWidth() * scale;
+                    auto py = y / getHeight() * scale;
+                    auto value = noise(px, py, z)
+                     + noise(px * 2, py * 2, z * 2) / 2  
+                     + noise(px * 4, py * 4, z * 4) / 4
+                     + noise(px * 8, py * 8, z * 8) / 8;
                     if (value>max) max = value;
                     if (value<min) min = value;
+                    if (value>0.99f) value = 0.99f;
+                    else if (value<-1) value = -1;
                     auto intensity = remap<int>( value, {-1.0, 1.0f}, {0, 256});
-                    auto col = Color(static_cast<Color::COMPONENT>(intensity));
-                    fill(col);
-                    rect({x, y}, {step, step});
+                    auto col = Color{intensity};
+                    // fill(col);
+                    *(pixels++) = col.ToARGB32();
+                    //rect({x - step * 0.5f, y - step * 0.5f}, {step, step});
                 }
             }
-            z += 0.03f;
+            updatePixels(perlinImg);
+            image(perlinImg, {0_px, 0_px});
+            z += 0.07f;
             fill(Blue);
             textFont(bigFont);
             text(std::to_string(min), { 10_px, 110_px });

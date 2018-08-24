@@ -21,6 +21,8 @@ using namespace Gdiplus;
 using GdiColor = Gdiplus::Color;
 using Color = cuppa::Color;
 using GdiImage = Gdiplus::Image;
+using GdiBitmap = Gdiplus::Bitmap;
+using GdiPoint = Gdiplus::Point;
 using Image = cuppa::Image;
 using GdiFont = Gdiplus::Font;
 using Font = cuppa::Image;
@@ -345,14 +347,43 @@ namespace cuppa
             //SizeF sz;
             //gdiImage->GetPhysicalDimension(&sz);
             //std::cout << sz.Width << " x " << sz.Height << std::endl;
-            return Image{ std::make_shared<GdiImage>( wcs ) };
+            return Image{ std::make_shared<GdiBitmap>( wcs ) };
         }
 
         void image(const Image& img, Point pt) override
         {
-            auto gdiImage = img.getNativeAs<std::shared_ptr<GdiImage>>().get();
+            auto gdiImage = img.getNativeAs<std::shared_ptr<GdiBitmap>>().get();
             RectF rc{ toNative(pt), SizeF{static_cast<float>(gdiImage->GetWidth()),static_cast<float>(gdiImage->GetHeight())}};
-            graphics_->DrawImage(img.getNativeAs<std::shared_ptr<GdiImage>>().get(), rc);
+            auto status = graphics_->DrawImage(gdiImage, rc);
+            int a = 1;
+            (void)a;
+            (void)status;
+        }
+
+        Image createImage(Direction size) override
+        {
+            return Image{ std::make_shared<GdiBitmap>( size.width.getAs<INT>(), size.height.getAs<INT>()) };
+        }
+
+        BitmapData bitmapData = { };
+        void loadPixels(const Image& img) override
+        {
+            auto gdiImage = img.getNativeAs<std::shared_ptr<GdiBitmap>>().get();
+            Rect rc{ GdiPoint( 0, 0 ), Size{static_cast<INT>(gdiImage->GetWidth()),static_cast<INT>(gdiImage->GetHeight())}};
+            auto status = gdiImage->LockBits(&rc, ImageLockMode::ImageLockModeRead | ImageLockMode::ImageLockModeWrite, gdiImage->GetPixelFormat(), &bitmapData);
+            Assert(status == Status::Ok);
+        }
+
+        void updatePixels(const Image& img) override
+        {
+            auto gdiImage = img.getNativeAs<std::shared_ptr<GdiBitmap>>().get();
+            auto status = gdiImage->UnlockBits(&bitmapData);
+            Assert(status == Status::Ok);
+        }
+
+        unsigned int* getPixels() override
+        {
+            return static_cast<unsigned int*>(bitmapData.Scan0);
         }
 
     private:

@@ -131,8 +131,12 @@ namespace cuppa
     float randomGaussian();
 
     // image
-    inline Image loadImage(std::string_view filename)  {   return graphicsDriver->loadImage(filename); }
-    inline void image(const Image& img, Point pt)      {   graphicsDriver->image(img, pt);             }
+    inline Image loadImage(std::string_view filename)   {   return graphicsDriver->loadImage(filename); }
+    inline void image(const Image& img, Point pt)       {   graphicsDriver->image(img, pt);             }
+    inline Image createImage(Direction size)            {   return graphicsDriver->createImage(size);   }
+    inline void loadPixels(const Image& img)            {   graphicsDriver->loadPixels(img);            }
+    inline void updatePixels(const Image& img)          {   graphicsDriver->updatePixels(img);          }
+    inline unsigned int* getPixels()                    {   return graphicsDriver->getPixels();         }
 
     // sound
     inline void beep(int frequency, int duration)       { platformDriver->beep(frequency, duration); }

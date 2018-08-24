@@ -88,36 +88,54 @@ namespace cuppa
         return *this;
     }
 
-    struct Color
+    template<typename T>
+    struct ColorComponentTraits;
+
+    template<> struct ColorComponentTraits<unsigned char>  { using diff_type = short; };
+    template<> struct ColorComponentTraits<unsigned short> { using diff_type = int; };
+    template<> struct ColorComponentTraits<unsigned int>   { using diff_type = long long; };
+    template<> struct ColorComponentTraits<char>  { using diff_type = short; };
+    template<> struct ColorComponentTraits<short> { using diff_type = int; };
+    template<> struct ColorComponentTraits<int>   { using diff_type = long long; };
+
+    template<typename COMPONENT, typename = std::enable_if_t<std::is_arithmetic_v<COMPONENT>&&!std::is_same_v<bool,COMPONENT>>>
+    struct ColorT
     {
-        using COMPONENT = short;
-        using diff_type = Color;
-        Color() = default;
-        explicit constexpr Color(COMPONENT _red, COMPONENT _green, COMPONENT _blue, COMPONENT _alpha=255)
+        using DIFF_COMPONENT = typename ColorComponentTraits<COMPONENT>::diff_type;
+        using diff_type = ColorT<DIFF_COMPONENT>;
+        ColorT() = default;
+        explicit constexpr ColorT(COMPONENT _red, COMPONENT _green, COMPONENT _blue, COMPONENT _alpha=255)
         : alpha{ _alpha }, red{ _red }, green{ _green }, blue{ _blue }
         {}
-        explicit constexpr Color(COMPONENT _gray, COMPONENT _alpha=255)
-        : Color{ _gray, _gray, _gray, _alpha }
+        explicit constexpr ColorT(COMPONENT _gray, COMPONENT _alpha=255)
+        : ColorT{ _gray, _gray, _gray, _alpha }
         {}
         template<typename T, typename = std::enable_if_t<std::is_convertible_v<T, COMPONENT>>>
-        explicit constexpr Color(T _gray, COMPONENT _alpha=255)
-        : Color{ static_cast<COMPONENT>(_gray), _alpha }
+        explicit constexpr ColorT(T _gray, COMPONENT _alpha=255)
+        : ColorT{ static_cast<COMPONENT>(_gray), _alpha }
         {}
 
-        constexpr Color ModulateAlpha(COMPONENT _alpha) const
+        constexpr ColorT ModulateAlpha(COMPONENT _alpha) const
         {
-            return Color{ red, green, blue, COMPONENT(alpha * _alpha / 255) };
+            return ColorT{ red, green, blue, COMPONENT(alpha * _alpha / 255) };
         }
 
-        constexpr auto operator-(const Color& rhs) const { return diff_type{ red - rhs.red, green - rhs.green, blue - rhs.blue, alpha - rhs.alpha }; }
-        constexpr auto operator*(float scale) const { return Color{ static_cast<COMPONENT>(scale*red), static_cast<COMPONENT>(scale*green), static_cast<COMPONENT>(scale*blue), static_cast<COMPONENT>(scale*alpha) }; }
-        constexpr auto operator+(const diff_type& rhs) const { return Color{ red + rhs.red, green + rhs.green, blue + rhs.blue, alpha + rhs.alpha }; }
-        // static constexpr auto FromGray(U8 gray) { return Color{ gray, 255 }; }
-        // static constexpr auto FromRGB(U8 red, U8 green, U8 blue) { return Color{ red, green, blue, 255 }; }
-        // static constexpr auto FromRGBA(U8 red, U8 green, U8 blue, U8 alpha) { return Color{ red, green, blue, alpha }; }
-        //static constexpr auto FromHSV() { return Color{}; }
-        //static constexpr auto FromHSB() { return Color{}; }
-        //static constexpr unsigned int ToARGB32() { return 0U; }
+        constexpr auto operator-(const ColorT& rhs) const { return diff_type{ GetRed<DIFF_COMPONENT>() - rhs.GetRed<DIFF_COMPONENT>(), GetGreen<DIFF_COMPONENT>() - rhs.GetGreen<DIFF_COMPONENT>(), GetBlue<DIFF_COMPONENT>() - rhs.GetBlue<DIFF_COMPONENT>(), GetAlpha<DIFF_COMPONENT>() - rhs.GetAlpha<DIFF_COMPONENT>() }; }
+        constexpr auto operator*(float scale) const { return ColorT{ static_cast<COMPONENT>(scale*red), static_cast<COMPONENT>(scale*green), static_cast<COMPONENT>(scale*blue), static_cast<COMPONENT>(scale*alpha) }; }
+        constexpr auto operator+(const diff_type& rhs) const 
+        {
+            return ColorT{
+                static_cast<COMPONENT>(red + rhs.template GetRed<DIFF_COMPONENT>()),
+                static_cast<COMPONENT>(green + rhs.template GetGreen<DIFF_COMPONENT>()),
+                static_cast<COMPONENT>(blue + rhs.template GetBlue<DIFF_COMPONENT>()),
+                static_cast<COMPONENT>(alpha + rhs.template GetAlpha<DIFF_COMPONENT>())};
+        }
+        // static constexpr auto FromGray(U8 gray) { return ColorT{ gray, 255 }; }
+        // static constexpr auto FromRGB(U8 red, U8 green, U8 blue) { return ColorT{ red, green, blue, 255 }; }
+        // static constexpr auto FromRGBA(U8 red, U8 green, U8 blue, U8 alpha) { return ColorT{ red, green, blue, alpha }; }
+        //static constexpr auto FromHSV() { return ColorT{}; }
+        //static constexpr auto FromHSB() { return ColorT{}; }
+        constexpr unsigned int ToARGB32() const { return ((alpha & 255) << 24) | ((red & 255) << 16) | ((green & 255) << 8) | (blue & 255); }
         template<typename T>
         T GetRed() const { return static_cast<T>(red); }
         template<typename T>
@@ -129,6 +147,8 @@ namespace cuppa
     private:
         COMPONENT alpha = 255, red = 255, green = 255, blue = 255;
     };
+
+    using Color = ColorT<unsigned char>;
 
     // PREDEFINED COLORS (https://en.wikipedia.org/wiki/Web_colors#X11_color_names)
     inline constexpr Color White{ 255 };

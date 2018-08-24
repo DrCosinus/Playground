@@ -55,5 +55,10 @@ namespace cuppa
 
         virtual Image loadImage(std::string_view filename) = 0;
         virtual void image(const Image& img, Point pt) = 0;
+        virtual Image createImage(Direction size) = 0;
+        virtual void loadPixels(const Image& img) = 0;
+        virtual void updatePixels(const Image& img) = 0;
+        virtual unsigned int* getPixels() = 0;
+        // to replace Color* by an object with Color& operator[](std::size_t) embedding underlying native object
     };
 }
