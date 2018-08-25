@@ -1,9 +1,10 @@
 #pragma once
 
 #include "angle.hpp"
+#include "color.hpp"
+#include "font.hpp"
 #include "image.hpp"
 #include "unit.hpp"
-#include "font.hpp"
 
 #include <string_view>
 
