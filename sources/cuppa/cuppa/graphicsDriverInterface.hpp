@@ -2,6 +2,7 @@
 
 #include "angle.hpp"
 #include "color.hpp"
+#include "deviceContext.hpp"
 #include "font.hpp"
 #include "image.hpp"
 #include "unit.hpp"

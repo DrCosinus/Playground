@@ -1,6 +1,7 @@
 #pragma once
 
 #include "angle.hpp"
+#include "deviceContext.hpp"
 #include "unit.hpp"
 #include "image.hpp"
 #include "font.hpp"

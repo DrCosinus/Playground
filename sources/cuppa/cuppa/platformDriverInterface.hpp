@@ -1,7 +1,7 @@
 #pragma once
 
 #include "unit.hpp"
-#include "image.hpp" // for DeviceContext... what the shame :(
+#include "deviceContext.hpp"
 
 namespace cuppa
 {
