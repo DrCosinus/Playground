@@ -138,6 +138,26 @@ namespace cuppa
     inline void loadPixels(const Image& img)            {   graphicsDriver->loadPixels(img);            }
     inline void updatePixels(const Image& img)          {   graphicsDriver->updatePixels(img);          }
     inline Color* getPixels()                           {   return graphicsDriver->getPixels();         }
+    struct pixelLock
+    {
+        pixelLock(const Image& img) : img{ img }
+        {
+            loadPixels(img);
+            buffer = getPixels();
+        }
+        ~pixelLock()
+        {
+            updatePixels(img);
+        }
+        Color& operator[](int index) { return *(buffer+index); }
+        pixelLock& operator++() { buffer++; return *this; }
+        //pixelLock operator++(int) { auto copy = *this; buffer++; return copy; }
+        Color& operator*() { return *buffer; }
+    private:
+        //pixelLock(const pixelLock& other) : img{other.img}, buffer{other.buffer} {}
+        const Image& img;
+        Color* buffer;
+    };
 
     // sound
     inline void beep(int frequency, int duration)       { platformDriver->beep(frequency, duration); }
