@@ -371,14 +371,14 @@ namespace cuppa
             auto gdiImage = img.getNativeAs<std::shared_ptr<GdiBitmap>>().get();
             Rect rc{ GdiPoint( 0, 0 ), Size{static_cast<INT>(gdiImage->GetWidth()),static_cast<INT>(gdiImage->GetHeight())}};
             auto status = gdiImage->LockBits(&rc, ImageLockMode::ImageLockModeRead | ImageLockMode::ImageLockModeWrite, gdiImage->GetPixelFormat(), &bitmapData);
-            Assert(status == Status::Ok);
+            Assert(status == Status::Ok, "loadPixels failed!");
         }
 
         void updatePixels(const Image& img) override
         {
             auto gdiImage = img.getNativeAs<std::shared_ptr<GdiBitmap>>().get();
             auto status = gdiImage->UnlockBits(&bitmapData);
-            Assert(status == Status::Ok);
+            Assert(status == Status::Ok, "updatePixels failed!");
         }
 
         Color* getPixels() override
