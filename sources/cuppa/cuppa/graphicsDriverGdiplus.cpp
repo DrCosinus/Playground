@@ -202,20 +202,20 @@ namespace cuppa
         bool shapeBuilding = false;
         std::vector<PointF> shapeVertices;
 
-        void beginShape() override
+        void beginShape(ShapeKind /*shapeKind*/) override
         {
             Assert(!shapeBuilding);
             shapeVertices.clear();
             shapeBuilding = true;
         }
 
-        void endShape(ShapeOpen shapeOpen) override
+        void endShape(ShapeMode shapeMode) override
         {
             Assert(shapeBuilding);
             shapeBuilding = false;
             GraphicsPath shape;
             shape.AddLines(&shapeVertices.front(), (INT)shapeVertices.size());
-            if (shapeOpen==ShapeOpen::CLOSE)
+            if (shapeMode==ShapeMode::CLOSE)
                 shape.CloseFigure();
             if (fillEnabled_)
                 graphics_->FillPath( fillBrush_.get(), &shape );

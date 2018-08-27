@@ -96,8 +96,8 @@ namespace cuppa
     inline void arc(Point center, Direction size, Angle start, Angle end)               {   arc(center, size, start, end, ArcMode::OPEN);           }
     inline void quad(Point pt1, Point pt2, Point pt3, Point pt4)                        {   graphicsDriver->quad( pt1, pt2, pt3, pt4);              }
     inline void triangle(Point pt1, Point pt2, Point pt3)                               {   graphicsDriver->triangle( pt1, pt2, pt3);               }
-    inline void beginShape()                                                            {   graphicsDriver->beginShape();                           }
-    inline void endShape(ShapeOpen shapeOpen = ShapeOpen::OPEN)                         {   graphicsDriver->endShape(shapeOpen);                    }
+    inline void beginShape(ShapeKind shapeKind = ShapeKind::POLYLINES)                  {   graphicsDriver->beginShape(shapeKind);                  }
+    inline void endShape(ShapeMode shapeMode = ShapeMode::OPEN)                         {   graphicsDriver->endShape(shapeMode);                    }
     inline void vertex(Point pt)                                                        {   graphicsDriver->vertex(pt);                             }
 
     // transforms
