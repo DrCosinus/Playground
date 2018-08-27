@@ -16,6 +16,7 @@ namespace cuppa
     enum struct Appliance{ ENABLED, DISABLED };
     enum struct TextHAlign{ LEFT, CENTER, RIGHT };
     enum struct TextVAlign{ TOP, MIDDLE, BOTTOM };
+    enum struct ShapeOpen{ OPEN, CLOSE };
 
     struct graphicsDriverInterface
     {
@@ -38,7 +39,7 @@ namespace cuppa
         virtual void quad(Point pt1, Point pt2, Point pt3, Point pt4) = 0;
         virtual void triangle(Point pt1, Point pt2, Point pt3) = 0;
         virtual void beginShape() = 0;
-        virtual void endShape() = 0;
+        virtual void endShape(ShapeOpen) = 0;
         virtual void vertex(Point pt) = 0;
 
         virtual Font loadFont(std::string_view name, std::size_t size) = 0;

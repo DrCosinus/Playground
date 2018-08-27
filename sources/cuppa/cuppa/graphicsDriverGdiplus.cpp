@@ -209,12 +209,14 @@ namespace cuppa
             shapeBuilding = true;
         }
 
-        void endShape() override
+        void endShape(ShapeOpen shapeOpen) override
         {
             Assert(shapeBuilding);
             shapeBuilding = false;
             GraphicsPath shape;
             shape.AddLines(&shapeVertices.front(), (INT)shapeVertices.size());
+            if (shapeOpen==ShapeOpen::CLOSE)
+                shape.CloseFigure();
             if (fillEnabled_)
                 graphics_->FillPath( fillBrush_.get(), &shape );
             if (strokeEnabled_)

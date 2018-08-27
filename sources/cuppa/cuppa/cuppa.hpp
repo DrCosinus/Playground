@@ -97,7 +97,7 @@ namespace cuppa
     inline void quad(Point pt1, Point pt2, Point pt3, Point pt4)                        {   graphicsDriver->quad( pt1, pt2, pt3, pt4);              }
     inline void triangle(Point pt1, Point pt2, Point pt3)                               {   graphicsDriver->triangle( pt1, pt2, pt3);               }
     inline void beginShape()                                                            {   graphicsDriver->beginShape();                           }
-    inline void endShape()                                                              {   graphicsDriver->endShape();                             }
+    inline void endShape(ShapeOpen shapeOpen = ShapeOpen::OPEN)                         {   graphicsDriver->endShape(shapeOpen);                    }
     inline void vertex(Point pt)                                                        {   graphicsDriver->vertex(pt);                             }
 
     // transforms
