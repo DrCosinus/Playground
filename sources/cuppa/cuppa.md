@@ -2,6 +2,61 @@
 
 C++ prototyping facilities (simple media management). Windows specific until further notice.
 
+## bulk
+
+- imaging: createImage, loadPixels, updatePixels
+- Point semantic => Corner, Center: rect(Corner topLeft, Corner bottomRight), rect(Center, Size)
+- PointDifference semantic => Size, Offset, Direction
+- split unit.hpp => Pixel, Point, Direction, Color 
+
+{
+    auto pixels = lockPixels{img};
+    pixels[index] = Red;
+}
+image(img);
+
+push(transform{});
+pop(transform{});
+append(translation{});
+append(rotation{});
+append(scale{});
+append(shear{});
+prepend(...);
+reset(transform{});
+
+generate(random());
+generate(noise());
+
+create(Image());
+
+
+begin /end shape + vertex
+
+set(fill(color));
+set(stroke(color, thickness));
+push(stroke{});
+push(fill{});
+set(font);
+draw(ellipse(center, radius));
+draw(rectangle(topLeftCorner, bottomRightCorner));
+draw(rectangle(topLeftCorner, size));
+draw(rectangle(center, size));
+clear(background(color));
+
+struct Center : Point
+{
+    using Point::Point;
+    explicit(const Point& pt) : Point(pt);
+};
+
+struct ellipse
+{
+    ellipse(Center,Diameter);
+};
+
+
+20, 20; 80, 20; 50, 50
+
 ## Functions
 
 ### Input
@@ -272,6 +327,28 @@ $
 ### Camera transform
 
 ObjectToWorld x World ToCam
+
+### Bezier curve
+
+#### Quadratic
+
+$t \in [0, 1]$
+
+$t^2P_0+2t(1-t)P_1+(1-t)^2P_2$
+
+$t^2P_0+2tP_1-2t^2P_1+P_2-2tP_2+t^2P_2$
+
+$t^2(P_0-2P_1+P_2)+2t(P_1-P_2)+P_2$
+
+$M(t) = t^2(P_0-2P_1+P_2)+2t(P_1-P_2)+P_2 = at^2+bt+c$
+
+$M(t+\delta t) = a(t+\delta t)^2+b(t+\delta t)+c$
+
+$M(t+\delta t) = at^2+2at.\delta t+a.\delta t^2 + b.t + b.\delta t + c$
+
+$M(t+\delta t) = M(t) + \delta t(2at + a.\delta t + b)$
+
+$\dfrac{\delta M(t)}{\delta t} = 2at + a.\delta t + b$
 
 ## TODO
 
