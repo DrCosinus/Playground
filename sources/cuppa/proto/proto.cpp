@@ -76,6 +76,7 @@ namespace proto
                 perlinTest2();
                 //perlinTest();
             }
+            text(std::to_string(fps), { 0_px, 0_px });
         }
 
         void perlinTest()
