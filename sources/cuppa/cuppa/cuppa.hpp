@@ -219,6 +219,10 @@ namespace cuppa
         virtual void keyUp(short) {}
         virtual void keyDown(short) {}
         virtual void keyChar(char) {}
+        std::chrono::time_point<std::chrono::high_resolution_clock> frameStartTime;
+        float fps;
+        void onBeginFrame();
+        void onEndFrame();
 
         void setMousePosition(Point position) { previousMousePosition = mousePosition; mousePosition = position; }
         Point mousePosition;

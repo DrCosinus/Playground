@@ -120,7 +120,9 @@ namespace cuppa
             MSG Msg;
             while(GetMessage(&Msg, NULL, 0, 0) > 0)
             {
+                appPtr->onBeginFrame();
                 appPtr->update();
+                appPtr->onEndFrame();
                 TranslateMessage(&Msg);
                 DispatchMessage(&Msg);
             }

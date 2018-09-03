@@ -18,6 +18,16 @@ namespace cuppa
         }
     }
 
+    void app::onBeginFrame()
+    {
+        frameStartTime = std::chrono::high_resolution_clock::now();
+    }
+
+    void app::onEndFrame()
+    {
+        fps = 1000.0f / std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now() - frameStartTime).count();
+    }
+
     void app::run()
     {
         // Commandline: __argc, __argv
