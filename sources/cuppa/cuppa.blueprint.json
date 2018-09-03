@@ -8,6 +8,7 @@
         "minor_version": "1",
         "path_version": "0",
         "status": "wip",
+        "outputtype": "staticlibrary",
         "dependencies": [ "tdd", "wit" ],
         "headers": [ "**/*.hpp" ],
         "sources": [ "**/*.cpp" ],
