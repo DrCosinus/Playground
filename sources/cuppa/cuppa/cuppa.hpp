@@ -220,7 +220,7 @@ namespace cuppa
         virtual void keyDown(short) {}
         virtual void keyChar(char) {}
         std::chrono::time_point<std::chrono::high_resolution_clock> frameStartTime;
-        float fps;
+        float fps = -1.0f;
         void onBeginFrame();
         void onEndFrame();
 

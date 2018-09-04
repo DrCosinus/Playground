@@ -120,9 +120,7 @@ namespace cuppa
             MSG Msg;
             while(GetMessage(&Msg, NULL, 0, 0) > 0)
             {
-                appPtr->onBeginFrame();
                 appPtr->update();
-                appPtr->onEndFrame();
                 TranslateMessage(&Msg);
                 DispatchMessage(&Msg);
             }
@@ -152,6 +150,7 @@ private:
         void draw()
         {
             auto appPtr = getAppPtr(hWnd_);
+            appPtr->onBeginFrame();
             POINT p;
             if (GetCursorPos(&p))
             {
@@ -164,6 +163,7 @@ private:
             auto hdc = BeginPaint(hWnd_, &ps);
             graphicsDriver->draw(DeviceContext{hdc});
             EndPaint(hWnd_, &ps);
+            appPtr->onEndFrame();
         }
 
         void refreshWindow()

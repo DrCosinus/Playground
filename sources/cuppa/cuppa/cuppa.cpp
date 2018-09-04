@@ -25,7 +25,8 @@ namespace cuppa
 
     void app::onEndFrame()
     {
-        fps = 1000.0f / std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now() - frameStartTime).count();
+        using namespace std::chrono;
+        fps =  1000.0f / duration_cast<milliseconds>(high_resolution_clock::now() - frameStartTime).count();
     }
 
     void app::run()
