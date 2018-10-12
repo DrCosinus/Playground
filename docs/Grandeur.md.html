@@ -1,0 +1,211 @@
+﻿<meta charset="utf-8">
+**Sémantique de la valeur et autres digressions**
+
+Bjarne Stroustrup "A Tour of C++"<br>
+_"Every name and every expression has a type that determines the operations that may be performed on it."_<br>
+_"Chaque nom et chaque expression a un type qui détermine les opérations qui peuvent être effectuées dessus."_<br>
+
+# Objectifs
+
+- Ne plus stocker des valeurs dans différents types, dans différentes unités, avec différents facteurs multiplicatifs. Par exemple, on ne doit plus stocker des temps, quelques fois en entier, d'autres fois en flottant, quelques fois en secondes, d'autres fois en millisecondes, d'autres fois en "machin". C'est d'autant plus un problème que les gentils programmeurs appellent quasiment tous leur variable "myTime", sans autres précision et/ou commentaires...
+- Distinguer la valeur et la différence de valeurs. Par exemple :
+  - une date et un durée,
+  - une position et un déplacement,
+  - une somme d'argent et un coût,
+  - la santé d'un personnage de jeu vidéo et une quantité de dégâts ou de soin qu'il subit,
+  - un pointeur et un offset de mémoire
+  - ...
+- [**Créer facilement des types sémantiquement fort et contextualisé**](#create) qui contienne une valeur et garantisse leur sémantique dans un context précis.
+- Utilisation des opérateurs "classiques" (+, -, /, *, ++, --, +=, -=, *=, /=, ...).
+- Vérifier **à la compilation** la validité des opérations effectuées entre ses grandeurs: gain de productivité.
+  Souvent ajouter 
+- **Ne pas impacter les performances**.
+- Besoin de pouvoir composer les unités (les sémantiques?) : un déplacement divisé par un durée donne une vitesse
+- Support des types aggrégés (homogène et/ou hétérogène) : un vecteur 3d est l'aggrégat de 3 grandeurs 1d
+- Support des unités complexes ? Par exemple, le Hz est en réalité un par seconde et donc si on peut diviser par des secondes on doit pouvoir multiplier par des Hertz.
+
+# Préambule
+Imaginons que l'on est deux vecteurs 3D $\overrightarrow{A}$ et $\overrightarrow{B}$.
+$\overrightarrow{A} = \begin{bmatrix} 1 \\ 3.7 \\ -5 \end{bmatrix},
+\overrightarrow{B} = \begin{bmatrix} 1 \\ 3.7 \\ -5 \end{bmatrix}$.
+
+$\overrightarrow{A}$ et $\overrightarrow{B}$ sont-ils égaux ? Sont-ils équivalents ? Sont-ils identiques ?
+Sans autre informations on ne peut pas répondre. :disappointed:
+
+Les composantes de $\overrightarrow{A}$ peuvent, par exemple, être des longueurs et les composantes de $\overrightarrow{B}$ des angles.  
+Plus généralement, la probabilité que $\overrightarrow{A}$ et $\overrightarrow{B}$ soient réellement égaux, même s'ils contiennent des composantes de même valeur, est de 0%.
+
+Et si on considère que les composantes de $\overrightarrow{A}$ et $\overrightarrow{B}$ des longueurs ?  
+On ne peut toujours pas répondre. :disappointed:  
+$\overrightarrow{A}$ peut indiquer la position d'un point dans le monde alors que $\overrightarrow{B}$ indique la taille d'une boite (alignée sur les axes) dans ce même monde.
+
+Plus généralement, la probabilité que $\overrightarrow{A}$ et $\overrightarrow{B}$ soient réellement égaux, même s'ils contiennent des composantes de même valeur dans la même unité, est de 0%.
+
+Et si on sait que les composantes de $\overrightarrow{A}$ et de $\overrightarrow{B}$ sont des positions ?  
+Bon, il n'est pas précisé que $\overrightarrow{A}$ et $\overrightarrow{B}$ appartiennent au même monde. Oui, ça peut arriver.
+Dans ce cas, $\overrightarrow{A}$ et $\overrightarrow{B}$ ne sont évidemment pas égaux.
+
+# Définitions
+
+<a name="quantity"></a>
+## Grandeur
+Une grandeur (_quantity_ en anglais) est une propriété qui peut être mesurée ou calculée. Les différentes valeurs qu'elle peut prendre s'exprime par un nombre (réel ou complexe). Dans le cas des jeux vidéo, on peut discrétiser ces valeurs (si besoin en jouant avec un facteur multiplicatif) et donc envisager d'exprimer les valeurs à l'aide d'entiers.  
+
+Les grandeurs physiques (temps, longueur, masse...) ne sont pas les seules concernées. Dans les jeux vidéo, par exemple, les points de vie, de mana ou l'argent sont des grandeurs.
+[📘](https://fr.wikipedia.org/wiki/Grandeur_physique)
+
+<a name="unit"></a>
+## Unité de la grandeur
+Une unité (_unit_ en anglais) est une référence, une convention pour exprimer une grandeur relativement à un étalon. Elle ne change rien à la [grandeur](#quantity) elle-même. Plusieurs unités peuvent exprimer une même grandeur (le mètre et le pied, le radian et le degré...).
+[📘](https://fr.wikipedia.org/wiki/Unit%C3%A9_de_mesure)
+
+## Sémantique de la grandeur
+Il s'agit de la signification de ce que représente une grandeur. Par exemple, une unité de longueur permet de décrire une position, ou un déplacement.
+Une [grandeur](#quantity) est accompagnée d'une sémantique.
+
+## Contexte dans lequel la grandeur à du sens
+Pour pouvoir effectuer une opération entre 2 grandeurs de même sémantique, elles doivent appartenir au même contexte.  
+On ne peut pas effectuer d'opérations entre la position de 2 points issus de 2 monde 3D différents.
+
+*************************************************
+*                                               *
+*   .-------------------------------------.     *
+*  |  Valeur                               |    *
+*  |  .---------------------------------.  |    *
+*  | |  Grandeur                         | |    *
+*  | |  .-----------------------------.  | |    *
+*  | | | ... avec une sémantique ...   | | |    *
+*  | | |  .-------------------------.  | | |    *
+*  | | | |                           | | | |    *
+*  | | | | ... dans un context       | | | |    *
+*  | | | |                           | | | |    *
+*  | | |  '-------------------------'  | | |    *
+*  | |  '-----------------------------'  | |    *
+*  |  '---------------------------------'  |    *
+*   '-------------------------------------'     *
+*                                               *
+*                                               *
+*************************************************
+
+# Besoins
+
+* l'utilisateur est **à l'abri des problèmes des différentes unités pouvant désigner une valeur**. Par exemple les angles peuvent être exprimé en degrés, les radians, etc..., les temps peuvent être exprimés en secondes, minutes, heures, etc... le programmeur choisit l'unité dans laquelle est stockée la valeur (usuellement celle la plus proche du bas niveau et compatible avec les unités des grandeurs avec lesquelles la grandeur actuelle est liée) ensuite les passerelles entre les différentes unités sont simples à mettre en place.
+* l'utilisateur est **préservé du soucis des préfixes multiplicatifs** : milli, centi, déci, déca, hecto, kilo, méga, giga, ...
+* l'utilisateur est **protégé d'opérations illicites** comme par exemple d'ajouter une durée, des points de vie ou un angle mais aussi d'ajouter 2 dates entre-elles.
+* l'utilisateur peut définir des **sémantiques différentes pour une même grandeur**. Par exemple, un vecteur peut désigner une position ou un déplacement (une différence de position)... ça n'a rien à voir ??. De même, pour une date et une durée.
+* il est possible de déclarer les relations/opérations entre deux valeurs avec leur sémantique et le résultat produit dans la sémantique adaptée. Par exemple, d'une manière générale diviser par une durée peut avoir du sens, alors que diviser par une date n'en a jamais. Ainsi un déplacement divisé par une durée donne une vitesse linéaire. Par contre, diviser une position par une durée n'en a pas.
+* l'utilisateur peut définir des limites de valider d'une valeur au delà desquelles la valeur cycle ou est tronquée.
+* Identification, voir éradication des valeurs codées en dur.
+* Gestion de cas particuliers, comme par exemple les vecteurs normaux, les matrices orthogonales ou orthonormales. Trop souvent on norme un vecteur déjà normé (au cas où :disappointed:) ou on oublie de normé un vecteur qui ne l'est pas :unamused:. Par exemple, si pour normer un vecteur on le castait ce vecteur quelconque en "vecteur normé", et si une méthode qui renvoie un vecteur normé renvoyait un objet de type "vecteur normé", ça réglerait bien des soucis. De même, on peut envisager d'avoir un type vecteur nul ou matrice identité, mais c'est un autre sujet :stuck_out_tongue_winking_eye:. 
+
+# Implémentation en C++
+
+## Utilisation des [opérateurs littéraux défini par l'utilisateur](http://en.cppreference.com/w/cpp/language/user_literal)
+Pour simplifier l'utilisation des valeurs avec sémantiques ont peut envisager l'utilisation des opérateurs littéraux défini par l'utilisateur.
+Cependant se pose le problème des différentes sémantiques pour une valeur. Par exemple, avec _m_ symbolisant le mètre, 1_m représente-t-il la position ou la distance ? Ou ni l'un ni l'autre, représente-t-il seulement l'unité sans sémantique et ce tant qu'il n'est pas affecté à une grandeur...  
+:question: Cela est-il souhaitable d'avoir des constantes codée en dur ?
+
+## Implémentation des grandeurs sans sémantique
+On choisira une unité et ainsi qu'un facteur multiplicatif pour stocker une [grandeur](#quantity).  
+Par exemple, dans un jeu vidéo, on peut choisir de stocker les temps en entier indiquant des millisecondes.
+
+### Constructeur par défaut d'une grandeur sans sémantique
+La valeur n'est pas initialisée.
+
+## Constructeur par défaut : interdit, autorisé non initialisé, autorisé initialisé à une valeur par défaut
+On laisse un choix, selon les types et les besoins.  
+Je préconise que le choix se limite à :
+- le constructeur par défaut affecte une valeur par défaut
+- le constructeur par défaut provoque une erreur de compilation
+
+**Créer la grandeur avec une valeur indéterminée est dangereux**.
+
+## Signé ou non signé ?
+On peut laisser le choix mais une unité signée est plus versatile.
+
+## Conversion standardisée vers/à partir chaîne de caractère
+Cool :smiley:
+
+## Sérialisation montante et descendante standardisée en binaire et en texte
+Chouette :sunglasses:
+
+## Accès/assignation direct à la valeur sous-jacente ou pas
+Je n'y suis pas favorable :no_entry:.  
+Nous devons fournir les services suffisant pour pouvoir s'en passer.  
+Éventuellement, nous en n'avons besoin que pour les tests unitaires, mais on doit pouvoir s'en sortir.
+
+## constexpr
+http://en.cppreference.com/w/cpp/language/constexpr
+Utilisation de constexpr pour profiter de la résolution à la compilation autant que possible.
+
+# Quelques habitudes à changer.
+Revenons à l'exemple du vecteur. Un vecteur 3D (x,y,z) peut désigner une position dans le monde 3D, mais aussi un déplacement dans ce monde 3D.
+On peut ajouter un déplacement à une position pour obtenir une nouvelle position.
+On peut soustraire une position à une autre pour obtenir le déplacement de la première à la seconde.
+On peut prendre la norme d'une déplacement, mais quid de la norme d'une position.
+On peut ajouter 2 déplacements ce qui donne un déplacement.
+Par contre, ajouter 2 positions n'a, à priori, pas de sens.
+
+Il existe des moyens de passer de la position à un déplacement et inversement
+
+> _M_ = _O_ + **OM**  
+> **OM** = _M_ - _O_
+
+Par exemple, prenons la formule habituellement utilisée pour calculer le milieu I d'un segment **AB**.
+
+> _I_ = (_A_+_B_)/2
+
+C'est problématique. En effet, _A_+_B_ n'a sémantiquement pas de sens, même en imaginant que cela donne une position, diviser une position par 2 (sans sémantique) n'a pas de sens non plus.
+On doit revenir au fondamentaux et à la formule
+
+> _I_ = _A_+ __AB__/2  
+  _I_ = _A_+(_B_-_A_)/2
+
+C'est bien équivalent à la formule simplifiée. _B_-_A_ donne le déplacement pour aller de _A_ à _B_. 
+Diviser ce déplacement par 2 (sans sémantique) à du sens et donne la moitié du déplacement de _A_ à _B_, dont pour aller de _A_ à _I_.
+Ajouter ce déplacement à la position _A_ donne donc bien la position de _I_.
+
+Bon, on ne va pas se mentir. Ce changement induis un coût, le compilateur ne sait générée la version simplifiée. Ce coût est généralement négligeable comparé au gain de productivité qu'apporterait les valeurs avec sémantique.
+
+<a name="create"></a>
+## Créer facilement des types qui contienne une valeur et garantisse leur sémantique.
+### Par composition
+A réflechir...
+### Par "policies"
+A réflechir...
+
+## Bac à sable, Pseudo-code pour réfléchir à une syntaxe
+
+```cpp
+using quantity_length = quantity<length, double>;
+using semantic_position = semantic<semantic_position, quantity_length>;
+using semantic_distance = semantic<semantic_distance, quantity_length>;
+
+using quantity_angle = quantity<length, long long>;
+using semantic_absolute_angle = semantic<semantic_absolute_angle, quantity_angle>;
+using semantic_angle_of_arc = semantic<semantic_angle_of_arc, quantity_angle>;
+
+using time = quantity<time, long long>;
+using duration = semantic<duration, time>;
+using date = semantic<date, time>;
+
+using speed = length::over<time>; // quantité sans sémantique
+
+// On a besoin de vecteur templaté par la sémantique
+template<typename semantic, std::size_t dimension>
+struct vector3d
+{
+    semantic x, , y, z;
+    ...
+};
+
+// Les opérations sont à definir
+using 
+
+auto d = deplacement3d::from{ 1_m, 3.7_m, -4_m };
+auto t = duree::from{ 666_ms };
+auto h = 1/t; // h est un fréquence
+
+```
+
+<!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js"></script><!--<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>--><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
