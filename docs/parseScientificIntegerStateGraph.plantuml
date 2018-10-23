@@ -1,0 +1,19 @@
+@startuml
+[*] --> MantisseSign : '+' or '-'
+[*] --> MantineFractionalPart : '.'
+[*] --> MantisseIntegerPart : '0' to '9'
+[*] --> End : others
+MantisseSign --> MantisseIntegerPart : '0' to '9'
+MantisseSign --> MantineFractionalPart : '.'
+MantisseSign --> End : others
+MantisseIntegerPart --> MantisseIntegerPart : '0' to '9'
+MantisseIntegerPart --> MantineFractionalPart : '.'
+MantisseIntegerPart --> MantineExponentPart : 'e' or 'E'
+MantisseIntegerPart --> End : others
+MantineFractionalPart --> MantineFractionalPart : '0' to '9'
+MantineFractionalPart --> MantineExponentPart : 'e' or 'E'
+MantineFractionalPart --> End : others
+MantineExponentPart --> MantineExponentPart : '0' to '9'
+MantineExponentPart --> End : others
+End --> [*]
+@enduml
