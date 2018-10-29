@@ -1,0 +1,10 @@
+{
+    "import": [ "sources/tdd/tdd.blueprint.json", "sources/wit/wit.blueprint.json" ],
+    "project":
+    {
+        "name": "wit_tests",
+        "dependencies": [ "tdd", "wit" ],
+        "sources": [ "quantity_tests.cpp" ],
+        "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe"
+    }
+}
