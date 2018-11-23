@@ -1,0 +1,1 @@
+@clang-query testfile.cpp --

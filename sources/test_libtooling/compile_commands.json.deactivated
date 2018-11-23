@@ -1,0 +1,23 @@
+[
+    {
+        "directory": "D:/GitHub/Playground/sources/test_libtooling",
+        "command": "clang -std=c++17 -Wall -pedantic -Wextra -DDEBUG=0 -DNDEBUG -O3 -Werror -I../tdd -I. -I../.. testfile.cpp -c -o testfile.o",
+        "arguments": [
+            "clang",
+            "-std=c++17",
+            "-Wall",
+            "-pedantic",
+            "-Wextra",
+            "-DDEBUG=0",
+            "-DNDEBUG",
+            "-O3",
+            "-Werror",
+            "-I../tdd",
+            "-I.",
+            "-I../..",
+            "-c",
+            "testfile.cpp"
+        ],
+        "file": "testfile.cpp"
+    },
+]
