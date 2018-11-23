@@ -4,6 +4,8 @@ class ForwardDeclaredClass;
 
 struct ForwardDeclaredStruct;
 
+void Blabla(ForwardDeclaredInHeader*);
+
 struct CompleteDummyClass
 {
     void MemberFunction(const ForwardDeclaredClass&);
@@ -34,6 +36,50 @@ struct Derived3 : Base
 struct Derived4 : Base
 {
     virtual void VirtualMemberFunction(); // No override + extra virtual
+};
+
+void foo(Base* b)
+{
+    b->VirtualMemberFunction();
+}
+
+void foo(Base& b)
+{
+    b.VirtualMemberFunction();
+}
+
+void foo()
+{
+    Base b;
+}
+
+void foo(int)
+{
+    Base* b = new Base();
+}
+
+void foo(short)
+{
+    auto b = new Base();
+}
+
+void foo(char)
+{
+    Base* b = new Base;
+}
+
+Base& GetARefToBase();
+
+void crap()
+{
+    auto AutoNoRef = GetARefToBase();
+    auto& AutoRef = GetARefToBase();
+    auto&& AutoRefRef = GetARefToBase();
+}
+
+struct Trash
+{
+    Base b;
 };
 
 int addTwo(int num) 

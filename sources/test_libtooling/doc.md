@@ -40,6 +40,39 @@ Uncomplete classes and structures:
 m cxxRecordDecl(isExpansionInMainFile(),unless(isImplicit()),unless(hasDefinition()))
 ```
 
+Call memberfunction on type
+
+```plaintext
+m cxxMemberCallExpr(on(hasType(cxxRecordDecl(hasName("Base")))))
+
+m cxxMemberCallExpr(on(hasType(pointsTo(cxxRecordDecl(hasName("Base"))))))
+
+m cxxMemberCallExpr(on(anyOf( hasType(pointsTo(cxxRecordDecl(hasName("Base")))), hasType(cxxRecordDecl(hasName("Base"))) )))
+
+```
+
+Declare object of type
+
+```plaintext
+VarDecl 0x19c6606f128 <col:5, col:10> col:10 b 'Base' callinit
+```
+
+Calling new
+
+```plaintext
+`-CXXNewExpr 0x296ff25c4b8 <col:15, col:24> 'Base *' Function 0x296ff25bee8 'operator new' 'void *(unsigned long long)'
+  `-CXXConstructExpr 0x296ff25c488 <col:19, col:24> 'Base' 'void () noexcept' zeroing
+```
+
+Declaration with copy
+
+```plaintext
+m varDecl(has(cxxConstructExpr()))
+m varDecl(hasDescendant(cxxConstructorDecl() ))
+m varDecl(hasDescendant(cxxConstructorDecl(isCopyConstructor()) ))
+m varDecl(has(cxxConstructExpr()))
+```
+
 ## Includes
 
 not needed definition:
@@ -58,3 +91,25 @@ need complete definition:
 - inherit from
 - operator dot
 - operator arrow
+- variable declaration of type (not pointer, not reference)
+- operator new
+
+## To do
+
+declaration without definition detection + removal
+
+dead code detection + removal
+
+renaming convention checker + fixer
+
+function reordering
+
+implicit convertion detection
+
+new A or new A{} or new A()
+
+overriden methods do not call its parent
+
+member method does not use other members -> consider free function or static member function
+
+detect copy due to auto instead of auto&
