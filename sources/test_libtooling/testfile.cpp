@@ -1,4 +1,5 @@
 #include "testfile.hpp"
+#include <map>
 
 class ForwardDeclaredClass;
 
@@ -34,6 +35,11 @@ struct Derived3 : Base
 struct Derived4 : Base
 {
     virtual void VirtualMemberFunction(); // No override + extra virtual
+};
+
+struct Zorg : CompleteInHeader
+{
+
 };
 
 int addTwo(int num) 
