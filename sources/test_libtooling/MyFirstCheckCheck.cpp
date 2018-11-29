@@ -14,6 +14,8 @@
 #include "clang/Lex/PPCallbacks.h"
 #include "clang/Lex/Preprocessor.h"
 
+// see IncludeOrderCheck
+
 #pragma optimize("", off)
 using namespace clang::ast_matchers;
 
@@ -23,7 +25,7 @@ namespace misc {
 
 namespace {
 struct IncludePPCallbacks : PPCallbacks {
-  IncludePPCallbacks(ClangTidyCheck &Check, SourceManager &SM)
+  IncludePPCallbacks(MyFirstCheckCheck &Check, SourceManager &SM)
       : Check(Check), SM(SM) {}
 
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
@@ -32,6 +34,7 @@ struct IncludePPCallbacks : PPCallbacks {
                           StringRef SearchPath, StringRef RelativePath,
                           const Module *Imported,
                           SrcMgr::CharacteristicKind FileType) override;
+  void EndOfMainFile() override;
 
 private:
   struct IncludeDirective {
@@ -43,7 +46,7 @@ private:
   };
   bool LookForMainModule = true;
 
-  ClangTidyCheck &Check;
+  MyFirstCheckCheck &Check;
   SourceManager &SM;
 };
 } // namespace
@@ -74,7 +77,6 @@ void MyFirstCheckCheck::registerPPCallbacks(CompilerInstance &Compiler) {
                                               Compiler.getSourceManager()));
 }
 void MyFirstCheckCheck::registerMatchers(MatchFinder *Finder) {
-  // FIXME: Add matchers.
   Finder->addMatcher(
       cxxRecordDecl(
           isExpansionInMainFile(),
@@ -84,18 +86,33 @@ void MyFirstCheckCheck::registerMatchers(MatchFinder *Finder) {
       this);
 }
 void MyFirstCheckCheck::check(const MatchFinder::MatchResult &Result) {
-  // FIXME: Add callback implementation.
-  const auto DerivedDecl = Result.Nodes.getNodeAs<CXXRecordDecl>("derived");
-  const auto BaseDecl = Result.Nodes.getNodeAs<CXXRecordDecl>("base");
-  auto name = DerivedDecl->getNameAsString();
-  auto base_name = BaseDecl->getNameAsString();
-  // if (MatchedDecl->getName().startswith("awesome_"))
-  //  return;
-  diag(DerivedDecl->getLocation(),
-       "struct/class %0 need the full definition of struct/class %1",
-       DiagnosticIDs::Remark)
-      << DerivedDecl << BaseDecl;
-  //<< FixItHint::CreateInsertion(DerivedDecl->getLocation(), "awesome_");
+
+  if (const auto DerivedDecl =
+          Result.Nodes.getNodeAs<CXXRecordDecl>("derived")) {
+    const auto BaseDecl = Result.Nodes.getNodeAs<CXXRecordDecl>("base");
+    // auto name = DerivedDecl->getNameAsString();
+    // auto base_name = BaseDecl->getNameAsString();
+
+    needs[BaseDecl->getNameAsString()].push_back(
+        DerivedDecl->getNameAsString());
+
+    // diag(DerivedDecl->getLocation(),
+    //     "struct/class %0 need the full definition of struct/class %1",
+    //     DiagnosticIDs::Remark)
+    //    << DerivedDecl << BaseDecl;
+    //<< FixItHint::CreateInsertion(DerivedDecl->getLocation(), "awesome_");
+  }
+}
+
+void IncludePPCallbacks::EndOfMainFile() {
+  for (auto &p : Check.needs) {
+    auto &base = p.first;
+    auto &usages = p.second;
+    for (auto &u : usages)
+    {
+      int a = 1;
+    }
+  }
 }
 
 } // namespace misc

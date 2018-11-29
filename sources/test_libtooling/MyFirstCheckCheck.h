@@ -11,7 +11,6 @@
 #define LLVM_CLANG_TOOLS_EXTRA_CLANG_TIDY_MISC_MYFIRSTCHECKCHECK_H
 
 #include "../ClangTidy.h"
-#include "../utils/IncludeInserter.h"
 
 namespace clang {
 namespace tidy {
@@ -29,10 +28,8 @@ public:
   void registerMatchers(ast_matchers::MatchFinder *Finder) override;
   void check(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
+  std::map<std::string, std::vector<std::string>> needs;
 private:
-  std::unique_ptr<clang::tidy::utils::IncludeInserter> IncludeInserter;
-  const utils::IncludeSorter::IncludeStyle IncludeStyle =
-      utils::IncludeSorter::IncludeStyle::IS_LLVM;
 };
 
 } // namespace misc
