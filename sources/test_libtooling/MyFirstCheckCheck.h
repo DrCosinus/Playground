@@ -16,6 +16,23 @@ namespace clang {
 namespace tidy {
 namespace misc {
 
+enum class RecordDeclarationKind {
+  IsComplete,
+  IsIncomplete,
+};
+
+enum class RecordDeclarationRegion {
+  IsInMain,
+  IsInHeader, // only if main is a cpp with same name
+  IsInElsewhere
+};
+
+struct RecordDeclarationInfo {
+  RecordDeclarationKind kind;
+  RecordDeclarationRegion region;
+  SourceLocation location;
+};
+
 /// FIXME: Write a short description.
 ///
 /// For the user-facing documentation see:
@@ -29,7 +46,12 @@ public:
   void check(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
   std::map<std::string, std::vector<std::string>> needs;
+
+  std::map<llvm::StringRef, std::vector<RecordDeclarationInfo>>
+      forwardDeclaredRecords;
+
 private:
+  SourceManager *SM = nullptr;
 };
 
 } // namespace misc
