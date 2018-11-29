@@ -10,6 +10,7 @@ void Blabla(ForwardDeclaredInHeader*);
 struct CompleteDummyClass
 {
     void MemberFunction(const ForwardDeclaredClass&);
+    static void StaticMemberFunction();
 };
 
 void FreeFunction(ForwardDeclaredClass*);
@@ -46,6 +47,7 @@ struct Zorg : CompleteInHeader
 void foo(Base* b)
 {
     b->VirtualMemberFunction();
+    CompleteDummyClass::StaticMemberFunction();
 }
 
 void foo(Base& b)

@@ -79,18 +79,17 @@ void MyFirstCheckCheck::registerPPCallbacks(CompilerInstance &Compiler) {
       ::llvm::make_unique<IncludePPCallbacks>(*this,
                                               Compiler.getSourceManager()));
 }
+
 void MyFirstCheckCheck::registerMatchers(MatchFinder *Finder) {
-  // forward declaration of classes and structures in "main" file
-  Finder->addMatcher(
-      cxxRecordDecl(/*isExpansionInMainFile(),*/
-                    unless(hasDefinition()), unless(isImplicit()))
-          .bind("forwardDeclaredRecord"),
-      this);
-  // complete declaration of classes and structures in "main" file
-  Finder->addMatcher(cxxRecordDecl(/*isExpansionInMainFile(),*/ hasDefinition(),
-                                   unless(isImplicit()))
-                         .bind("fullyDeclaredRecord"),
+
+  // all declarations of classes, structures (and unions)
+  Finder->addMatcher(cxxRecordDecl(unless(isImplicit())).bind("declaredRecord"),
                      this);
+
+  // all complete declarations of classes and structures (and unions)
+  // Finder->addMatcher(cxxRecordDecl(hasDefinition(), unless(isImplicit()))
+  //                       .bind("fullyDeclaredRecord"),
+  //                   this);
 
   // class/struct inherits from type => complete definition of type needed
   Finder->addMatcher(
@@ -109,6 +108,12 @@ void MyFirstCheckCheck::registerMatchers(MatchFinder *Finder) {
                      this);
 
   // static member function calls ??
+  Finder->addMatcher(
+      callExpr(isExpansionInMainFile(),
+               hasDeclaration(cxxMethodDecl(isStaticStorageClass())
+                                  .bind("callStaticMemberFunctionOnType")))
+          .bind("staticMemberCall"),
+      this);
 
   // declaration of object of type... (unless pointer or reference)
 
@@ -121,27 +126,37 @@ void MyFirstCheckCheck::registerMatchers(MatchFinder *Finder) {
   */
 }
 
+void MyFirstCheckCheck::addRecordDeclaration(
+    const CXXRecordDecl *cxxRecordDecl,
+    RecordDeclarationKind recordDeclarationKind) {
+  recordDeclareInfos[cxxRecordDecl->getQualifiedNameAsString()].push_back(
+      {recordDeclarationKind,
+       SM->isInMainFile(cxxRecordDecl->getLocation())
+           ? RecordDeclarationRegion::IsInMain
+           : RecordDeclarationRegion::IsInElsewhere,
+       cxxRecordDecl->getLocation()});
+  // need to avoid to push same location multiple times
+}
+
 void MyFirstCheckCheck::check(const MatchFinder::MatchResult &Result) {
 
-  if (const auto forwardDeclaredRecordDecl =
-          Result.Nodes.getNodeAs<CXXRecordDecl>("forwardDeclaredRecord")) {
-    forwardDeclaredRecords[forwardDeclaredRecordDecl->getName()].push_back(
-        {RecordDeclarationKind::IsIncomplete,
-         SM->isInMainFile(forwardDeclaredRecordDecl->getLocation())
-             ? RecordDeclarationRegion::IsInMain
-             : RecordDeclarationRegion::IsInElsewhere,
-         forwardDeclaredRecordDecl->getLocation()});
-    // need to avoid to push same location multiple times
+  if (const auto declaredRecordDecl =
+          Result.Nodes.getNodeAs<CXXRecordDecl>("declaredRecord")) {
+
+    auto complete = declaredRecordDecl->hasDefinition();
+    auto location = declaredRecordDecl->getLocation();
+    // if (!SM->isInSystemHeader(location))
+    {
+      auto recordName = declaredRecordDecl->getName().str();
+      auto filename = SM->getFilename(location).str();
+      int z = 1;
+    }
+    addRecordDeclaration(declaredRecordDecl,
+                         complete ? RecordDeclarationKind::IsComplete
+                                  : RecordDeclarationKind::IsIncomplete);
+    return;
   }
-  if (const auto fullyDeclaredRecordDecl =
-          Result.Nodes.getNodeAs<CXXRecordDecl>("fullyDeclaredRecord")) {
-    forwardDeclaredRecords[fullyDeclaredRecordDecl->getName()].push_back(
-        {RecordDeclarationKind::IsComplete,
-         SM->isInMainFile(fullyDeclaredRecordDecl->getLocation())
-             ? RecordDeclarationRegion::IsInMain
-             : RecordDeclarationRegion::IsInElsewhere,
-         fullyDeclaredRecordDecl->getLocation()});
-  }
+
   if (const auto BaseDecl =
           Result.Nodes.getNodeAs<CXXRecordDecl>("baseRecord")) {
     const auto DerivedDecl =
@@ -150,6 +165,7 @@ void MyFirstCheckCheck::check(const MatchFinder::MatchResult &Result) {
     needs[BaseDecl->getNameAsString()].push_back(
         DerivedDecl->getBeginLoc().printToString(*SM));
   }
+
   if (const auto CompletelyDefinedRecord =
           Result.Nodes.getNodeAs<CXXRecordDecl>("callMemberFunctionOnType")) {
     const auto &memberCallExpr =
@@ -180,7 +196,7 @@ void IncludePPCallbacks::EndOfMainFile() {
   }
 
   std::cout << "Forward declared strutures and classes:" << std::endl;
-  for (auto &pair_RecordName_Locations : Check.forwardDeclaredRecords) {
+  for (auto &pair_RecordName_Locations : Check.recordDeclareInfos) {
     auto &recordName = pair_RecordName_Locations.first;
     auto &locations = pair_RecordName_Locations.second;
 
@@ -197,7 +213,7 @@ void IncludePPCallbacks::EndOfMainFile() {
                         return k.kind == RecordDeclarationKind::IsComplete;
                       });
 
-    std::cout << "-\t" << recordName.str() << " ( " << inMainCount << "/"
+    std::cout << "-\t" << recordName << " ( " << inMainCount << "/"
               << locations.size() << " ) Complete:" << CompleteDeclarationCount
               << std::endl;
   }

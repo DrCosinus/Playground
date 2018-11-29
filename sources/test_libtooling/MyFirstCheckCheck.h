@@ -47,10 +47,13 @@ public:
 
   std::map<std::string, std::vector<std::string>> needs;
 
-  std::map<llvm::StringRef, std::vector<RecordDeclarationInfo>>
-      forwardDeclaredRecords;
+  std::map</*llvm::StringRef*/ std::string, std::vector<RecordDeclarationInfo>>
+      recordDeclareInfos;
 
 private:
+  void addRecordDeclaration(const CXXRecordDecl* cxxRecordDecl,
+                            RecordDeclarationKind recordDeclarationKind);
+
   SourceManager *SM = nullptr;
 };
 

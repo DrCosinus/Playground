@@ -95,9 +95,11 @@ need complete definition:
 - variable declaration of type (not pointer, not reference)
 - operator new
 
-fix backslash, fix relative, fix angle brackets vs double quotes, precompiledheader in cpp
+- overriden member functions implies at least that the type of their parameters and return value type were forward declared for the parent class.
 
 ## To do
+
+fix backslash, fix relative, fix angle brackets vs double quotes, precompiledheader in cpp
 
 declaration without definition detection + removal
 
@@ -117,6 +119,9 @@ member method does not use other members -> consider free function or static mem
 
 detect copy due to auto instead of auto&
 
+a member function which does not use member variable or function could be static
+
+a non const member function which does not use modify member variable or call only member functions could be const
 
 cmake .. -G "Visual Studio 15 2017" -DCMAKE_GENERATOR_PLATFORM=x64 -Thost=x64 -DLLVM_INCLUDE_TESTS=OFF -DLLVM_BUILD_TOOLS=OFF -DLLVM_INCLUDE_UTILS=OFF -DLLVM_TARGETS_TO_BUILD="" -DCLANG_ENABLE_STATIC_ANALYZER=OFF -DCLANG_ENABLE_ARCMT=OFF
 
