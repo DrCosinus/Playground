@@ -97,6 +97,12 @@ need complete definition:
 
 - overriden member functions implies at least that the type of their parameters and return value type were forward declared for the parent class.
 
+- alias (using and typedef)
+
+- definition of template class specializations
+
+- definition of macros
+
 ## To do
 
 fix backslash, fix relative, fix angle brackets vs double quotes, precompiledheader in cpp

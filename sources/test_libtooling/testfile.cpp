@@ -5,6 +5,22 @@ class ForwardDeclaredClass;
 
 struct ForwardDeclaredStruct;
 
+template<typename TYPENAME>
+struct ForwardDeclaredTemplateStruct;
+
+template<typename TYPENAME>
+struct ForwardDeclaredTemplateStructWithCompleteSpecialization;
+
+template<>
+struct ForwardDeclaredTemplateStructWithCompleteSpecialization<int>
+{
+};
+
+template<class CLASS>
+class CompleteTemplateClass
+{
+};
+
 void Blabla(ForwardDeclaredInHeader*);
 
 struct CompleteDummyClass

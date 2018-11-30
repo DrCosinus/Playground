@@ -28,12 +28,18 @@ enum class RecordDeclarationRegion {
 };
 
 struct RecordDeclarationInfo {
+  RecordDeclarationInfo(const SourceManager &SM,
+                        const CXXRecordDecl *cxxRecordDecl);
+
+  bool operator==(const RecordDeclarationInfo &other) const {
+    return kind == other.kind && location == other.location;
+  }
+  SourceLocation location;
   RecordDeclarationKind kind;
   RecordDeclarationRegion region;
-  SourceLocation location;
 };
 
-/// FIXME: Write a short description.
+    /// FIXME: Write a short description.
 ///
 /// For the user-facing documentation see:
 /// http://clang.llvm.org/extra/clang-tidy/checks/misc-my-first-check.html
@@ -51,8 +57,7 @@ public:
       recordDeclareInfos;
 
 private:
-  void addRecordDeclaration(const CXXRecordDecl* cxxRecordDecl,
-                            RecordDeclarationKind recordDeclarationKind);
+  void addRecordDeclaration(const CXXRecordDecl *cxxRecordDecl);
 
   SourceManager *SM = nullptr;
 };

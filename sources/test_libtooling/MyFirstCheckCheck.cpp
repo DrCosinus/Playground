@@ -83,7 +83,12 @@ void MyFirstCheckCheck::registerPPCallbacks(CompilerInstance &Compiler) {
 void MyFirstCheckCheck::registerMatchers(MatchFinder *Finder) {
 
   // all declarations of classes, structures (and unions)
-  Finder->addMatcher(cxxRecordDecl(unless(isImplicit())).bind("declaredRecord"),
+  // in main file or in other files
+  // with or without definition
+  // avoid specializations
+  Finder->addMatcher(cxxRecordDecl(unless(isImplicit()),
+                                   unless(isExplicitTemplateSpecialization()))
+                         .bind("declaredRecord"),
                      this);
 
   // all complete declarations of classes and structures (and unions)
@@ -126,15 +131,40 @@ void MyFirstCheckCheck::registerMatchers(MatchFinder *Finder) {
   */
 }
 
+RecordDeclarationInfo::RecordDeclarationInfo(const SourceManager &SM,
+                                             const CXXRecordDecl *cxxRecordDecl)
+    : location{cxxRecordDecl->getLocation()},
+      kind{cxxRecordDecl->hasDefinition()
+               ? RecordDeclarationKind::IsComplete
+               : RecordDeclarationKind::IsIncomplete},
+      region{SM.isInMainFile(location)
+                 ? RecordDeclarationRegion::IsInMain
+                 : RecordDeclarationRegion::IsInElsewhere} {}
+
 void MyFirstCheckCheck::addRecordDeclaration(
-    const CXXRecordDecl *cxxRecordDecl,
-    RecordDeclarationKind recordDeclarationKind) {
-  recordDeclareInfos[cxxRecordDecl->getQualifiedNameAsString()].push_back(
-      {recordDeclarationKind,
-       SM->isInMainFile(cxxRecordDecl->getLocation())
-           ? RecordDeclarationRegion::IsInMain
-           : RecordDeclarationRegion::IsInElsewhere,
-       cxxRecordDecl->getLocation()});
+    const CXXRecordDecl *cxxRecordDecl) {
+  auto name = cxxRecordDecl->getQualifiedNameAsString();
+  auto info = RecordDeclarationInfo{*SM, cxxRecordDecl};
+
+  auto it = recordDeclareInfos.find(name);
+  if (it == std::end(recordDeclareInfos)) {
+    auto insertionResult = recordDeclareInfos.insert({name, {}});
+    if (insertionResult.second) {
+      it = insertionResult.first;
+    }
+  }
+  if (it == std::end(recordDeclareInfos)) {
+    // oh shit... what should we do?
+  }
+  auto &infoList = it->second;
+  if (std::end(infoList) ==
+      std::find_if(std::begin(infoList), std::end(infoList),
+                   [&info](const RecordDeclarationInfo &other) {
+                     return info == other;
+                   })) {
+    recordDeclareInfos[name].push_back(info);
+  }
+
   // need to avoid to push same location multiple times
 }
 
@@ -143,17 +173,7 @@ void MyFirstCheckCheck::check(const MatchFinder::MatchResult &Result) {
   if (const auto declaredRecordDecl =
           Result.Nodes.getNodeAs<CXXRecordDecl>("declaredRecord")) {
 
-    auto complete = declaredRecordDecl->hasDefinition();
-    auto location = declaredRecordDecl->getLocation();
-    // if (!SM->isInSystemHeader(location))
-    {
-      auto recordName = declaredRecordDecl->getName().str();
-      auto filename = SM->getFilename(location).str();
-      int z = 1;
-    }
-    addRecordDeclaration(declaredRecordDecl,
-                         complete ? RecordDeclarationKind::IsComplete
-                                  : RecordDeclarationKind::IsIncomplete);
+    addRecordDeclaration(declaredRecordDecl);
     return;
   }
 
@@ -212,10 +232,17 @@ void IncludePPCallbacks::EndOfMainFile() {
                       [this](const RecordDeclarationInfo &k) {
                         return k.kind == RecordDeclarationKind::IsComplete;
                       });
-
-    std::cout << "-\t" << recordName << " ( " << inMainCount << "/"
-              << locations.size() << " ) Complete:" << CompleteDeclarationCount
-              << std::endl;
+    if (CompleteDeclarationCount > 1 || inMainCount > 0) {
+      std::cout << "-" << recordName << " ( " << inMainCount << "/"
+                << locations.size()
+                << " ) Complete:" << CompleteDeclarationCount << std::endl;
+      for (const auto &location : locations) {
+        std::cout << (location.kind == RecordDeclarationKind::IsComplete
+                          ? "Complete"
+                          : "Forward")
+                  << " - " << location.location.printToString(SM) << std::endl;
+      }
+    }
   }
 }
 
