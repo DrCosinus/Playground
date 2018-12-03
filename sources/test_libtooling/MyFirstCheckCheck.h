@@ -28,17 +28,20 @@ enum class RecordDeclarationRegion {
 };
 
 struct RecordDeclarationInfo {
-  RecordDeclarationInfo(const SourceManager &SM,
-                        const CXXRecordDecl *cxxRecordDecl);
-
-  bool operator==(const RecordDeclarationInfo &other) const {
-    return kind == other.kind && location == other.location;
-  }
-  SourceLocation location;
-  RecordDeclarationKind kind;
-  RecordDeclarationRegion region;
+  RecordDeclarationInfo(std::string name) : name{name} {}
+  //const SourceManager &SM, const CXXRecordDecl *cxxRecordDecl);
+  //void insert(const CXXRecordDecl &cxxRecordDecl);
+  //bool operator==(const RecordDeclarationInfo &other) const {
+  //  return kind == other.kind && location == other.location;
+  //}
+  std::vector<SourceLocation> completeDeclarations;
+  std::vector<SourceLocation> incompleteDeclarations;
+  //SourceLocation location;
+  //RecordDeclarationKind kind;
+  //RecordDeclarationRegion region;
+  std::string name;
 };
-
+constexpr auto p = sizeof(CXXRecordDecl);
     /// FIXME: Write a short description.
 ///
 /// For the user-facing documentation see:
@@ -53,11 +56,10 @@ public:
 
   std::map<std::string, std::vector<std::string>> needs;
 
-  std::map</*llvm::StringRef*/ std::string, std::vector<RecordDeclarationInfo>>
-      recordDeclareInfos;
+  std::vector<RecordDeclarationInfo> recordDeclareInfos;
 
 private:
-  void addRecordDeclaration(const CXXRecordDecl *cxxRecordDecl);
+  void addRecordDeclaration(const CXXRecordDecl &cxxRecordDecl);
 
   SourceManager *SM = nullptr;
 };

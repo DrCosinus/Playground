@@ -28,7 +28,7 @@ namespace misc {
 namespace {
 struct IncludePPCallbacks : PPCallbacks {
   IncludePPCallbacks(MyFirstCheckCheck &Check, SourceManager &SM)
-      : Check(Check), SM(SM) {}
+      : Check{Check}, SM{SM} {}
 
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
                           StringRef FileName, bool IsAngled,
@@ -43,13 +43,12 @@ private:
     SourceLocation Loc;    ///< '#' location in the include directive
     CharSourceRange Range; ///< SourceRange for the file name
     std::string Filename;  ///< Filename as a string
-    bool IsAngled;         ///< true if this was an include with angle brackets
-    bool IsMainModule;     ///< true if this was the first include in a file
   };
   bool LookForMainModule = true;
 
   MyFirstCheckCheck &Check;
   SourceManager &SM;
+  std::vector<IncludeDirective> includeDirectives;
 };
 } // namespace
 
@@ -58,16 +57,11 @@ void IncludePPCallbacks::InclusionDirective(
     bool IsAngled, CharSourceRange FilenameRange, const FileEntry *File,
     StringRef SearchPath, StringRef RelativePath, const Module *Imported,
     SrcMgr::CharacteristicKind FileType) {
-  // We recognize the first include as a special main module header and want
-  // to leave it in the top position.
-  if (SM.getFileID(HashLoc) == SM.getMainFileID()) {
-    IncludeDirective ID = {HashLoc, FilenameRange, FileName, IsAngled, false};
 
-    auto loc = HashLoc.printToString(SM);
-    if (LookForMainModule && !IsAngled) {
-      ID.IsMainModule = true;
-      LookForMainModule = false;
-    }
+  // we store only the file included directly in main file
+  if (SM.isInMainFile(HashLoc)) {
+    IncludeDirective ID = {HashLoc, FilenameRange, FileName};
+    includeDirectives.push_back(std::move(ID));
   }
   // Bucket the include directives by the id of the file they were declared in.
   // IncludeDirectives[SM.getFileID(HashLoc)].push_back(std::move(ID));
@@ -131,38 +125,39 @@ void MyFirstCheckCheck::registerMatchers(MatchFinder *Finder) {
   */
 }
 
-RecordDeclarationInfo::RecordDeclarationInfo(const SourceManager &SM,
-                                             const CXXRecordDecl *cxxRecordDecl)
-    : location{cxxRecordDecl->getLocation()},
-      kind{cxxRecordDecl->hasDefinition()
-               ? RecordDeclarationKind::IsComplete
-               : RecordDeclarationKind::IsIncomplete},
-      region{SM.isInMainFile(location)
-                 ? RecordDeclarationRegion::IsInMain
-                 : RecordDeclarationRegion::IsInElsewhere} {}
+// void RecordDeclarationInfo::insert(const CXXRecordDecl &cxxRecordDecl) {
+//  declarations.push_back(&cxxRecordDecl);
+//}
+//: location{cxxRecordDecl->getLocation()},
+//  kind{cxxRecordDecl->hasDefinition()
+//           ? RecordDeclarationKind::IsComplete
+//           : RecordDeclarationKind::IsIncomplete},
+//  region{SM.isInMainFile(location)
+//             ? RecordDeclarationRegion::IsInMain
+//             : RecordDeclarationRegion::IsInElsewhere} {}
 
 void MyFirstCheckCheck::addRecordDeclaration(
-    const CXXRecordDecl *cxxRecordDecl) {
-  auto name = cxxRecordDecl->getQualifiedNameAsString();
-  auto info = RecordDeclarationInfo{*SM, cxxRecordDecl};
+    const CXXRecordDecl &cxxRecordDecl) {
+  auto name = cxxRecordDecl.getQualifiedNameAsString();
+  auto isComplete = cxxRecordDecl.hasDefinition();
+  auto location = cxxRecordDecl.getLocation();
+  // auto info = RecordDeclarationInfo{cxxRecordDecl};
 
-  auto it = recordDeclareInfos.find(name);
+  auto it = std::find_if(
+      std::begin(recordDeclareInfos), std::end(recordDeclareInfos),
+      [&name](const RecordDeclarationInfo &x) { return x.name == name; });
   if (it == std::end(recordDeclareInfos)) {
-    auto insertionResult = recordDeclareInfos.insert({name, {}});
-    if (insertionResult.second) {
-      it = insertionResult.first;
-    }
+    recordDeclareInfos.push_back(RecordDeclarationInfo{name});
+    it = recordDeclareInfos.end() - 1;
   }
-  if (it == std::end(recordDeclareInfos)) {
-    // oh shit... what should we do?
-  }
-  auto &infoList = it->second;
+  auto &infoList =
+      isComplete ? it->completeDeclarations : it->incompleteDeclarations;
   if (std::end(infoList) ==
       std::find_if(std::begin(infoList), std::end(infoList),
-                   [&info](const RecordDeclarationInfo &other) {
-                     return info == other;
+                   [&location](const SourceLocation &_location) {
+                     return location == _location;
                    })) {
-    recordDeclareInfos[name].push_back(info);
+    infoList.push_back(location);
   }
 
   // need to avoid to push same location multiple times
@@ -173,7 +168,7 @@ void MyFirstCheckCheck::check(const MatchFinder::MatchResult &Result) {
   if (const auto declaredRecordDecl =
           Result.Nodes.getNodeAs<CXXRecordDecl>("declaredRecord")) {
 
-    addRecordDeclaration(declaredRecordDecl);
+    addRecordDeclaration(*declaredRecordDecl);
     return;
   }
 
@@ -214,7 +209,8 @@ void IncludePPCallbacks::EndOfMainFile() {
       std::cout << "-\t'" << u << "'" << std::endl;
     }
   }
-
+  std::cout << std::endl;
+  /*
   std::cout << "Forward declared strutures and classes:" << std::endl;
   for (auto &pair_RecordName_Locations : Check.recordDeclareInfos) {
     auto &recordName = pair_RecordName_Locations.first;
@@ -225,13 +221,15 @@ void IncludePPCallbacks::EndOfMainFile() {
                       [this](const RecordDeclarationInfo &k) {
                         return k.region ==
                                RecordDeclarationRegion::
-                                   IsInMain /*SM.isInMainFile(k.location)*/;
+                                   IsInMain;
                       });
-    auto CompleteDeclarationCount =
-        std::count_if(std::begin(locations), std::end(locations),
-                      [this](const RecordDeclarationInfo &k) {
-                        return k.kind == RecordDeclarationKind::IsComplete;
-                      });
+    auto CompleteDeclarationCount = std::count_if(
+        std::begin(locations), std::end(locations),
+        [this](const RecordDeclarationInfo &k) {
+          return k.kind == RecordDeclarationKind::
+                               IsComplete
+              ;
+        });
     if (CompleteDeclarationCount > 1 || inMainCount > 0) {
       std::cout << "-" << recordName << " ( " << inMainCount << "/"
                 << locations.size()
@@ -241,6 +239,45 @@ void IncludePPCallbacks::EndOfMainFile() {
                           ? "Complete"
                           : "Forward")
                   << " - " << location.location.printToString(SM) << std::endl;
+      }
+    }
+  }
+  std::cout << std::endl;*/
+
+  std::cout << "Includes in main file:" << std::endl;
+  for (const auto &includeDirective : includeDirectives) {
+    std::cout << "- " << includeDirective.Filename << " "
+              << includeDirective.Loc.printToString(SM) << std::endl;
+  }
+  std::cout << std::endl;
+
+  std::cout << "Forward declaration in main file:" << std::endl;
+  for (const auto &x : Check.recordDeclareInfos) {
+    auto completeCount = x.completeDeclarations.size();
+    auto incompleteCount = x.incompleteDeclarations.size();
+
+    std::cout << "- " << x.name << " ( " << completeCount << "/"
+              << completeCount + incompleteCount << " )" << std::endl;
+    if (completeCount > 1) {
+      for (const auto &d : x.completeDeclarations) {
+        std::cout << "\t- " << d.printToString(SM) << "(*)"
+                  << (SM.isInMainFile(d) ? "inMain" : "") << std::endl;
+      }
+      for (const auto &d : x.incompleteDeclarations) {
+        std::cout << "\t- " << d.printToString(SM) << "( )"
+                  << (SM.isInMainFile(d) ? "inMain" : "") << std::endl;
+      }
+    }
+    for (const auto &d : x.completeDeclarations) {
+      if (SM.isInMainFile(d)) {
+        std::cout << "\t# " << d.printToString(SM) << "(*)"
+                  << "inMain" << std::endl;
+      }
+    }
+    for (const auto &d : x.incompleteDeclarations) {
+      if (SM.isInMainFile(d)) {
+        std::cout << "\t# " << d.printToString(SM) << "( )"
+                  << "inMain" << std::endl;
       }
     }
   }
