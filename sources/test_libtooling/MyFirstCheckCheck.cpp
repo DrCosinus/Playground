@@ -44,7 +44,7 @@ private:
     CharSourceRange Range; ///< SourceRange for the file name
     std::string Filename;  ///< Filename as a string
   };
-  bool LookForMainModule = true;
+  // bool LookForMainModule = true;
 
   MyFirstCheckCheck &Check;
   SourceManager &SM;
@@ -85,12 +85,8 @@ void MyFirstCheckCheck::registerMatchers(MatchFinder *Finder) {
                          .bind("declaredRecord"),
                      this);
 
-  // all complete declarations of classes and structures (and unions)
-  // Finder->addMatcher(cxxRecordDecl(hasDefinition(), unless(isImplicit()))
-  //                       .bind("fullyDeclaredRecord"),
-  //                   this);
-
-  // class/struct inherits from type => complete definition of type needed
+  // ** class/struct inherits from type **
+  //=> complete definition of type needed
   Finder->addMatcher(
       cxxRecordDecl(isExpansionInMainFile(),
                     isDerivedFrom(cxxRecordDecl(unless(isExpansionInMainFile()))
@@ -98,8 +94,8 @@ void MyFirstCheckCheck::registerMatchers(MatchFinder *Finder) {
           .bind("inheritingRecord"),
       this);
 
-  // member function calls (dot or arrow operator) on instance of type =>
-  // complete definition of type needed
+  // ** member function calls (dot or arrow operator) on instance of type **
+  // => complete definition of type needed
   Finder->addMatcher(cxxMemberCallExpr(isExpansionInMainFile(),
                                        on(hasType(cxxRecordDecl().bind(
                                            "callMemberFunctionOnType"))))
@@ -112,6 +108,15 @@ void MyFirstCheckCheck::registerMatchers(MatchFinder *Finder) {
                hasDeclaration(cxxMethodDecl(isStaticStorageClass())
                                   .bind("callStaticMemberFunctionOnType")))
           .bind("staticMemberCall"),
+      this);
+
+  // function pointer or reference parameter
+  Finder->addMatcher(
+      functionDecl(isExpansionInMainFile(), unless(isImplicit()),
+                   hasDescendant(parmVarDecl(anyOf(hasType(referenceType()),
+                                                   hasType(isAnyPointer())))
+                                     .bind("ptrOrRefParm")))
+          .bind("functionOrMethod"),
       this);
 
   // declaration of object of type... (unless pointer or reference)
@@ -130,25 +135,23 @@ void MyFirstCheckCheck::registerMatchers(MatchFinder *Finder) {
 //}
 //: location{cxxRecordDecl->getLocation()},
 //  kind{cxxRecordDecl->hasDefinition()
-//           ? RecordDeclarationKind::IsComplete
-//           : RecordDeclarationKind::IsIncomplete},
+//           ? Completeness::IsComplete
+//           : Completeness::IsIncomplete},
 //  region{SM.isInMainFile(location)
 //             ? RecordDeclarationRegion::IsInMain
 //             : RecordDeclarationRegion::IsInElsewhere} {}
 
-void MyFirstCheckCheck::addRecordDeclaration(
-    const CXXRecordDecl &cxxRecordDecl) {
+void MyFirstCheckCheck::addDeclaration(const CXXRecordDecl &cxxRecordDecl) {
   auto name = cxxRecordDecl.getQualifiedNameAsString();
   auto isComplete = cxxRecordDecl.hasDefinition();
   auto location = cxxRecordDecl.getLocation();
-  // auto info = RecordDeclarationInfo{cxxRecordDecl};
 
-  auto it = std::find_if(
-      std::begin(recordDeclareInfos), std::end(recordDeclareInfos),
-      [&name](const RecordDeclarationInfo &x) { return x.name == name; });
-  if (it == std::end(recordDeclareInfos)) {
-    recordDeclareInfos.push_back(RecordDeclarationInfo{name});
-    it = recordDeclareInfos.end() - 1;
+  auto it =
+      std::find_if(std::begin(declarationInfos), std::end(declarationInfos),
+                   [&name](const auto &x) { return x.name == name; });
+  if (it == std::end(declarationInfos)) {
+    declarationInfos.push_back(DeclarationInfo{name});
+    it = declarationInfos.end() - 1;
   }
   auto &infoList =
       isComplete ? it->completeDeclarations : it->incompleteDeclarations;
@@ -163,12 +166,18 @@ void MyFirstCheckCheck::addRecordDeclaration(
   // need to avoid to push same location multiple times
 }
 
-void MyFirstCheckCheck::check(const MatchFinder::MatchResult &Result) {
+void MyFirstCheckCheck::addNeed(const NamedDecl &need,
+                                Completeness completeness,
+                                SourceLocation where) {
+  declarationNeeds.push_back(
+      {need.getQualifiedNameAsString(), completeness, where});
+}
 
+void MyFirstCheckCheck::check(const MatchFinder::MatchResult &Result) {
   if (const auto declaredRecordDecl =
           Result.Nodes.getNodeAs<CXXRecordDecl>("declaredRecord")) {
 
-    addRecordDeclaration(*declaredRecordDecl);
+    addDeclaration(*declaredRecordDecl);
     return;
   }
 
@@ -177,16 +186,27 @@ void MyFirstCheckCheck::check(const MatchFinder::MatchResult &Result) {
     const auto DerivedDecl =
         Result.Nodes.getNodeAs<CXXRecordDecl>("inheritingRecord");
 
-    needs[BaseDecl->getNameAsString()].push_back(
-        DerivedDecl->getBeginLoc().printToString(*SM));
+    addNeed(*BaseDecl, Completeness::Complete, DerivedDecl->getLocation());
+    return;
   }
 
   if (const auto CompletelyDefinedRecord =
           Result.Nodes.getNodeAs<CXXRecordDecl>("callMemberFunctionOnType")) {
-    const auto &memberCallExpr =
+    const auto memberCallExpr =
         Result.Nodes.getNodeAs<CXXMemberCallExpr>("memberCall");
-    needs[CompletelyDefinedRecord->getNameAsString()].push_back(
-        memberCallExpr->getBeginLoc().printToString(*SM));
+    addNeed(*CompletelyDefinedRecord, Completeness::Complete,
+            memberCallExpr->getBeginLoc());
+    return;
+  }
+
+  if (const auto parmVarDecl =
+          Result.Nodes.getNodeAs<ParmVarDecl>("ptrOrRefParm")) {
+    const auto memberCallExpr =
+        Result.Nodes.getNodeAs<CXXMemberCallExpr>("memberCall");
+
+    // FIXME: Need to retrieve pointed/referenced type
+
+    auto t = parmVarDecl->getType();
   }
 
   // diag(DerivedDecl->getLocation(),
@@ -197,17 +217,31 @@ void MyFirstCheckCheck::check(const MatchFinder::MatchResult &Result) {
 }
 
 void IncludePPCallbacks::EndOfMainFile() {
-
   std::cout << "--==####==--" << std::endl;
 
-  for (auto &p : Check.needs) {
-    auto &base = p.first;
-    std::cout << "Need full definition of Record '" << base
-              << "' due to :" << std::endl;
-    auto &usages = p.second;
-    for (auto &u : usages) {
-      std::cout << "-\t'" << u << "'" << std::endl;
+  for (auto &p : Check.declarationNeeds) {
+    bool isComplete = p.kind == Completeness::Complete;
+    std::cout << (isComplete ? "(*) " : "( ) ") << p.name << std::endl
+              << '\t' << p.location.printToString(SM) << std::endl;
+    auto itDeclInfo = std::find_if(
+        std::begin(Check.declarationInfos), std::end(Check.declarationInfos),
+        [&p](const auto &d) { return p.name == d.name; });
+    if (itDeclInfo == std::end(Check.declarationInfos)) {
+      std::cout << "NOT DECLARED!!" << std::endl;
+      continue;
     }
+    // std::cout << "Declaration found." << std::endl;
+    auto &declarations = isComplete ? itDeclInfo->completeDeclarations
+                                    : itDeclInfo->incompleteDeclarations;
+    bool success = false;
+    std::find_if(std::begin(declarations), std::end(declarations),
+                 [isComplete, &success, &SM = SM](const SourceLocation &loc) {
+                   if (isComplete) {
+                     std::cout << "Need incude of " << loc.printToString(SM)
+                               << std::endl;
+                   }
+                   return false;
+                 });
   }
   std::cout << std::endl;
   /*
@@ -226,7 +260,7 @@ void IncludePPCallbacks::EndOfMainFile() {
     auto CompleteDeclarationCount = std::count_if(
         std::begin(locations), std::end(locations),
         [this](const RecordDeclarationInfo &k) {
-          return k.kind == RecordDeclarationKind::
+          return k.kind == Completeness::
                                IsComplete
               ;
         });
@@ -235,10 +269,11 @@ void IncludePPCallbacks::EndOfMainFile() {
                 << locations.size()
                 << " ) Complete:" << CompleteDeclarationCount << std::endl;
       for (const auto &location : locations) {
-        std::cout << (location.kind == RecordDeclarationKind::IsComplete
+        std::cout << (location.kind == Completeness::IsComplete
                           ? "Complete"
                           : "Forward")
-                  << " - " << location.location.printToString(SM) << std::endl;
+                  << " - " << location.location.printToString(SM) <<
+  std::endl;
       }
     }
   }
@@ -250,9 +285,9 @@ void IncludePPCallbacks::EndOfMainFile() {
               << includeDirective.Loc.printToString(SM) << std::endl;
   }
   std::cout << std::endl;
-
+  /*
   std::cout << "Forward declaration in main file:" << std::endl;
-  for (const auto &x : Check.recordDeclareInfos) {
+  for (const auto &x : Check.declarationInfos) {
     auto completeCount = x.completeDeclarations.size();
     auto incompleteCount = x.incompleteDeclarations.size();
 
@@ -280,7 +315,7 @@ void IncludePPCallbacks::EndOfMainFile() {
                   << "inMain" << std::endl;
       }
     }
-  }
+  }*/
 }
 
 } // namespace misc

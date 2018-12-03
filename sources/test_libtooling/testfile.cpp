@@ -105,6 +105,13 @@ struct Trash
     Base b;
 };
 
+void needForwardOfArray(std::array<int, 4>&);
+
+void needCompleteOfVector(std::vector<int>& v)
+{
+    v.push_back(42);
+}
+
 int addTwo(int num) 
 { 
     return num + 2; 

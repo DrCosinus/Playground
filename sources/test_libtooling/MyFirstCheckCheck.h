@@ -16,33 +16,30 @@ namespace clang {
 namespace tidy {
 namespace misc {
 
-enum class RecordDeclarationKind {
-  IsComplete,
-  IsIncomplete,
+enum class Completeness {
+  Complete,
+  Incomplete,
 };
 
-enum class RecordDeclarationRegion {
-  IsInMain,
-  IsInHeader, // only if main is a cpp with same name
-  IsInElsewhere
+enum class DeclarationScope {
+  InMain,
+  InHeader, // only if main is a cpp with same name
+  Elsewhere
 };
 
-struct RecordDeclarationInfo {
-  RecordDeclarationInfo(std::string name) : name{name} {}
-  //const SourceManager &SM, const CXXRecordDecl *cxxRecordDecl);
-  //void insert(const CXXRecordDecl &cxxRecordDecl);
-  //bool operator==(const RecordDeclarationInfo &other) const {
-  //  return kind == other.kind && location == other.location;
-  //}
+struct DeclarationInfo {
+  explicit DeclarationInfo(std::string name) : name{name} {}
   std::vector<SourceLocation> completeDeclarations;
   std::vector<SourceLocation> incompleteDeclarations;
-  //SourceLocation location;
-  //RecordDeclarationKind kind;
-  //RecordDeclarationRegion region;
   std::string name;
 };
-constexpr auto p = sizeof(CXXRecordDecl);
-    /// FIXME: Write a short description.
+
+struct DeclarationNeed {
+  std::string name;
+  Completeness kind;
+  SourceLocation location;
+};
+
 ///
 /// For the user-facing documentation see:
 /// http://clang.llvm.org/extra/clang-tidy/checks/misc-my-first-check.html
@@ -54,12 +51,14 @@ public:
   void registerMatchers(ast_matchers::MatchFinder *Finder) override;
   void check(const ast_matchers::MatchFinder::MatchResult &Result) override;
 
-  std::map<std::string, std::vector<std::string>> needs;
+  std::vector<DeclarationNeed> declarationNeeds;
 
-  std::vector<RecordDeclarationInfo> recordDeclareInfos;
+  std::vector<DeclarationInfo> declarationInfos;
 
 private:
-  void addRecordDeclaration(const CXXRecordDecl &cxxRecordDecl);
+  void addDeclaration(const CXXRecordDecl &cxxRecordDecl);
+  void addNeed(const NamedDecl &need, Completeness completeness,
+               SourceLocation where);
 
   SourceManager *SM = nullptr;
 };
