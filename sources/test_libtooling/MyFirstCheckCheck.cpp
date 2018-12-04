@@ -202,11 +202,48 @@ void MyFirstCheckCheck::check(const MatchFinder::MatchResult &Result) {
   if (const auto parmVarDecl =
           Result.Nodes.getNodeAs<ParmVarDecl>("ptrOrRefParm")) {
     const auto memberCallExpr =
-        Result.Nodes.getNodeAs<CXXMemberCallExpr>("memberCall");
+        Result.Nodes.getNodeAs<CXXMemberCallExpr>("functionOrMethod");
 
     // FIXME: Need to retrieve pointed/referenced type
+    auto qualType = parmVarDecl->getType();
+    auto isCanon = qualType.isCanonical();
+    std::string def;
+    auto typePtr = qualType.getTypePtrOrNull();
+    
+    auto qt = qualType;
+    std::string tn;
+    while (qt->isPointerType())
+        {
+      qt = qt->getPointeeType();
+        }
+    if (qt->isRecordType())
+    {
+          auto rd = qt->getAsCXXRecordDecl();
+      tn = rd->getQualifiedNameAsString();
+    }
 
-    auto t = parmVarDecl->getType();
+
+    auto qp = qualType->getPointeeCXXRecordDecl();
+    if (qp) {
+      auto h = qp->getQualifiedNameAsString();
+      auto é = 3;
+    }
+    if (typePtr) {
+      auto k = typePtr->getPointeeCXXRecordDecl(); //
+
+      if (k) {
+        def = k->getQualifiedNameAsString();
+      }
+    } else {
+      // def = qualType.getAsC
+      //             .getTypePtr()
+      //             ->getAsCXXRecordDecl()
+      //             ->getQualifiedNameAsString();
+    }
+    //->getAsCXXRecordDecl();
+
+    auto t = parmVarDecl->getDeclName().getAsString();
+    auto _ = 0;
   }
 
   // diag(DerivedDecl->getLocation(),
