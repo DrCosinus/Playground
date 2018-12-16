@@ -1,15 +1,25 @@
 # clang/llvm libTooling
 
-Exploring clang tooling :
+Visial C++ Team Blog - Exploring clang tooling :
 
 - [Part 0 - Building your code with clang](https://blogs.msdn.microsoft.com/vcblog/2018/09/18/exploring-clang-tooling-part-0-building-your-code-with-clang/)
 - [Part 1 - Extending clang-tidy](https://blogs.msdn.microsoft.com/vcblog/2018/10/19/exploring-clang-tooling-part-1-extending-clang-tidy/)
 - [Part 2 - Examining the clang AST with clang-query](https://blogs.msdn.microsoft.com/vcblog/2018/10/23/exploring-clang-tooling-part-2-examining-the-clang-ast-with-clang-query/)
 - [Part 3 - Rewriting code with clang-tidy](https://blogs.msdn.microsoft.com/vcblog/2018/11/06/exploring-clang-tooling-part-3-rewriting-code-with-clang-tidy/)
+- [Exploring Clang Tooling – Using Build Tools with clang-tidy](https://blogs.msdn.microsoft.com/vcblog/2018/11/27/exploring-clang-tooling-using-build-tools-with-clang-tidy/)
 
 [AST Matcher reference](http://clang.llvm.org/docs/LibASTMatchersReference.html)
 
 [Clang doxygen](https://clang.llvm.org/doxygen/classclang_1_1FunctionDecl.html)
+
+BITS, BYTES, BOOS:
+
+- [CLANG TUTORIAL PART I: INTRODUCTION](https://kevinaboos.wordpress.com/2013/07/23/clang-tutorial-part-i-introduction/)
+- [CLANG TUTORIAL PART II: LIBTOOLING EXAMPLE](https://kevinaboos.wordpress.com/2013/07/23/clang-tutorial-part-ii-libtooling-example/)
+
+[FR] Developpez.com (David Come):
+
+- [Présentation de libclang/libtooling](https://come-david.developpez.com/tutoriels/libclang-f/)
 
 clang-check file.cpp --
 
