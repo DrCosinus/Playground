@@ -1,5 +1,11 @@
 # clang/llvm libTooling
 
+## References
+
+clang.llvm.org:
+
+[Introduction to the Clang AST¶](http://clang.llvm.org/docs/IntroductionToTheClangAST.html)
+
 Visial C++ Team Blog - Exploring clang tooling :
 
 - [Part 0 - Building your code with clang](https://blogs.msdn.microsoft.com/vcblog/2018/09/18/exploring-clang-tooling-part-0-building-your-code-with-clang/)
@@ -12,6 +18,10 @@ Visial C++ Team Blog - Exploring clang tooling :
 
 [Clang doxygen](https://clang.llvm.org/doxygen/classclang_1_1FunctionDecl.html)
 
+Steveire's Blog:
+
+[Composing AST Matchers in clang-tidy](https://steveire.wordpress.com/2018/11/20/composing-ast-matchers-in-clang-tidy/)
+
 BITS, BYTES, BOOS:
 
 - [CLANG TUTORIAL PART I: INTRODUCTION](https://kevinaboos.wordpress.com/2013/07/23/clang-tutorial-part-i-introduction/)
@@ -20,10 +30,6 @@ BITS, BYTES, BOOS:
 [FR] Developpez.com (David Come):
 
 - [Présentation de libclang/libtooling](https://come-david.developpez.com/tutoriels/libclang-f/)
-
-clang-check file.cpp --
-
-clang-query file.cpp --
 
 ## Queries
 
@@ -149,3 +155,8 @@ Updating ..\docs\ReleaseNotes.rst...
 Creating ..\test\clang-tidy\misc-my-first-check.cpp...
 Creating ..\docs\clang-tidy\checks\misc-my-first-check.rst...
 Updating ..\docs\clang-tidy\checks\list.rst...
+
+
+clang-check file.cpp --
+
+clang-query file.cpp --
