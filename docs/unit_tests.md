@@ -9,6 +9,7 @@
 - [Googletest Samples](https://github.com/google/googletest/blob/master/googletest/docs/samples.md)
 - [Google Mock](https://github.com/abseil/googletest/blob/master/googlemock/README.md)
 - [Google Mock for Dummiers](https://github.com/abseil/googletest/blob/master/googlemock/docs/ForDummies.md)
+- [Google Mock Cook Book](https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md)
 
 ### Catch2
 
