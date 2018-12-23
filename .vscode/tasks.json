@@ -2,41 +2,68 @@
     // See https://go.microsoft.com/fwlink/?LinkId=733558
     // for the documentation about the tasks.json format
     "version": "2.0.0",
+    "presentation": {
+        "clear": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+    },
+    "type": "shell",
     "tasks": [
         {
+            "group": "build",
+            "command": "make\\BuildTask.exe",
             "label": "build release with msvc",
-            "type": "shell",
-            "command": "make\\BuildTask.exe",
-            "args": [ "-msvc", "${relativeFile}", "-ndebug", "-warnings_are_errors", "-blueprint:playground.blueprint.json", "-output:bin/project_msvc_r.exe" ],
-            "group": "build",
-            "presentation": { "reveal": "silent", "focus": false, "panel": "shared" },
+            "args": [
+                "-msvc",
+                "${relativeFile}",
+                "-ndebug",
+                "-warnings_are_errors",
+                "-blueprint:playground.blueprint.json",
+                "-output:bin/project_msvc_r.exe"
+            ],
             "problemMatcher": "$msCompile"
         },
         {
+            "group": "build",
+            "command": "make\\BuildTask.exe",
             "label": "build debug with msvc",
-            "type": "shell",
-            "command": "make\\BuildTask.exe",
-            "args": [ "-msvc", "${relativeFile}", "-debug", "-warnings_are_errors", "-blueprint:playground.blueprint.json", "-output:bin/project_msvc_d.exe" ],
-            "group": "build",
-            "presentation": { "reveal": "silent", "focus": false, "panel": "shared" },
+            "args": [
+                "-msvc",
+                "${relativeFile}",
+                "-debug",
+                "-warnings_are_errors",
+                "-blueprint:playground.blueprint.json",
+                "-output:bin/project_msvc_d.exe"
+            ],
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "build release with clang",
-            "type": "shell",
-            "command": "make\\BuildTask.exe",
-            "args": [ "-clang", "${relativeFile}", "-ndebug", "-warnings_are_errors", "-blueprint:playground.blueprint.json", "-output:bin/project_clang_r.exe" ],
             "group": "build",
-            "presentation": { "reveal": "silent", "focus": false, "panel": "shared" },
+            "command": "make\\BuildTask.exe",
+            "label": "build release with clang",
+            "args": [
+                "-clang",
+                "${relativeFile}",
+                "-ndebug",
+                "-warnings_are_errors",
+                "-blueprint:playground.blueprint.json",
+                "-output:bin/project_clang_r.exe"
+            ],
             "problemMatcher": "$gcc"
         },
         {
-            "label": "build debug with clang",
-            "type": "shell",
-            "command": "make\\BuildTask.exe",
-            "args": [ "-clang", "${relativeFile}", "-debug", "-warnings_are_errors", "-blueprint:playground.blueprint.json", "-output:bin/project_clang_d.exe" ],
             "group": "build",
-            "presentation": { "reveal": "silent", "focus": false, "panel": "shared" },
+            "command": "make\\BuildTask.exe",
+            "label": "build debug with clang",
+            "args": [
+                "-clang",
+                "${relativeFile}",
+                "-debug",
+                "-warnings_are_errors",
+                "-blueprint:playground.blueprint.json",
+                "-output:bin/project_clang_d.exe"
+            ],
             "problemMatcher": "$gcc"
         },
     ]
