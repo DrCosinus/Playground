@@ -1,12 +1,12 @@
 {
-    "import":
-    [
-        "sources/grammar/grammar.blueprint.json"
-        , "sources/nonintegral_enum/nonintegral_enum.blueprint.json"
-        , "sources/strong_type/strong_type.blueprint.json"
-        , "sources/constraint/constraint.blueprint.json"
-        , "sources/modern_static_dispatch/modern_static_dispatch.blueprint.json"
-        , "sources/cuppa/cuppa.blueprint.json"
-        , "sources/wit_tests/wit_tests.blueprint.json"
+    "import": [
+        "sources/grammar/grammar.blueprint.json",
+        "sources/nonintegral_enum/nonintegral_enum.blueprint.json",
+        "sources/strong_type/strong_type.blueprint.json",
+        "sources/constraint/constraint.blueprint.json",
+        "sources/modern_static_dispatch/modern_static_dispatch.blueprint.json",
+        "sources/cuppa/cuppa.blueprint.json",
+        "sources/wit_tests/wit_tests.blueprint.json",
+        "sources/engine/engine.blueprint.json"
     ]
 }

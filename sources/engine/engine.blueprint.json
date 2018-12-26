@@ -1,0 +1,30 @@
+{
+    "import": [],
+    "project": {
+        "name": "engine",
+        "description": "simple game engine",
+        "major_version": "0",
+        "minor_version": "1",
+        "patch_version": "0",
+        "status": "wip",
+        "outputtype": "application",
+        "dependencies": [],
+        "headers": [
+            "**/*.hpp"
+        ],
+        "sources": [
+            "**/*.cpp"
+        ],
+        "libs": [
+            "user32.lib",
+            "gdi32.lib",
+            "winmm.lib"
+        ],
+        "defines": [
+            "DEBUG_SOUND=1"
+        ],
+        "msvcextra": [],
+        "clangextra": [],
+        "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe"
+    }
+}
