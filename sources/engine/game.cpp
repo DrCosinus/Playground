@@ -74,7 +74,10 @@ namespace Game
         }
     }
 
-    void UpdateAndRender(Memory& Memory, const Input& Input, const PIBackBuffer& Buffer, SoundOutputBuffer& SoundBuffer)
+    void UpdateAndRender(Memory&             Memory,
+                         const Inputs&       Inputs,
+                         const PIBackBuffer& Buffer,
+                         SoundOutputBuffer&  SoundBuffer)
     {
         auto& GameState = *static_cast<State*>(Memory.PermanentStorage);
         if (!Memory.IsInitialized)
@@ -94,8 +97,8 @@ namespace Game
             Memory.IsInitialized = true;
         }
 
-        ProcessGamepad(GameState, Input.Keyboard);
-        for (auto& gamepad : Input.GamePads)
+        ProcessGamepad(GameState, Inputs.Keyboard);
+        for (auto& gamepad : Inputs.GamePads)
         {
             ProcessGamepad(GameState, gamepad);
         }

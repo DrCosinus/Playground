@@ -53,7 +53,7 @@ namespace Game
         };
     };
 
-    struct Input
+    struct Inputs
     {
         static constexpr uint32 GamePadCount = 4;
         GamePad                 GamePads[GamePadCount];

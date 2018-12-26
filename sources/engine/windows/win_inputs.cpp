@@ -8,6 +8,28 @@
 
 #include <algorithm>
 
+static real32 mapStick(int16 _value, int16 _deadzone)
+{
+    return (_value > _deadzone) ? (_value - _deadzone) / (32767.0f - _deadzone)
+                                : (_value < -_deadzone ? ((_value + _deadzone) / (32768.0f - _deadzone)) : 0);
+}
+
+static Game::DigitalButtonState ProcessDigitalBtn(DWORD                           XInputButtonState,
+                                                  const Game::DigitalButtonState& PrevState,
+                                                  DWORD                           ButtonBit)
+{
+    Game::DigitalButtonState NewState;
+    NewState.EndedDown           = ((XInputButtonState & ButtonBit) == ButtonBit);
+    NewState.HalfTransitionCount = (PrevState.EndedDown != NewState.EndedDown) ? 1 : 0;
+    return NewState;
+}
+
+static void ProcessKeyboardMessage(Game::DigitalButtonState& NewState, bool32 IsDown)
+{
+    NewState.EndedDown = IsDown;
+    ++NewState.HalfTransitionCount;
+}
+
 namespace Windows
 {
     struct Inputs::Driver
@@ -53,22 +75,6 @@ namespace Windows
     Inputs::~Inputs() = default;
 
     void Inputs::Init() { driver = std::make_unique<Driver>(); }
-
-    static Game::DigitalButtonState ProcessDigitalBtn(DWORD                           XInputButtonState,
-                                                      const Game::DigitalButtonState& PrevState,
-                                                      DWORD                           ButtonBit)
-    {
-        Game::DigitalButtonState NewState;
-        NewState.EndedDown           = ((XInputButtonState & ButtonBit) == ButtonBit);
-        NewState.HalfTransitionCount = (PrevState.EndedDown != NewState.EndedDown) ? 1 : 0;
-        return NewState;
-    }
-
-    static void ProcessKeyboardMessage(Game::DigitalButtonState& NewState, bool32 IsDown)
-    {
-        NewState.EndedDown = IsDown;
-        ++NewState.HalfTransitionCount;
-    }
 
     void Inputs::ProcessPendingMessages(Game::GamePad& KeyboardController)
     {
@@ -152,87 +158,87 @@ namespace Windows
 
     void Inputs::Update()
     {
-        auto& OldInput = Input[CurrentInput];
-        CurrentInput   = 1 - CurrentInput;
-        auto& NewInput = Input[CurrentInput];
+        auto& prevInput = PIInputs[CurrentInput];
+        CurrentInput    = 1 - CurrentInput;
+        auto& curInput  = PIInputs[CurrentInput];
 
-        auto& NewKeyboardController = NewInput.Keyboard;
-        auto& OldKeyboardController = OldInput.Keyboard;
-        NewKeyboardController       = {};
+        auto& curKeyboardCtrl  = curInput.Keyboard;
+        auto& prevKeyboardCtrl = prevInput.Keyboard;
+        curKeyboardCtrl        = {};
 
-        for (size_t ButtonIndex = 0; ButtonIndex < ArrayCount(NewKeyboardController.Buttons); ++ButtonIndex)
+        for (size_t ButtonIndex = 0; ButtonIndex < ArrayCount(curKeyboardCtrl.Buttons); ++ButtonIndex)
         {
-            NewKeyboardController.Buttons[ButtonIndex].EndedDown = OldKeyboardController.Buttons[ButtonIndex].EndedDown;
+            curKeyboardCtrl.Buttons[ButtonIndex].EndedDown = prevKeyboardCtrl.Buttons[ButtonIndex].EndedDown;
         }
 
-        ProcessPendingMessages(NewKeyboardController);
+        ProcessPendingMessages(curKeyboardCtrl);
 
         constexpr DWORD MaxControllerCount =
-            std::min(static_cast<const uint32>(XUSER_MAX_COUNT), NewInput.GamePadCount);
+            std::min(static_cast<const uint32>(XUSER_MAX_COUNT), curInput.GamePadCount);
 
         for (DWORD ControllerIndex = 0; ControllerIndex < MaxControllerCount; ++ControllerIndex)
         {
-            auto& OldCtrl = OldInput.GamePads[ControllerIndex];
-            auto& NewCtrl = NewInput.GamePads[ControllerIndex];
+            auto& prevCtrl = prevInput.GamePads[ControllerIndex];
+            auto& curCtrl  = curInput.GamePads[ControllerIndex];
 
             XINPUT_STATE ControllerState;
             if (driver->GetState(ControllerIndex, &ControllerState) == ERROR_SUCCESS)
             {
-                NewCtrl.IsConnected = true;
+                curCtrl.IsConnected = true;
 
                 auto& Pad = ControllerState.Gamepad;
 
-                NewCtrl.LeftStickX = mapStick(Pad.sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
-                NewCtrl.LeftStickY = mapStick(Pad.sThumbLY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+                curCtrl.LeftStickX = mapStick(Pad.sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+                curCtrl.LeftStickY = mapStick(Pad.sThumbLY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
 
-                if ((NewCtrl.LeftStickX != 0.0f) || (NewCtrl.LeftStickY != 0.0f))
+                if ((curCtrl.LeftStickX != 0.0f) || (curCtrl.LeftStickY != 0.0f))
                 {
-                    NewCtrl.IsAnalog = true;
+                    curCtrl.IsAnalog = true;
                 }
 
                 if (Pad.wButtons & XINPUT_GAMEPAD_DPAD_UP)
                 {
-                    NewCtrl.LeftStickY = 1.0f;
-                    NewCtrl.IsAnalog   = false;
+                    curCtrl.LeftStickY = 1.0f;
+                    curCtrl.IsAnalog   = false;
                 }
                 if (Pad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN)
                 {
-                    NewCtrl.LeftStickY = -1.0f;
-                    NewCtrl.IsAnalog   = false;
+                    curCtrl.LeftStickY = -1.0f;
+                    curCtrl.IsAnalog   = false;
                 }
                 if (Pad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT)
                 {
-                    NewCtrl.LeftStickX = -1.0f;
-                    NewCtrl.IsAnalog   = false;
+                    curCtrl.LeftStickX = -1.0f;
+                    curCtrl.IsAnalog   = false;
                 }
                 if (Pad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)
                 {
-                    NewCtrl.LeftStickX = 1.0f;
-                    NewCtrl.IsAnalog   = false;
+                    curCtrl.LeftStickX = 1.0f;
+                    curCtrl.IsAnalog   = false;
                 }
 
                 // TODO: Hysteresis
                 constexpr real32 Threshold = 0.5f;
-                NewCtrl.MoveLeft  = ProcessDigitalBtn(NewCtrl.LeftStickX < -Threshold ? 1 : 0, OldCtrl.MoveLeft, 1);
-                NewCtrl.MoveRight = ProcessDigitalBtn(NewCtrl.LeftStickX > Threshold ? 1 : 0, OldCtrl.MoveRight, 1);
-                NewCtrl.MoveDown  = ProcessDigitalBtn(NewCtrl.LeftStickY < -Threshold ? 1 : 0, OldCtrl.MoveDown, 1);
-                NewCtrl.MoveUp    = ProcessDigitalBtn(NewCtrl.LeftStickY > Threshold ? 1 : 0, OldCtrl.MoveUp, 1);
+                curCtrl.MoveLeft  = ProcessDigitalBtn(curCtrl.LeftStickX < -Threshold ? 1 : 0, prevCtrl.MoveLeft, 1);
+                curCtrl.MoveRight = ProcessDigitalBtn(curCtrl.LeftStickX > Threshold ? 1 : 0, prevCtrl.MoveRight, 1);
+                curCtrl.MoveDown  = ProcessDigitalBtn(curCtrl.LeftStickY < -Threshold ? 1 : 0, prevCtrl.MoveDown, 1);
+                curCtrl.MoveUp    = ProcessDigitalBtn(curCtrl.LeftStickY > Threshold ? 1 : 0, prevCtrl.MoveUp, 1);
 
-                NewCtrl.ActionDown  = ProcessDigitalBtn(Pad.wButtons, OldCtrl.ActionDown, XINPUT_GAMEPAD_A);
-                NewCtrl.ActionRight = ProcessDigitalBtn(Pad.wButtons, OldCtrl.ActionRight, XINPUT_GAMEPAD_B);
-                NewCtrl.ActionLeft  = ProcessDigitalBtn(Pad.wButtons, OldCtrl.ActionLeft, XINPUT_GAMEPAD_X);
-                NewCtrl.ActionUp    = ProcessDigitalBtn(Pad.wButtons, OldCtrl.ActionUp, XINPUT_GAMEPAD_Y);
-                NewCtrl.LeftShoulder =
-                    ProcessDigitalBtn(Pad.wButtons, OldCtrl.LeftShoulder, XINPUT_GAMEPAD_LEFT_SHOULDER);
-                NewCtrl.RightShoulder =
-                    ProcessDigitalBtn(Pad.wButtons, OldCtrl.RightShoulder, XINPUT_GAMEPAD_RIGHT_SHOULDER);
+                curCtrl.ActionDown  = ProcessDigitalBtn(Pad.wButtons, prevCtrl.ActionDown, XINPUT_GAMEPAD_A);
+                curCtrl.ActionRight = ProcessDigitalBtn(Pad.wButtons, prevCtrl.ActionRight, XINPUT_GAMEPAD_B);
+                curCtrl.ActionLeft  = ProcessDigitalBtn(Pad.wButtons, prevCtrl.ActionLeft, XINPUT_GAMEPAD_X);
+                curCtrl.ActionUp    = ProcessDigitalBtn(Pad.wButtons, prevCtrl.ActionUp, XINPUT_GAMEPAD_Y);
+                curCtrl.LeftShoulder =
+                    ProcessDigitalBtn(Pad.wButtons, prevCtrl.LeftShoulder, XINPUT_GAMEPAD_LEFT_SHOULDER);
+                curCtrl.RightShoulder =
+                    ProcessDigitalBtn(Pad.wButtons, prevCtrl.RightShoulder, XINPUT_GAMEPAD_RIGHT_SHOULDER);
 
-                NewCtrl.Start = ProcessDigitalBtn(Pad.wButtons, OldCtrl.Start, XINPUT_GAMEPAD_START);
-                NewCtrl.Back  = ProcessDigitalBtn(Pad.wButtons, OldCtrl.Back, XINPUT_GAMEPAD_BACK);
+                curCtrl.Start = ProcessDigitalBtn(Pad.wButtons, prevCtrl.Start, XINPUT_GAMEPAD_START);
+                curCtrl.Back  = ProcessDigitalBtn(Pad.wButtons, prevCtrl.Back, XINPUT_GAMEPAD_BACK);
             }
             else
             {
-                NewCtrl.IsConnected = false;
+                curCtrl.IsConnected = false;
             }
         }
     }

@@ -18,7 +18,7 @@ namespace Windows
         void Update();
 
         bool32 IsQuitRequested() const { return QuitRequested; }
-        auto   GetCurrent() const { return Input[CurrentInput]; }
+        auto   GetCurrent() const { return PIInputs[CurrentInput]; }
 
     private:
         struct Driver;
@@ -26,10 +26,10 @@ namespace Windows
 
         void ProcessPendingMessages(Game::GamePad& KeyboardController);
 
-        // Double buffer to detect transitions
-        Game::Input Input[2]      = {};
-        uint32      CurrentInput  = 0;
-        bool32      QuitRequested = false;
+        // Platform Independent Inputs (Double buffer for transition detection)
+        Game::Inputs PIInputs[2]   = {};
+        uint32       CurrentInput  = 0;
+        bool32       QuitRequested = false;
     };
 
 } // namespace Windows

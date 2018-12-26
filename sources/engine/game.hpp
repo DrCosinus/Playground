@@ -4,12 +4,6 @@
 
 #define ArrayCount(_ARRAY_) (sizeof(_ARRAY_) / sizeof(*_ARRAY_))
 
-inline real32 mapStick(int16 _value, int16 _deadzone)
-{
-    return (_value > _deadzone) ? (_value - _deadzone) / (32767.0f - _deadzone)
-                                : (_value < -_deadzone ? ((_value + _deadzone) / (32768.0f - _deadzone)) : 0);
-}
-
 inline constexpr int64 Kilobytes(int64 Value)
 {
     return Value * 1024LL;
@@ -78,10 +72,10 @@ namespace Game
         bool32 IsValid; // private
     };
 
-    struct Input;
+    struct Inputs;
 
     void UpdateAndRender(Memory&             Memory,
-                         const Input&        Input,
+                         const Inputs&       Inputs,
                          const PIBackBuffer& Buffer,
                          SoundOutputBuffer&  SoundBuffer);
 } // namespace Game
