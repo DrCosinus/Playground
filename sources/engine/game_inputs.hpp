@@ -26,6 +26,9 @@ namespace Game
             DigitalButtonState Buttons[16];
 #pragma warning(push)
 #pragma warning(disable : 4201)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
+#pragma clang diagnostic ignored "-Wnested-anon-types"
             struct
             {
                 DigitalButtonState MoveUp;
@@ -46,6 +49,7 @@ namespace Game
                 DigitalButtonState Start;
             };
 #pragma warning(pop)
+#pragma clang diagnostic pop
         };
     };
 

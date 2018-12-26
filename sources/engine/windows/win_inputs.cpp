@@ -160,7 +160,7 @@ namespace Windows
         auto& OldKeyboardController = OldInput.Keyboard;
         NewKeyboardController       = {};
 
-        for (int ButtonIndex = 0; ButtonIndex < ArrayCount(NewKeyboardController.Buttons); ++ButtonIndex)
+        for (size_t ButtonIndex = 0; ButtonIndex < ArrayCount(NewKeyboardController.Buttons); ++ButtonIndex)
         {
             NewKeyboardController.Buttons[ButtonIndex].EndedDown = OldKeyboardController.Buttons[ButtonIndex].EndedDown;
         }

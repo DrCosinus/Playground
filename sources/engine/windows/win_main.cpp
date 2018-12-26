@@ -171,15 +171,15 @@ namespace Windows
     };
     constexpr size_t markerCount = 15;
     Marker           markers[markerCount];
-    int32            currentMarkerIndex = 0;
+    size_t           currentMarkerIndex = 0;
 
-    constexpr int32 padX              = 16;
-    constexpr int32 padY              = 16;
-    constexpr int32 lineHeight        = 64;
-    constexpr DWORD PlayColor         = 0xFFFFFFFF; // White
-    constexpr DWORD WriteColor        = 0xFFFF0000; // Red
-    constexpr DWORD ExpectedFlipColor = 0xFFFFFF00; // Yellow
-    constexpr DWORD PlayWindowColor   = 0xFFFF00FF; // Purple
+    constexpr int32 padX       = 16;
+    constexpr int32 padY       = 16;
+    constexpr int32 lineHeight = 64;
+    constexpr DWORD PlayColor  = 0xFFFFFFFF; // White
+    constexpr DWORD WriteColor = 0xFFFF0000; // Red
+    // constexpr DWORD ExpectedFlipColor = 0xFFFFFF00; // Yellow
+    // constexpr DWORD PlayWindowColor   = 0xFFFF00FF; // Purple
 
     static void DebugDrawSoundBufferMarker(const DebugBackBuffer& backbuffer,
                                            real32                 pixelPerBytes,
@@ -195,7 +195,7 @@ namespace Windows
     {
         auto pixelPerBytes = static_cast<real32>(backbuffer.Width - 2 * padX) / sndEngine.WorkBufferSize;
 
-        for (auto markerIndex = 0; markerIndex < markerCount; ++markerIndex)
+        for (size_t markerIndex = 0; markerIndex < markerCount; ++markerIndex)
         {
             auto& marker = markers[markerIndex];
 

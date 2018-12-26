@@ -23,7 +23,12 @@
         "defines": [
             "DEBUG_SOUND=1"
         ],
-        "msvcextra": [],
+        "_comments": [
+            "MSVC: -wd4068: ignore warning unknown pragma"
+        ],
+        "msvcextra": [
+            "wd4068"
+        ],
         "clangextra": [],
         "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe"
     }

@@ -51,8 +51,8 @@ namespace Windows
     private:
         struct SoundBuffer;
         uint32                       RunningSampleIndex = 0;
-        std::unique_ptr<SoundBuffer> WorkBuffer         = nullptr;
-        int16*                       Samples            = nullptr;
+        std::unique_ptr<SoundBuffer> WorkBuffer;
+        int16*                       Samples = nullptr;
         DWORD                        ByteToLock;
         DWORD                        BytesToWrite;
     };

@@ -76,8 +76,6 @@ namespace Game
         uint32 SampleCount;
         int16* Samples;
         bool32 IsValid; // private
-        uint32 ByteToLock; // private
-        uint32 BytesToWrite; // private
     };
 
     struct Input;
