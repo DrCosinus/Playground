@@ -57,7 +57,8 @@
                 "${workspaceRoot}/sources/tdd",
                 "${workspaceRoot}/sources/wit",
                 "${workspaceRoot}/sources/cuppa",
-                "${workspaceRoot}/sources/cuppa/proto"
+                "${workspaceRoot}/sources/cuppa/proto",
+                "${workspaceRoot}/sources/engine"
             ],
             "defines": [
                 "_DEBUG",
