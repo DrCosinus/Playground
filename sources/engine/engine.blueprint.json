@@ -21,7 +21,8 @@
             "winmm.lib"
         ],
         "defines": [
-            "DEBUG_SOUND=1"
+            "DEBUG_SOUND=1",
+            "ENABLE_ASSERT=1"
         ],
         "_comments": [
             "MSVC: -wd4068: ignore warning unknown pragma"

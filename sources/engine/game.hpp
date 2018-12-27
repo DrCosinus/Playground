@@ -24,15 +24,24 @@ inline constexpr int64 Terabytes(int64 Value)
     return Gigabytes(Value) * 1024LL;
 }
 
-#if DEBUG
+#if ENABLE_ASSERT
 #define Assert(condition)                \
     if (!(condition))                    \
     {                                    \
         *static_cast<int*>(nullptr) = 0; \
     }
-#else
+#define Check(condition)                 \
+    if (!(condition))                    \
+    {                                    \
+        *static_cast<int*>(nullptr) = 0; \
+    }
+#else // ENABLE_ASSERT
 #define Assert(condition)
-#endif
+#define Check(condition) \
+    if (condition)       \
+    {                    \
+    }
+#endif // ENABLE_ASSERT
 
 struct Dimension
 {

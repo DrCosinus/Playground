@@ -240,6 +240,32 @@ namespace Windows
     }
 #endif // DEBUG_SOUND
 
+    // Set the Windows scheduler granularity to 1ms so that out Sleep() can be more granular.
+    struct ScopedTimerResolution
+    {
+        ScopedTimerResolution()
+            : timeCaps { GetDevCaps() }
+        {
+            Check(timeBeginPeriod(timeCaps.wPeriodMin) == TIMERR_NOERROR);
+        }
+        ~ScopedTimerResolution() { Check(timeEndPeriod(timeCaps.wPeriodMin) == TIMERR_NOERROR); }
+        // Sleep slightly less than the desired amount of milliseconds (rounded to granularity)
+        void Sleep(uint32 Milliseconds) const
+        {
+            ::Sleep(Milliseconds - (Milliseconds % timeCaps.wPeriodMin) - timeCaps.wPeriodMin);
+        }
+
+    private:
+        static TIMECAPS GetDevCaps()
+        {
+            TIMECAPS timeCaps;
+            timeGetDevCaps(&timeCaps, sizeof(timeCaps));
+            return timeCaps;
+        }
+
+        const TIMECAPS timeCaps;
+    };
+
     int Main(HINSTANCE Instance)
     {
         WNDCLASSA WindowClass   = {};
@@ -249,9 +275,7 @@ namespace Windows
         //    WindowClass.hIcon;
         WindowClass.lpszClassName = "EngineWindowClass";
 
-        // NOTE: Set the Windows scheduler granularity to 1ms so that out Sleep() can be more granular.
-        UINT   DesiredSchedulerMilliseconds = 1;
-        bool32 SleepIsGranular              = timeBeginPeriod(DesiredSchedulerMilliseconds) == TIMERR_NOERROR;
+        ScopedTimerResolution timerResolution;
 
         // TODO: How do we reliably query on this on Windows? (no more constexpr)
         constexpr uint32 MonitorRefreshHz           = 60;
@@ -356,20 +380,15 @@ namespace Windows
                             auto MicrosecondsElapsedForFrame = LastCounter.GetElapsedMicroseconds();
                             if (MicrosecondsElapsedForFrame < TargetMicrosecondsPerFrame)
                             {
-                                if (SleepIsGranular)
+                                auto SleepMicroseconds = TargetMicrosecondsPerFrame - MicrosecondsElapsedForFrame;
+                                if (SleepMicroseconds > 0)
                                 {
-                                    auto SleepMicroseconds = TargetMicrosecondsPerFrame - MicrosecondsElapsedForFrame;
-                                    if (SleepMicroseconds > 0)
-                                    {
-                                        Sleep(static_cast<DWORD>(SleepMicroseconds / 1'000 - 1));
-                                    }
+                                    timerResolution.Sleep(static_cast<DWORD>(SleepMicroseconds / 1'000));
                                 }
-                                MicrosecondsElapsedForFrame = LastCounter.GetElapsedMicroseconds();
-                                // Assert(MicrosecondsElapsedForFrame < TargetMicrosecondsPerFrame);
-                                while (MicrosecondsElapsedForFrame < TargetMicrosecondsPerFrame)
+                                do
                                 {
                                     MicrosecondsElapsedForFrame = LastCounter.GetElapsedMicroseconds();
-                                }
+                                } while (MicrosecondsElapsedForFrame < TargetMicrosecondsPerFrame);
                             }
                             else
                             {
