@@ -1,5 +1,6 @@
 #include <windows.h>
 
+#include "cpu.hpp"
 #include "hdtimer.hpp"
 #include "win_inputs.hpp"
 #include "win_sound.hpp"
@@ -414,7 +415,7 @@ namespace Windows
                                       MSPerFrame,
                                       FPS,
                                       MCPF);
-                            OutputDebugStringA(FPSBuffer);
+                            // OutputDebugStringA(FPSBuffer);
 #if DEBUG_SOUND
                             DebugDisplaySoundSync(DebugBackBuffer { backbuffer }, sndEngine);
                             currentMarkerIndex++;
@@ -447,7 +448,19 @@ namespace Windows
 
 } // namespace Windows
 
+void check_floatingpoint32_precision()
+{
+    auto magic = [](float f, float g) { printf("%f + %f = %f\n", f, g, f + g); };
+
+    for (int i = 8; i < 16; ++i)
+    {
+        magic(powf(2, 16) - 1, powf(2, (float)-i));
+    }
+}
+
 int WinMain(HINSTANCE Instance, HINSTANCE /*PrevInstance*/, LPSTR /*CommandLine*/, int /*ShowCode*/)
 {
+    check_floatingpoint32_precision();
+    cpu_info();
     return Windows::Main(Instance);
 }

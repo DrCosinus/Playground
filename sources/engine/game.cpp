@@ -15,7 +15,7 @@ static void GameOutputSound(Game::SoundOutputBuffer& SoundBuffer, int ToneHz)
     for (auto SampleIndex = 0U; SampleIndex < SoundBuffer.SampleCount; ++SampleIndex)
     {
         real32 SineValue   = sinf(tSine);
-        int16  SampleValue = (int16)(SineValue * ToneVolume);
+        int16  SampleValue = (int16)(SineValue * ToneVolume * 0); // silence
         *SampleOut++       = SampleValue;
         *SampleOut++       = SampleValue;
 

@@ -28,7 +28,9 @@
             "MSVC: -wd4068: ignore warning unknown pragma"
         ],
         "msvcextra": [
-            "wd4068"
+            "wd4068",
+            "fp:fast",
+            "/arch:AVX"
         ],
         "clangextra": [],
         "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe"
