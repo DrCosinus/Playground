@@ -448,19 +448,19 @@ namespace Windows
 
 } // namespace Windows
 
-void check_floatingpoint32_precision()
+void check_floatingpoint64_precision()
 {
-    auto magic = [](float f, float g) { printf("%f + %f = %f\n", f, g, f + g); };
+    auto magic = [](int i, double f, double g) { printf("%02d: %f + %f = %f\n", i, f, g, f + g); };
 
-    for (int i = 8; i < 16; ++i)
+    for (int i = 1; i < 6; ++i)
     {
-        magic(powf(2, 14) - 1, powf(2, (float)-i));
+        magic(i, pow(2, 39) - 1, pow(0.1, (double)i));
     }
 }
 
 int WinMain(HINSTANCE Instance, HINSTANCE /*PrevInstance*/, LPSTR /*CommandLine*/, int /*ShowCode*/)
 {
-    check_floatingpoint32_precision();
+    check_floatingpoint64_precision();
     cpu_info();
     return Windows::Main(Instance);
 }
