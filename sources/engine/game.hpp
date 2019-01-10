@@ -24,24 +24,50 @@ inline constexpr int64 Terabytes(int64 Value)
     return Gigabytes(Value) * 1024LL;
 }
 
+#if __clang__
+#define IS_CLANG 1
+#define IS_MSVC 0
+#elif _MSC_VER
+#define IS_CLANG 0
+#define IS_MSVC 1
+inline auto __builtin_trap()
+{
+    return __debugbreak();
+}
+#endif
+
+inline void PIDebugBreak()
+{
+    if constexpr (IS_CLANG)
+    {
+        __builtin_trap();
+    }
+    else if constexpr (IS_MSVC)
+    {
+        __debugbreak();
+    }
+}
+
+inline void Check(bool _condition)
+{
 #if ENABLE_ASSERT
-#define Assert(condition)                \
-    if (!(condition))                    \
-    {                                    \
-        *static_cast<int*>(nullptr) = 0; \
+    if (!_condition)
+    {
+        PIDebugBreak();
     }
-#define Check(condition)                 \
-    if (!(condition))                    \
-    {                                    \
-        *static_cast<int*>(nullptr) = 0; \
+#endif
+}
+
+inline void Assert([[maybe_unused]] bool _condition)
+{
+    if constexpr (ENABLE_ASSERT)
+    {
+        if (!(_condition))
+        {
+            PIDebugBreak();
+        }
     }
-#else // ENABLE_ASSERT
-#define Assert(condition)
-#define Check(condition) \
-    if (condition)       \
-    {                    \
-    }
-#endif // ENABLE_ASSERT
+}
 
 struct Dimension
 {

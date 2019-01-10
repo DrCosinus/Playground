@@ -64,7 +64,8 @@
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE",
-                "DEBUG_SOUND"
+                "DEBUG_SOUND=1",
+                "ENABLE_ASSERT=1"
             ],
             "intelliSenseMode": "msvc-x64",
             "browse": {

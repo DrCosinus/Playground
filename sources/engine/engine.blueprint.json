@@ -30,9 +30,11 @@
         "msvcextra": [
             "wd4068",
             "fp:fast",
-            "/arch:AVX"
+            "arch:AVX"
         ],
-        "clangextra": [],
+        "clangextra": [
+            "Wno-unused-lambda-capture"
+        ],
         "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe"
     }
 }

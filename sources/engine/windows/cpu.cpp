@@ -82,18 +82,18 @@ private:
     {
     public:
         InstructionSet_Internal()
-            : nIds_ { 0 }
-            , nExIds_ { 0 }
-            , isIntel_ { false }
-            , isAMD_ { false }
-            , f_1_ECX_ { 0 }
-            , f_1_EDX_ { 0 }
-            , f_7_EBX_ { 0 }
-            , f_7_ECX_ { 0 }
-            , f_81_ECX_ { 0 }
-            , f_81_EDX_ { 0 }
-            , data_ {}
-            , extdata_ {}
+            : nIds_{ 0 }
+            , nExIds_{ 0 }
+            , isIntel_{ false }
+            , isAMD_{ false }
+            , f_1_ECX_{ 0 }
+            , f_1_EDX_{ 0 }
+            , f_7_EBX_{ 0 }
+            , f_7_ECX_{ 0 }
+            , f_81_ECX_{ 0 }
+            , f_81_EDX_{ 0 }
+            , data_{}
+            , extdata_{}
         {
             // int cpuInfo[4] = {-1};
             std::array<int, 4> cpui;
@@ -147,7 +147,7 @@ private:
             char brand[0x40];
             memset(brand, 0, sizeof(brand));
 
-            for (int i = 0x80000000; i <= nExIds_; ++i)
+            for (auto i = 0x80000000; i <= nExIds_; ++i)
             {
                 __cpuidex(cpui.data(), i, 0);
                 extdata_.push_back(cpui);
@@ -171,7 +171,7 @@ private:
         };
 
         int                             nIds_;
-        int                             nExIds_;
+        unsigned int                    nExIds_;
         std::string                     vendor_;
         std::string                     brand_;
         bool                            isIntel_;

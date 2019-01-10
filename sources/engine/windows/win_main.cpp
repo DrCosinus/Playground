@@ -245,7 +245,7 @@ namespace Windows
     struct ScopedTimerResolution
     {
         ScopedTimerResolution()
-            : timeCaps { GetDevCaps() }
+            : timeCaps{ GetDevCaps() }
         {
             Check(timeBeginPeriod(timeCaps.wPeriodMin) == TIMERR_NOERROR);
         }
@@ -417,7 +417,7 @@ namespace Windows
                                       MCPF);
                             // OutputDebugStringA(FPSBuffer);
 #if DEBUG_SOUND
-                            DebugDisplaySoundSync(DebugBackBuffer { backbuffer }, sndEngine);
+                            DebugDisplaySoundSync(DebugBackBuffer{ backbuffer }, sndEngine);
                             currentMarkerIndex++;
                             if (currentMarkerIndex >= markerCount)
                             {
@@ -454,7 +454,7 @@ void check_floatingpoint32_precision()
 
     for (int i = 8; i < 16; ++i)
     {
-        magic(powf(2, 16) - 1, powf(2, (float)-i));
+        magic(powf(2, 14) - 1, powf(2, (float)-i));
     }
 }
 
