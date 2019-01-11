@@ -30,7 +30,7 @@ private:
 // precision better than tenth of a milliseconds -> 14 bits
 // values have 38 bits of stored precision => 549755813887 seconds => more than 17480 years => OK
 
-// if we consider that time will in range [-1000 years, 1000 years] we need to able to store 31536000000 seconds so 35
-// bits so it remains 18bits of precision to subdivide a second
+// if we consider that time will in range [-8710 years, 8710years] we need to able to store 38bits
+// so it remains 18bits of precision to subdivide a second
 
 // need to test performances
