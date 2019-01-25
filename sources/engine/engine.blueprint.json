@@ -30,7 +30,8 @@
         "msvcextra": [
             "wd4068",
             "fp:fast",
-            "arch:AVX"
+            "arch:AVX",
+            "MP"
         ],
         "clangextra": [
             "Wno-unused-lambda-capture"
