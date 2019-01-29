@@ -409,7 +409,7 @@ namespace Windows
             {
                 return Data.ftLastWriteTime;
             }
-            return { 0 };
+            return { 0, 0 };
         }
 
         char     SourceGameCodeDLLFullPath[WIN32_STATE_FILE_NAME_COUNT];
@@ -507,7 +507,7 @@ namespace Windows
                         if (inputs.GetCurrent().GamePads[0].Start.EndedDown &&
                             inputs.GetCurrent().GamePads[0].Start.HalfTransitionCount == 1)
                         {
-                            Pause = !Pause;
+                            // Pause = !Pause;
                         }
 
                         if (!Pause)
@@ -522,13 +522,15 @@ namespace Windows
                             auto& Buffer = backbuffer.PrepareUpdate();
 
                             thread_context Thread = {};
+                            (void)Thread;
+                            (void)Buffer;
                             if (Game.UpdateAndRender)
                             {
                                 Game.UpdateAndRender(Thread, GameMemory, inputs.GetCurrent(), Buffer);
                             }
                             if (Game.GetSoundSamples)
                             {
-                                Game.GetSoundSamples(Thread, GameMemory, SoundBuffer);
+                                // Game.GetSoundSamples(Thread, GameMemory, SoundBuffer);
                             }
 
 #if DEBUG_SOUND
@@ -547,12 +549,12 @@ namespace Windows
                                 auto SleepMicroseconds = TargetMicrosecondsPerFrame - MicrosecondsElapsedForFrame;
                                 if (SleepMicroseconds > 0)
                                 {
-                                    timerResolution.Sleep(static_cast<DWORD>(SleepMicroseconds / 1'000));
+                                    // timerResolution.Sleep(static_cast<DWORD>(SleepMicroseconds / 1'000));
                                 }
-                                do
-                                {
-                                    MicrosecondsElapsedForFrame = LastCounter.GetElapsedMicroseconds();
-                                } while (MicrosecondsElapsedForFrame < TargetMicrosecondsPerFrame);
+                                // do
+                                // {
+                                //     MicrosecondsElapsedForFrame = LastCounter.GetElapsedMicroseconds();
+                                // } while (MicrosecondsElapsedForFrame < TargetMicrosecondsPerFrame);
                             }
                             else
                             {

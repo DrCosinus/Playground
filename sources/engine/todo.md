@@ -2,8 +2,10 @@
 
 ## Features
 
+- [ ] launch the engine from VS code with F5... maybe BuildTask should be modified
+- [ ] use the dll which match the exe (_msvc_r/_msvc_d/_clang_r/)
 - [ ] engine sub project should be extract from the playground repository to its own repository
-- [ ] engine should be split in two: engine.exe and game.dll
+- [x] engine should be split in two: engine.exe and game.dll
   game.dll should be "hot" compilable
 - [ ] implementing tileset (square, rectangle, hexagon, custom...)
 - [ ] implementing something like libfmt...
@@ -29,12 +31,13 @@
 
 ### Documentation
 
-| Name                                                                                           |                           | Current Version |
-| ---------------------------------------------------------------------------------------------- | ------------------------- | --------------- |
-| [PlantUML](https://marketplace.visualstudio.com/items?itemName=jebbs.plantuml)                 | vs code extension         | 2.10.2          |
-| [LaTeX Math for Markdown](https://marketplace.visualstudio.com/items?itemName=goessner.mdmath) | vs code extension         | 2.3.7           |
-| [GraphViz](http://www.graphviz.org/download/)                                                  | for PlantUML local render | 2.38            |
-| [java](https://www.java.com/en/download/)                                                      | for PlantUML local render | 8 Updata 201    |
+| Name                                                                                                  |                           | Current Version |
+| ----------------------------------------------------------------------------------------------------- | ------------------------- | --------------- |
+| [PlantUML](https://marketplace.visualstudio.com/items?itemName=jebbs.plantuml)                        | vs code extension         | 2.10.2          |
+| [LaTeX Math for Markdown](https://marketplace.visualstudio.com/items?itemName=goessner.mdmath)        | vs code extension         | 2.3.7           |
+| [GraphViz](http://www.graphviz.org/download/)                                                         | for PlantUML local render | 2.38            |
+| [java](https://www.java.com/en/download/)                                                             | for PlantUML local render | 8 Update 201    |
+| [Markdown All in One](https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one) | vs code extension         | 2.0.1           |
 
 ## Tooling
 
