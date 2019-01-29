@@ -1,0 +1,16 @@
+{
+    "import": [],
+    "project": {
+        "name": "sdk",
+        "description": "common files for engine and game (headers only for now)",
+        "major_version": "0",
+        "minor_version": "1",
+        "patch_version": "0",
+        "status": "wip",
+        "outputtype": "staticlibrary",
+        "dependencies": [],
+        "headers": [
+            "**/*.hpp"
+        ]
+    }
+}

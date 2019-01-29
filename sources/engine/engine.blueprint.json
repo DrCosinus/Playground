@@ -1,41 +1,7 @@
 {
-    "import": [],
-    "project": {
-        "name": "engine",
-        "description": "simple game engine",
-        "major_version": "0",
-        "minor_version": "1",
-        "patch_version": "0",
-        "status": "wip",
-        "outputtype": "application",
-        "dependencies": [],
-        "headers": [
-            "**/*.hpp"
-        ],
-        "sources": [
-            "**/*.cpp"
-        ],
-        "libs": [
-            "user32.lib",
-            "gdi32.lib",
-            "winmm.lib"
-        ],
-        "defines": [
-            "DEBUG_SOUND=1",
-            "ENABLE_ASSERT=1"
-        ],
-        "_comments": [
-            "MSVC: -wd4068: ignore warning unknown pragma"
-        ],
-        "msvcextra": [
-            "wd4068",
-            "fp:fast",
-            "arch:AVX",
-            "MP"
-        ],
-        "clangextra": [
-            "Wno-unused-lambda-capture"
-        ],
-        "output": "bin/$(project_name)_$(compiler_name)_$(optimization).exe"
-    }
+    "import": [
+        "sources/engine/sdk/sdk.blueprint.json",
+        "sources/engine/windows/windows.blueprint.json",
+        "sources/engine/game/game.blueprint.json"
+    ]
 }

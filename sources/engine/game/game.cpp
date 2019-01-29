@@ -1,8 +1,10 @@
 #include "game.hpp"
 #include "game_inputs.hpp"
 
-#include <cmath>
+#include "types.hpp"
 
+#include <cmath>
+/*
 constexpr float Pi32 = 3.14159265359f;
 
 static void GameOutputSound(Game::SoundOutputBuffer& SoundBuffer, int ToneHz)
@@ -21,7 +23,7 @@ static void GameOutputSound(Game::SoundOutputBuffer& SoundBuffer, int ToneHz)
 
         tSine += 2.0f * Pi32 * 1.0f / (real32)WavePeriod;
     }
-}
+}*/
 
 static void RenderWeirdGradient(const PIBackBuffer& Buffer, int BlueOffset, int GreenOffset)
 {
@@ -73,38 +75,59 @@ namespace Game
             GameState.GreenOffset += 1;
         }
     }
-
-    void UpdateAndRender(Memory&             Memory,
-                         const Inputs&       Inputs,
-                         const PIBackBuffer& Buffer,
-                         SoundOutputBuffer&  SoundBuffer)
-    {
-        auto& GameState = *static_cast<State*>(Memory.PermanentStorage);
-        if (!Memory.IsInitialized)
-        {
-            // const char* Filename = __FILE__;
-
-            // debug_read_file_result File = DEBUGPlatformReadEntireFile(Filename);
-            // if (File.Contents)
-            // {
-            //     DEBUGPlatformWriteEntireFile("test.out", File.ContentsSize, File.Contents);
-            //     DEBUGPlatformFreeFileMemory(File.Contents);
-            // }
-
-            GameState.ToneHz = 256;
-
-            // TODO: This may be more appropriate to do in the platform layer
-            Memory.IsInitialized = true;
-        }
-
-        ProcessGamepad(GameState, Inputs.Keyboard);
-        for (auto& gamepad : Inputs.GamePads)
-        {
-            ProcessGamepad(GameState, gamepad);
-        }
-
-        // TODO: Allow sample offsets here for more robust platform options
-        GameOutputSound(SoundBuffer, GameState.ToneHz);
-        RenderWeirdGradient(Buffer, GameState.BlueOffset, GameState.GreenOffset);
-    }
 } // namespace Game
+
+using namespace Game;
+
+extern "C" __declspec(dllexport) void GameUpdateAndRender(thread_context& Thread,
+                         Memory& Memory,
+                         const Inputs&          Inputs,
+                         const PIBackBuffer&    Buffer/*,
+                         SoundOutputBuffer&     SoundBuffer*/)
+{
+    (void)Thread;
+    auto& GameState = *static_cast<State*>(Memory.PermanentStorage);
+    // if (!Memory.IsInitialized)
+    // {
+    //     // const char* Filename = __FILE__;
+
+    //     // debug_read_file_result File = DEBUGPlatformReadEntireFile(Filename);
+    //     // if (File.Contents)
+    //     // {
+    //     //     DEBUGPlatformWriteEntireFile("test.out", File.ContentsSize, File.Contents);
+    //     //     DEBUGPlatformFreeFileMemory(File.Contents);
+    //     // }
+
+    //     // TODO: This may be more appropriate to do in the platform layer
+    //     Memory.IsInitialized = true;
+    // }
+
+    ProcessGamepad(GameState, Inputs.Keyboard);
+    for (auto& gamepad : Inputs.GamePads)
+    {
+        ProcessGamepad(GameState, gamepad);
+    }
+
+    RenderWeirdGradient(Buffer, GameState.BlueOffset, GameState.GreenOffset);
+}
+
+extern "C" __declspec(dllexport) void GameGetSoundSamples(thread_context&    Thread,
+                                                          Memory&            Memory,
+                                                          SoundOutputBuffer& SoundBuffer)
+{
+    (void)Thread;
+    (void)Memory;
+    (void)SoundBuffer;
+
+    auto& GameState = *static_cast<State*>(Memory.PermanentStorage);
+    if (!Memory.IsInitialized)
+    {
+        GameState.ToneHz = 256;
+
+        // TODO: This may be more appropriate to do in the platform layer
+        Memory.IsInitialized = true;
+    }
+
+    // TODO: Allow sample offsets here for more robust platform options
+    // GameOutputSound(SoundBuffer, GameState.ToneHz);
+}

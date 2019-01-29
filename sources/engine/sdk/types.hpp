@@ -15,3 +15,8 @@ using uint64 = uint64_t;
 
 using real32 = float;
 using real64 = double;
+
+struct thread_context
+{
+    int PlaceHolder;
+};

@@ -109,8 +109,8 @@ namespace Game
 
     struct Inputs;
 
-    void UpdateAndRender(Memory&             Memory,
-                         const Inputs&       Inputs,
-                         const PIBackBuffer& Buffer,
-                         SoundOutputBuffer&  SoundBuffer);
+    // void UpdateAndRender(Memory&             Memory,
+    //                      const Inputs&       Inputs,
+    //                      const PIBackBuffer& Buffer,
+    //                      SoundOutputBuffer&  SoundBuffer);
 } // namespace Game

@@ -1,0 +1,39 @@
+{
+    "import": [],
+    "project": {
+        "name": "game",
+        "description": "game dll (only platform independent code)",
+        "major_version": "0",
+        "minor_version": "1",
+        "patch_version": "0",
+        "status": "wip",
+        "outputtype": "dynamiclibrary",
+        "dependencies": [
+            "sdk"
+        ],
+        "headers": [
+            "**/*.hpp"
+        ],
+        "sources": [
+            "**/*.cpp"
+        ],
+        "defines": [
+            "DEBUG_SOUND=1",
+            "ENABLE_ASSERT=1"
+        ],
+        "_comments": [
+            "MSVC: -wd4068: ignore warning unknown pragma"
+        ],
+        "msvcextra": [
+            "wd4068",
+            "fp:fast",
+            "arch:AVX",
+            "MP",
+            "LD"
+        ],
+        "clangextra": [
+            "Wno-unused-lambda-capture"
+        ],
+        "output": "../bin/$(project_name)_$(compiler_name)_$(optimization).dll"
+    }
+}
