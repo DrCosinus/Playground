@@ -14,7 +14,12 @@
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            "logging": { "engineLogging": false, "exceptions": false, "moduleLoad": false, "programOutput": true },
+            "logging": {
+                "engineLogging": false,
+                "exceptions": false,
+                "moduleLoad": false,
+                "programOutput": true
+            },
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": "build release with clang"
         },
@@ -28,7 +33,12 @@
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            "logging": { "engineLogging": false, "exceptions": false, "moduleLoad": false, "programOutput": true },
+            "logging": {
+                "engineLogging": false,
+                "exceptions": false,
+                "moduleLoad": false,
+                "programOutput": true
+            },
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": "build debug with clang"
         },
@@ -36,13 +46,18 @@
             "name": "[MSVC][Release] Launch",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/project_msvc_r.exe",
+            "program": "win_engine_msvc_r.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/sources/engine/bin/",
             "environment": [],
             "externalConsole": false,
-            "logging": { "engineLogging": false, "exceptions": false, "moduleLoad": false, "programOutput": true },
+            "logging": {
+                "engineLogging": false,
+                "exceptions": false,
+                "moduleLoad": false,
+                "programOutput": true
+            },
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": "build release with msvc"
         },
@@ -50,13 +65,18 @@
             "name": "[MSVC][Debug] Launch",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/project_msvc_d.exe",
+            "program": "win_engine_msvc_d.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/sources/engine/bin/",
             "environment": [],
             "externalConsole": false,
-            "logging": { "engineLogging": false, "exceptions": false, "moduleLoad": false, "programOutput": true },
+            "logging": {
+                "engineLogging": false,
+                "exceptions": false,
+                "moduleLoad": false,
+                "programOutput": true
+            },
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": "build debug with msvc"
         }

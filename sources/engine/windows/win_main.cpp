@@ -329,10 +329,13 @@ namespace Windows
 
     struct GameCode final
     {
+        const win32_state& Win32State_;
         GameCode(const win32_state& Win32State, const char* sourceDLLName, const char* TempDLLName)
+            : Win32State_{ Win32State }
         {
             BuildPath(Win32State, sourceDLLName, sizeof(SourceGameCodeDLLFullPath), SourceGameCodeDLLFullPath);
-            BuildPath(Win32State, TempDLLName, sizeof(TempGameCodeDLLFullPath), TempGameCodeDLLFullPath);
+            BuildPath(Win32State_, TempDLLName, sizeof(TempGameCodeDLLFullPath), TempGameCodeDLLFullPath);
+
             Load();
         }
 
@@ -340,10 +343,21 @@ namespace Windows
 
         void Load()
         {
-            dll_last_write_time_ = Win32GetLastWriteTime(SourceGameCodeDLLFullPath);
             // for now, during development we use a copy of the DLL so we can rebuild the DLL when the copy is used
             // maybe a better way to handle this is to track new DLL in another folder and copy it if needed
-            CopyFileA(SourceGameCodeDLLFullPath, TempGameCodeDLLFullPath, FALSE);
+            if (!CopyFileA(SourceGameCodeDLLFullPath, TempGameCodeDLLFullPath, FALSE))
+            {
+                char buff[64];
+                sprintf_s(buff, "DLL copy failed. Error #%d.\n", GetLastError());
+                OutputDebugStringA(buff);
+                return;
+            }
+
+            OutputDebugStringA("Loading ");
+            OutputDebugStringA(SourceGameCodeDLLFullPath);
+            OutputDebugStringA("\n");
+            dll_last_write_time_ = Win32GetLastWriteTime(SourceGameCodeDLLFullPath);
+
             dll_handle_ = LoadLibraryA(TempGameCodeDLLFullPath);
             if (dll_handle_)
             {
@@ -367,10 +381,31 @@ namespace Windows
         void LookForUpdate()
         {
             auto NewDLLWriteTime = Win32GetLastWriteTime(SourceGameCodeDLLFullPath);
+
             if (CompareFileTime(&NewDLLWriteTime, &dll_last_write_time_) != 0)
             {
-                Unload();
-                Load();
+                // auto handle = CreateFileA(SourceGameCodeDLLFullPath,
+                //                           GENERIC_READ | GENERIC_WRITE,
+                //                           0,
+                //                           NULL,
+                //                           OPEN_EXISTING,
+                //                           FILE_ATTRIBUTE_NORMAL,
+                //                           NULL);
+
+                // FIXME: yuck... horrible...
+                char xxx[WIN32_STATE_FILE_NAME_COUNT];
+
+                BuildPath(Win32State_, "game.lld", sizeof(xxx), xxx);
+
+                if (CopyFileA(SourceGameCodeDLLFullPath, xxx, FALSE))
+                {
+                    DeleteFileA(xxx);
+                    // CloseHandle(handle);
+                    Unload();
+                    Load();
+                }
+                // Sleep(1000); // we detect the change to early
+                // Unload();
             }
         }
 
@@ -378,7 +413,18 @@ namespace Windows
         {
             if (dll_handle_)
             {
+                OutputDebugStringA("Unloading Game DLL.\n");
                 FreeLibrary(dll_handle_);
+                if (!FreeLibrary(dll_handle_))
+                {
+                    // if (!DeleteFileA(TempGameCodeDLLFullPath))
+                    // {
+                    //     char buff[64];
+                    //     sprintf_s(buff, "Delete Error #%d", GetLastError());
+                    //     OutputDebugStringA(buff);
+                    // }
+                }
+                // CoFreeUnusedLibraries();
                 dll_handle_ = 0;
             }
             is_valid_       = false;

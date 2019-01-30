@@ -20,7 +20,8 @@
         "libs": [
             "user32.lib",
             "gdi32.lib",
-            "winmm.lib"
+            "winmm.lib",
+            "ole32.lib"
         ],
         "defines": [
             "DEBUG_SOUND=1",

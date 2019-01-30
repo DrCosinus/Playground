@@ -32,8 +32,7 @@
                 "${relativeFile}",
                 "-debug",
                 "-warnings_are_errors",
-                "-blueprint:playground.blueprint.json",
-                "-output:bin/project_msvc_d.exe"
+                "-blueprint:playground.blueprint.json"
             ],
             "problemMatcher": "$msCompile"
         },

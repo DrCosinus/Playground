@@ -31,13 +31,14 @@
 
 ### Documentation
 
-| Name                                                                                                  |                           | Current Version |
-| ----------------------------------------------------------------------------------------------------- | ------------------------- | --------------- |
-| [PlantUML](https://marketplace.visualstudio.com/items?itemName=jebbs.plantuml)                        | vs code extension         | 2.10.2          |
-| [LaTeX Math for Markdown](https://marketplace.visualstudio.com/items?itemName=goessner.mdmath)        | vs code extension         | 2.3.7           |
-| [GraphViz](http://www.graphviz.org/download/)                                                         | for PlantUML local render | 2.38            |
-| [java](https://www.java.com/en/download/)                                                             | for PlantUML local render | 8 Update 201    |
-| [Markdown All in One](https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one) | vs code extension         | 2.0.1           |
+| Name                                                                                                                          |                           | Current Version |
+| ----------------------------------------------------------------------------------------------------------------------------- | ------------------------- | --------------- |
+| [PlantUML](https://marketplace.visualstudio.com/items?itemName=jebbs.plantuml)                                                | vs code extension         | 2.10.2          |
+| [LaTeX Math for Markdown](https://marketplace.visualstudio.com/items?itemName=goessner.mdmath)                                | vs code extension         | 2.3.7           |
+| [GraphViz](http://www.graphviz.org/download/)                                                                                 | for PlantUML local render | 2.38            |
+| [java](https://www.java.com/en/download/)                                                                                     | for PlantUML local render | 8 Update 201    |
+| [Markdown All in One](https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one)                         | vs code extension         | 2.0.1           |
+| [Markdown Preview Github Styling](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-preview-github-styles) | vs code extension         | 0.1.4           |
 
 ## Tooling
 
