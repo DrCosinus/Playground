@@ -30,3 +30,4 @@ FixNamespaceComments: true
 NamespaceIndentation: All
 PenaltyBreakBeforeFirstCallParameter: 500
 PenaltyReturnTypeOnItsOwnLine: 1000
+SpaceBeforeCpp11BracedList: false

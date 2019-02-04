@@ -58,7 +58,8 @@
                 "${workspaceRoot}/sources/wit",
                 "${workspaceRoot}/sources/cuppa",
                 "${workspaceRoot}/sources/cuppa/proto",
-                "${workspaceRoot}/sources/engine"
+                "${workspaceRoot}/sources/engine",
+                "${workspaceFolder}/sources/engine/sdk"
             ],
             "defines": [
                 "_DEBUG",
