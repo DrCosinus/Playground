@@ -27,7 +27,7 @@
 ## Guidelines
 
 - [x] use of [C++17](https://isocpp.org/), support [MSVC](http://visualstudio.com) (from version 19.16, maybe previous), [Clang](http://llvm.org/) (from version 7.0?)
-- [x] using clang-format
+- [x] using clang-format 7.0 (setup "C_Cpp.clang_format_path" in VS Code user settings )
 
 ### Documentation
 
