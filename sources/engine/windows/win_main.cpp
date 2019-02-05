@@ -680,3 +680,142 @@ int WinMain(HINSTANCE Instance, HINSTANCE /*PrevInstance*/, LPSTR /*CommandLine*
     // cpu_info();
     return Windows::Main(Instance);
 }
+
+namespace Windows
+{
+    class Runner
+    {
+        // TODO: How do we reliably query on this on Windows? (no more constexpr)
+        inline static constexpr uint32 MonitorRefreshHz           = 60;
+        inline static constexpr uint32 GameUpdateHz               = MonitorRefreshHz / 2;
+        inline static constexpr uint32 TargetMicrosecondsPerFrame = 1'000'000 / GameUpdateHz;
+
+        bool   GlobalRunning{ true }; // TODO: rename "running"
+        uint64 LastCycleCount{ __rdtsc() };
+
+        struct ScopedTimerResolution
+        {
+        };
+
+        static LRESULT MainWindowCB(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam)
+        {
+            LRESULT Result = 0;
+            (void)Window;
+            (void)Message;
+            (void)WParam;
+            (void)LParam;
+            return Result;
+        }
+
+        void setup()
+        {
+            // TODO: Retrieve hInstance
+            HINSTANCE Instance = static_cast<HINSTANCE>(GetModuleHandleA(NULL));
+
+            WNDCLASSA WindowClass   = {};
+            WindowClass.style       = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+            WindowClass.lpfnWndProc = MainWindowCB;
+            WindowClass.hInstance   = Instance;
+            //    WindowClass.hIcon;
+            WindowClass.lpszClassName = "EngineWindowClass";
+
+            ScopedTimerResolution timerResolution;
+            (void)timerResolution;
+
+            if (RegisterClassA(&WindowClass))
+            {
+                HWND Window = CreateWindowExA(0,
+                                              WindowClass.lpszClassName,
+                                              "Engine",
+                                              WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+                                              CW_USEDEFAULT,
+                                              CW_USEDEFAULT,
+                                              CW_USEDEFAULT,
+                                              CW_USEDEFAULT,
+                                              0,
+                                              0,
+                                              Instance,
+                                              0);
+                if (Window)
+                {
+                    // Windows specific stuffs
+                    HiDefTimer    hdTimer;
+                    Inputs        inputs;
+                    WinBackBuffer backbuffer;
+                    SoundEngine   sndEngine;
+
+                    backbuffer.Resize(1280, 720);
+
+                    // NOTE: Store backbuffer structure pointer in the user date of the window
+                    SetWindowLongPtrA(Window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(&backbuffer));
+
+                    // Since we specified CS_OWNDC, we can just get one device context and use it forever because we are
+                    // not sharing it with anyone.
+                    HDC DeviceContext = GetDC(Window);
+                    (void)DeviceContext;
+
+                    inputs.Init();
+                    sndEngine.Init(Window);
+                    sndEngine.ClearBuffer();
+                    sndEngine.Play();
+
+                    bool Pause = false;
+                    (void)Pause;
+
+                    Game::Memory GameMemory;
+                    GameMemory.PermanentStorageSize = Megabytes(64);
+                    GameMemory.TransientStorageSize = Gigabytes(1);
+
+                    LPVOID BaseAddress = reinterpret_cast<LPVOID>(Terabytes(2));
+                    uint64 TotalSize   = GameMemory.PermanentStorageSize + GameMemory.TransientStorageSize;
+                    GameMemory.PermanentStorage =
+                        VirtualAlloc(BaseAddress, (size_t)TotalSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+                    GameMemory.TransientStorage =
+                        (static_cast<uint8*>(GameMemory.PermanentStorage) + GameMemory.PermanentStorageSize);
+                    // FIXME: need to be free on exit
+
+                    if (/*Samples &&*/ GameMemory.PermanentStorage && GameMemory.TransientStorage)
+                    {
+                        auto LastCounter = hdTimer.GetWallClock();
+
+                        win32_state Win32State;
+                        GameCode    Game{ Win32State, "game_msvc_r.dll", "game.dll" };
+                        // bool        GlobalRunning  = true;
+                        // uint64      LastCycleCount = __rdtsc();
+                    }
+                }
+            }
+        }
+        void update() {}
+        bool is_running() const { return false; }
+        void teardown() {}
+
+    public:
+        void run()
+        {
+            setup();
+            while (is_running())
+            {
+                update();
+            }
+            teardown();
+        }
+    };
+} // namespace Windows
+
+template <typename AppRunner>
+class App : public AppRunner
+{
+public:
+    static App& getApp()
+    {
+        static App instance;
+        return instance;
+    }
+};
+
+void foo()
+{
+    auto&& app = App<Windows::Runner>::getApp();
+    app.run();
+}
