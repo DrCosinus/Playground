@@ -58,24 +58,4 @@ namespace Windows
         }
     }
 
-    // void BackBuffer::DisplayBufferInWindow(HDC _DeviceContext, HWND _Window)
-    // {
-    //     auto Dimension = GetWindowDimension(_Window);
-    //     // TODO: Aspect ratio correction
-    //     // TODO: Play with stretch modes
-    //     StretchDIBits(_DeviceContext,
-    //                   0,
-    //                   0,
-    //                   Dimension.Width,
-    //                   Dimension.Height,
-    //                   0,
-    //                   0,
-    //                   Width,
-    //                   Height,
-    //                   Memory,
-    //                   &Info,
-    //                   DIB_RGB_COLORS,
-    //                   SRCCOPY);
-    // }
-
 } // namespace Windows

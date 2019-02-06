@@ -6,6 +6,7 @@
 #include "win_backbuffer.hpp"
 #include "win_inputs.hpp"
 #include "win_sound.hpp"
+#include "window.hpp"
 
 #include <game.hpp>
 #include <types.hpp>
@@ -14,10 +15,6 @@
 
 namespace Windows
 {
-
-    struct DebugBackBuffer : BackBuffer
-    {
-    };
 
     static bool ProcessPendingMessages()
     {
@@ -337,86 +334,10 @@ void check_real64_precision()
 // #############################################################################################################
 // #############################################################################################################
 
-#include <memory>
 #include <stdexcept>
 
 namespace Windows
 {
-    class Window final
-    {
-        friend class Runner;
-
-    public:
-        Window(const Window&) = delete; // non copiable
-        Window(Window&&)      = delete;
-        ~Window()
-        {
-            ReleaseDC(hwnd, hdc);
-            DestroyWindow(hwnd);
-        }
-
-        Dimension GetWindowDimension() const
-        {
-            RECT ClientRect;
-            GetClientRect(hwnd, &ClientRect);
-
-            return { ClientRect.right - ClientRect.left, ClientRect.bottom - ClientRect.top };
-        }
-
-        void blitBackBuffer() const { blitBackBuffer(hdc); }
-
-        void blitBackBuffer(HDC _hdc) const
-        {
-            auto [w, h] = GetWindowDimension();
-            // TODO: Aspect ratio correction
-            // TODO: Play with stretch modes
-            StretchDIBits(_hdc,
-                          0,
-                          0,
-                          w,
-                          h,
-                          0,
-                          0,
-                          backbuffer.Width,
-                          backbuffer.Height,
-                          backbuffer.Memory,
-                          &backbuffer.Info,
-                          DIB_RGB_COLORS,
-                          SRCCOPY);
-        }
-
-        void draw() const
-        {
-            PAINTSTRUCT Paint;
-            HDC         DeviceContext = BeginPaint(hwnd, &Paint);
-            blitBackBuffer(DeviceContext);
-            EndPaint(hwnd, &Paint);
-        }
-
-        HWND getHandle() const { return hwnd; }
-        HDC  getDeviceContext() const { return hdc; }
-
-    private:
-        Window(HWND hwnd, BackBuffer& backbuffer)
-            : hwnd{ hwnd }
-            , hdc{ GetDC(hwnd) }
-            , backbuffer{ backbuffer }
-        {
-            if (!hwnd)
-            {
-                throw std::domain_error{ "Fail to create window." };
-            }
-            SetWindowLongPtrA(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
-        }
-
-        // since we specified CS_OWNDC, we can just get one device context and use it forever
-
-        // order matters
-        const HWND        hwnd;
-        const HDC         hdc; // depends on hwnd
-        const BackBuffer& backbuffer;
-    };
-
     class WindowClass final
     {
         friend class Runner;
@@ -515,16 +436,13 @@ namespace Windows
             }
             TransientStorage = (static_cast<uint8*>(PermanentStorage) + PermanentStorageSize);
         }
-        ~Memory() override
-        {
-            VirtualFree(baseAddress, 0, MEM_RELEASE);
-        }
+        ~Memory() override { VirtualFree(baseAddress, 0, MEM_RELEASE); }
 
     private:
         void* const baseAddress;
     };
 
-    class Runner
+    class Runner final
     {
         // TODO: How do we reliably query on this on Windows? (no more constexpr)
         inline static constexpr uint32 MonitorRefreshHz           = 60;
@@ -537,12 +455,12 @@ namespace Windows
         };
 
         // order matters
-        WindowClass           wndClass;
-        BackBuffer            backbuffer;
-        Window                window; // depends on wndClass, and backbuffer
+        WindowClass           wndClass; // no dependies, can throw
+        BackBuffer            backbuffer; // no dependies
+        Window                window; // depends on wndClass, and backbuffer, can throw
         ScopedTimerResolution timerResolution; // no dependencies
-        Inputs                inputs;
-        SoundEngine           sndEngine;
+        Inputs                inputs; // no dependies, can throw
+        SoundEngine           sndEngine; // depends on window
         Memory                memory;
         win32_state           win32State;
         GameCode              gameDLL; // depends on win32State
@@ -558,8 +476,6 @@ namespace Windows
             , gameDLL{ win32State, "game_msvc_r.dll", "game.dll" }
             , lastCounter{ WallClock::create() }
         {
-
-            inputs.Init();
             sndEngine.Init(window.getHandle());
             sndEngine.ClearBuffer();
             sndEngine.Play();
@@ -660,7 +576,7 @@ namespace Windows
                           MCPF);
                 // OutputDebugStringA(FPSBuffer);
 #if DEBUG_SOUND
-                DebugDisplaySoundSync(DebugBackBuffer{ backbuffer }, sndEngine);
+                DebugDisplaySoundSync(backbuffer, sndEngine);
                 currentMarkerIndex++;
                 if (currentMarkerIndex >= markerCount)
                 {
@@ -670,7 +586,7 @@ namespace Windows
        // DRAW GREEN VERTICAL LINE IF GAME DLL IS VALID
                 constexpr uint32 green = 0x00FF00;
                 constexpr uint32 red   = 0xFF0000;
-                DebugBackBuffer{ backbuffer }.DebugDrawVertical(0, 0, 100, gameDLL.UpdateAndRender ? green : red);
+                backbuffer.DebugDrawVertical(0, 0, 100, gameDLL.UpdateAndRender ? green : red);
             }
 
             window.blitBackBuffer();

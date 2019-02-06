@@ -14,7 +14,6 @@ namespace Windows
         Inputs();
         ~Inputs();
 
-        void Init();
         void Update();
 
         bool32 IsQuitRequested() const { return QuitRequested; }

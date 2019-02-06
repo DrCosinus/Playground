@@ -71,10 +71,11 @@ namespace Windows
         static DWORD SetStateStub(DWORD, XINPUT_VIBRATION*) { return ERROR_DEVICE_NOT_CONNECTED; }
     };
 
-    Inputs::Inputs()  = default;
-    Inputs::~Inputs() = default;
+    Inputs::Inputs()
+        : driver{ std::make_unique<Driver>() }
+    {}
 
-    void Inputs::Init() { driver = std::make_unique<Driver>(); }
+    Inputs::~Inputs() = default;
 
     void Inputs::ProcessPendingMessages(Game::GamePad& KeyboardController)
     {

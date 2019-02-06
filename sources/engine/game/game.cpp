@@ -52,29 +52,29 @@ namespace Game
         int BlueOffset;
     };
 
-    // void ProcessGamepad(State& GameState, const GamePad& gamepad)
-    // {
-    //     if (gamepad.IsAnalog)
-    //     {
-    //         GameState.BlueOffset += (int)(4.0f * gamepad.LeftStickX);
-    //         GameState.ToneHz = 256 + (int)(128.0f * gamepad.LeftStickY);
-    //     }
-    //     else
-    //     {
-    //         if (gamepad.MoveLeft.EndedDown)
-    //         {
-    //             GameState.BlueOffset -= 1;
-    //         }
-    //         if (gamepad.MoveRight.EndedDown)
-    //         {
-    //             GameState.BlueOffset += 1;
-    //         }
-    //     }
-    //     if (gamepad.ActionDown.EndedDown)
-    //     {
-    //         GameState.GreenOffset += 1;
-    //     }
-    // }
+    void ProcessGamepad(State& GameState, const GamePad& gamepad)
+    {
+        if (gamepad.IsAnalog)
+        {
+            GameState.BlueOffset += (int)(4.0f * gamepad.LeftStickX);
+            GameState.ToneHz = 256 + (int)(128.0f * gamepad.LeftStickY);
+        }
+        else
+        {
+            if (gamepad.MoveLeft.EndedDown)
+            {
+                GameState.BlueOffset -= 1;
+            }
+            if (gamepad.MoveRight.EndedDown)
+            {
+                GameState.BlueOffset += 1;
+            }
+        }
+        if (gamepad.ActionDown.EndedDown)
+        {
+            GameState.GreenOffset += 1;
+        }
+    }
 } // namespace Game
 
 using namespace Game;
@@ -102,11 +102,11 @@ extern "C" __declspec(dllexport) void GameUpdateAndRender(thread_context& Thread
     //     Memory.IsInitialized = true;
     // }
     (void)Inputs;
-    // ProcessGamepad(GameState, Inputs.Keyboard);
-    // for (auto& gamepad : Inputs.GamePads)
-    // {
-    //     ProcessGamepad(GameState, gamepad);
-    // }
+    ProcessGamepad(GameState, Inputs.Keyboard);
+    for (auto& gamepad : Inputs.GamePads)
+    {
+        ProcessGamepad(GameState, gamepad);
+    }
 
     RenderWeirdGradient(Buffer, GameState.BlueOffset, GameState.GreenOffset);
 }
