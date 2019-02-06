@@ -1,6 +1,7 @@
 #include <windows.h>
 
 #include "cpu.hpp"
+#include "gameDLL.hpp"
 #include "hdtimer.hpp"
 #include "scopedTimerResolution.hpp"
 #include "win_backbuffer.hpp"
@@ -120,202 +121,6 @@ namespace Windows
 #endif // DEBUG_SOUND
 
     class game_sound_output_buffer;
-    using game_update_and_render = void(thread_context&, Game::Memory&, const Game::Inputs&, const PIBackBuffer&);
-    using game_get_sound_samples = void(thread_context&, Game::Memory&, Game::SoundOutputBuffer&);
-
-    static void CatStrings(size_t      SourceACount,
-                           const char* SourceA,
-                           size_t      SourceBCount,
-                           const char* SourceB,
-                           size_t /*DestCount*/,
-                           char* Dest)
-    {
-        // TODO: Dest bounds checking!
-
-        for (int Index = 0; Index < SourceACount; ++Index)
-        {
-            *Dest++ = *SourceA++;
-        }
-
-        for (int Index = 0; Index < SourceBCount; ++Index)
-        {
-            *Dest++ = *SourceB++;
-        }
-
-        *Dest++ = 0;
-    }
-
-    static size_t StringLength(const char* String)
-    {
-        size_t Count = 0;
-        while (*String++)
-        {
-            ++Count;
-        }
-        return Count;
-    }
-
-    static constexpr size_t WIN32_STATE_FILE_NAME_COUNT = MAX_PATH;
-    struct win32_state
-    {
-        win32_state() { Win32GetEXEFileName(); }
-
-        char        EXEFileName[WIN32_STATE_FILE_NAME_COUNT];
-        const char* OnePastLastEXEFileNameSlash;
-
-    private:
-        void Win32GetEXEFileName()
-        {
-            /*DWORD SizeOfFilename        =*/GetModuleFileNameA(0, EXEFileName, sizeof(EXEFileName));
-            OnePastLastEXEFileNameSlash = EXEFileName;
-            // TODO: should consider begin from the end
-            for (char* Scan = EXEFileName; *Scan; ++Scan)
-            {
-                if (*Scan == '\\' || *Scan == '/')
-                {
-                    OnePastLastEXEFileNameSlash = Scan + 1;
-                }
-            }
-        }
-    };
-
-    struct GameCode final
-    {
-        const win32_state& Win32State_;
-        GameCode(const win32_state& Win32State, const char* sourceDLLName, const char* TempDLLName)
-            : Win32State_{ Win32State }
-        {
-            BuildPath(Win32State, sourceDLLName, sizeof(SourceGameCodeDLLFullPath), SourceGameCodeDLLFullPath);
-            BuildPath(Win32State_, TempDLLName, sizeof(TempGameCodeDLLFullPath), TempGameCodeDLLFullPath);
-
-            Load();
-        }
-
-        ~GameCode() { Unload(); }
-
-        void Load()
-        {
-            // for now, during development we use a copy of the DLL so we can rebuild the DLL when the copy is used
-            // maybe a better way to handle this is to track new DLL in another folder and copy it if needed
-            if (!CopyFileA(SourceGameCodeDLLFullPath, TempGameCodeDLLFullPath, FALSE))
-            {
-                char buff[64];
-                sprintf_s(buff, "DLL copy failed. Error #%d.\n", GetLastError());
-                OutputDebugStringA(buff);
-                return;
-            }
-
-            OutputDebugStringA("Loading ");
-            OutputDebugStringA(SourceGameCodeDLLFullPath);
-            OutputDebugStringA("\n");
-            dll_last_write_time_ = Win32GetLastWriteTime(SourceGameCodeDLLFullPath);
-
-            dll_handle_ = LoadLibraryA(TempGameCodeDLLFullPath);
-            if (dll_handle_)
-            {
-                UpdateAndRender =
-                    reinterpret_cast<game_update_and_render*>(GetProcAddress(dll_handle_, "GameUpdateAndRender"));
-                GetSoundSamples =
-                    reinterpret_cast<game_get_sound_samples*>(GetProcAddress(dll_handle_, "GameGetSoundSamples"));
-                is_valid_ = UpdateAndRender && GetSoundSamples;
-            }
-            else
-            {
-                is_valid_ = false;
-            }
-            if (!is_valid_)
-            {
-                UpdateAndRender = nullptr;
-                GetSoundSamples = nullptr;
-            }
-        }
-
-        void LookForUpdate()
-        {
-            auto NewDLLWriteTime = Win32GetLastWriteTime(SourceGameCodeDLLFullPath);
-
-            if (CompareFileTime(&NewDLLWriteTime, &dll_last_write_time_) != 0)
-            {
-                // auto handle = CreateFileA(SourceGameCodeDLLFullPath,
-                //                           GENERIC_READ | GENERIC_WRITE,
-                //                           0,
-                //                           NULL,
-                //                           OPEN_EXISTING,
-                //                           FILE_ATTRIBUTE_NORMAL,
-                //                           NULL);
-
-                // FIXME: yuck... horrible...
-                char xxx[WIN32_STATE_FILE_NAME_COUNT];
-
-                BuildPath(Win32State_, "game.lld", sizeof(xxx), xxx);
-
-                if (CopyFileA(SourceGameCodeDLLFullPath, xxx, FALSE))
-                {
-                    DeleteFileA(xxx);
-                    // CloseHandle(handle);
-                    Unload();
-                    Load();
-                }
-                // Sleep(1000); // we detect the change to early
-                // Unload();
-            }
-        }
-
-        void Unload()
-        {
-            if (dll_handle_)
-            {
-                OutputDebugStringA("Unloading Game DLL.\n");
-                FreeLibrary(dll_handle_);
-                if (!FreeLibrary(dll_handle_))
-                {
-                    // if (!DeleteFileA(TempGameCodeDLLFullPath))
-                    // {
-                    //     char buff[64];
-                    //     sprintf_s(buff, "Delete Error #%d", GetLastError());
-                    //     OutputDebugStringA(buff);
-                    // }
-                }
-                // CoFreeUnusedLibraries();
-                dll_handle_ = 0;
-            }
-            is_valid_       = false;
-            UpdateAndRender = nullptr;
-            GetSoundSamples = nullptr;
-        }
-
-        bool IsValid() const { return is_valid_; }
-
-        game_update_and_render* UpdateAndRender = nullptr;
-        game_get_sound_samples* GetSoundSamples = nullptr;
-
-    private:
-        // TODO: should return the path (no out parameter... yuck!)
-        static void BuildPath(const win32_state& State, const char* FileName, size_t DestCount, char* Dest)
-        {
-            CatStrings(State.OnePastLastEXEFileNameSlash - State.EXEFileName,
-                       State.EXEFileName,
-                       StringLength(FileName),
-                       FileName,
-                       DestCount,
-                       Dest);
-        }
-
-        static FILETIME Win32GetLastWriteTime(const char* Filename)
-        {
-            if (WIN32_FILE_ATTRIBUTE_DATA Data; GetFileAttributesExA(Filename, GetFileExInfoStandard, &Data))
-            {
-                return Data.ftLastWriteTime;
-            }
-            return { 0, 0 };
-        }
-
-        char     SourceGameCodeDLLFullPath[WIN32_STATE_FILE_NAME_COUNT];
-        char     TempGameCodeDLLFullPath[WIN32_STATE_FILE_NAME_COUNT];
-        HMODULE  dll_handle_;
-        FILETIME dll_last_write_time_;
-        bool     is_valid_;
-    };
 
 } // namespace Windows
 
@@ -368,11 +173,6 @@ namespace Windows
         inline static constexpr uint32 GameUpdateHz               = MonitorRefreshHz / 2;
         inline static constexpr uint32 TargetMicrosecondsPerFrame = 1'000'000 / GameUpdateHz;
 
-        struct config
-        {
-            WindowClass wndClass;
-        };
-
         // order matters
         WindowClass           wndClass; // no dependies, can throw
         BackBuffer            backbuffer; // no dependies
@@ -382,7 +182,7 @@ namespace Windows
         SoundEngine           sndEngine; // depends on window
         Memory                memory;
         win32_state           win32State;
-        GameCode              gameDLL; // depends on win32State
+        GameDLL               gameDLL; // depends on win32State
         WallClock             lastCounter;
 
         bool   isRunning      = true; // no dependencies
@@ -435,8 +235,7 @@ namespace Windows
                 auto& Buffer = backbuffer.PrepareUpdate();
 
                 thread_context Thread = {};
-                (void)Thread;
-                (void)Buffer;
+
                 if (gameDLL.UpdateAndRender)
                 {
                     gameDLL.UpdateAndRender(Thread, memory, inputs.GetCurrent(), Buffer);
