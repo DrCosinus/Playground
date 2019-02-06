@@ -4,6 +4,7 @@
 #include "types.hpp"
 
 #include <cmath>
+
 /*
 constexpr float Pi32 = 3.14159265359f;
 
@@ -131,3 +132,13 @@ extern "C" __declspec(dllexport) void GameGetSoundSamples(thread_context&    Thr
     // TODO: Allow sample offsets here for more robust platform options
     // GameOutputSound(SoundBuffer, GameState.ToneHz);
 }
+
+// void check_real64_precision()
+// {
+//     auto magic = [](int i, real64 f, real64 g) { printf("%02d: %f + %f = %f\n", i, f, g, f + g); };
+
+//     for (int i = 1; i < 9; ++i)
+//     {
+//         magic(i, 8710.0 * 365.0 * 24.0 * 3600.0, pow(0.1, (real64)i));
+//     }
+// }

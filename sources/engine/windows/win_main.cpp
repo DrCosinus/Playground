@@ -3,6 +3,7 @@
 #include "cpu.hpp"
 #include "gameDLL.hpp"
 #include "hdtimer.hpp"
+#include "memory.hpp"
 #include "scopedTimerResolution.hpp"
 #include "win_backbuffer.hpp"
 #include "win_inputs.hpp"
@@ -14,6 +15,7 @@
 #include <types.hpp>
 
 #include <cstdio>
+#include <stdexcept>
 
 namespace Windows
 {
@@ -38,6 +40,7 @@ namespace Windows
         }
         return result;
     }
+
 #if DEBUG_SOUND
     struct Marker
     {
@@ -49,6 +52,7 @@ namespace Windows
         DWORD FlipPlayCursor;
         DWORD FlipWriteCursor;
     };
+
     constexpr size_t markerCount = 15;
     Marker           markers[markerCount];
     size_t           currentMarkerIndex = 0;
@@ -120,52 +124,6 @@ namespace Windows
     }
 #endif // DEBUG_SOUND
 
-    class game_sound_output_buffer;
-
-} // namespace Windows
-
-void check_real64_precision()
-{
-    auto magic = [](int i, real64 f, real64 g) { printf("%02d: %f + %f = %f\n", i, f, g, f + g); };
-
-    for (int i = 1; i < 9; ++i)
-    {
-        magic(i, 8710.0 * 365.0 * 24.0 * 3600.0, pow(0.1, (real64)i));
-    }
-}
-
-// #############################################################################################################
-// #############################################################################################################
-// #############################################################################################################
-// #############################################################################################################
-// #############################################################################################################
-
-#include <stdexcept>
-
-namespace Windows
-{
-
-    class Memory final : public Game::Memory
-    {
-    public:
-        Memory()
-            : Game::Memory{ Megabytes(64), Gigabytes(1) }
-            , baseAddress{ reinterpret_cast<LPVOID>(Terabytes(2)) }
-        {
-            uint64 TotalSize = PermanentStorageSize + TransientStorageSize;
-            PermanentStorage = VirtualAlloc(baseAddress, (SIZE_T)TotalSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-            if (!PermanentStorage)
-            {
-                throw std::domain_error{ "Fail to allocate virtual memory!" };
-            }
-            TransientStorage = (static_cast<uint8*>(PermanentStorage) + PermanentStorageSize);
-        }
-        ~Memory() override { VirtualFree(baseAddress, 0, MEM_RELEASE); }
-
-    private:
-        void* const baseAddress;
-    };
-
     class Runner final
     {
         // TODO: How do we reliably query on this on Windows? (no more constexpr)
@@ -220,7 +178,7 @@ namespace Windows
             if (inputs.GetCurrent().GamePads[0].Start.EndedDown &&
                 inputs.GetCurrent().GamePads[0].Start.HalfTransitionCount == 1)
             {
-                // Pause = !Pause;
+                isPaused = !isPaused;
             }
 
             if (!isPaused)
@@ -242,7 +200,7 @@ namespace Windows
                 }
                 if (gameDLL.GetSoundSamples)
                 {
-                    // Game.GetSoundSamples(Thread, GameMemory, SoundBuffer);
+                    gameDLL.GetSoundSamples(Thread, memory, SoundBuffer);
                 }
 
 #if DEBUG_SOUND
@@ -261,12 +219,12 @@ namespace Windows
                     auto SleepMicroseconds = TargetMicrosecondsPerFrame - MicrosecondsElapsedForFrame;
                     if (SleepMicroseconds > 0)
                     {
-                        // timerResolution.Sleep(static_cast<DWORD>(SleepMicroseconds / 1'000));
+                        timerResolution.Sleep(static_cast<DWORD>(SleepMicroseconds / 1'000));
                     }
-                    // do
-                    // {
-                    //     MicrosecondsElapsedForFrame = LastCounter.GetElapsedMicroseconds();
-                    // } while (MicrosecondsElapsedForFrame < TargetMicrosecondsPerFrame);
+                    do
+                    {
+                        MicrosecondsElapsedForFrame = lastCounter.GetElapsedMicroseconds();
+                    } while (MicrosecondsElapsedForFrame < TargetMicrosecondsPerFrame);
                 }
                 else
                 {
