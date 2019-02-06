@@ -81,6 +81,7 @@ struct PIBackBuffer
     void* Memory;
     int32 Width;
     int32 Height;
+    int32 BytesPerPixel;
     int32 Pitch;
 };
 

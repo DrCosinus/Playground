@@ -19,7 +19,7 @@
 - [ ] sound
   - [ ] basic wave forms: square, triangle, sawtooth, sine, noise, ...
 - [ ] loading bitmaps
-- [ ] timespan
+- [ ] timespan, memoryspan
 
 ## References
 

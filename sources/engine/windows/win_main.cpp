@@ -3,6 +3,7 @@
 #include "cpu.hpp"
 #include "hdtimer.hpp"
 #include "scopedTimerResolution.hpp"
+#include "win_backbuffer.hpp"
 #include "win_inputs.hpp"
 #include "win_sound.hpp"
 
@@ -13,132 +14,10 @@
 
 namespace Windows
 {
-    static Dimension GetWindowDimension(HWND Window)
+
+    struct DebugBackBuffer : BackBuffer
     {
-        RECT ClientRect;
-        GetClientRect(Window, &ClientRect);
-
-        return { ClientRect.right - ClientRect.left, ClientRect.bottom - ClientRect.top };
-    }
-
-    struct WinBackBuffer : PIBackBuffer
-    {
-        static constexpr int BytesPerPixel = 4;
-
-        void Resize(int _Width, int _Height)
-        {
-            if (Memory)
-            {
-                VirtualFree(Memory, 0, MEM_RELEASE);
-            }
-            Width  = _Width;
-            Height = _Height;
-
-            Info.bmiHeader.biSize        = sizeof(Info.bmiHeader);
-            Info.bmiHeader.biWidth       = Width;
-            Info.bmiHeader.biHeight      = -Height;
-            Info.bmiHeader.biPlanes      = 1;
-            Info.bmiHeader.biBitCount    = 32;
-            Info.bmiHeader.biCompression = BI_RGB;
-
-            int BitmapMemorySize = Width * Height * BytesPerPixel;
-            Memory               = VirtualAlloc(0, BitmapMemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-            Pitch                = Width * BytesPerPixel;
-
-            // Clear this to black: Memory allocated by VirtualAlloc is automatically initialized to zero.
-        }
-
-        void DisplayBufferInWindow(HDC _DeviceContext, HWND _Window)
-        {
-            auto Dimension = GetWindowDimension(_Window);
-            // TODO: Aspect ratio correction
-            // TODO: Play with stretch modes
-            StretchDIBits(_DeviceContext,
-                          0,
-                          0,
-                          Dimension.Width,
-                          Dimension.Height,
-                          0,
-                          0,
-                          Width,
-                          Height,
-                          Memory,
-                          &Info,
-                          DIB_RGB_COLORS,
-                          SRCCOPY);
-        }
-
-        const PIBackBuffer& PrepareUpdate() const { return *this; }
-
-    private:
-        // Pixels are alwasy 32-bits wide, Memory Order BB GG RR XX
-        BITMAPINFO Info;
     };
-
-    struct DebugBackBuffer : WinBackBuffer
-    {
-        void DebugDrawVertical(int32 X, int32 top, int32 bottom, uint32 color) const
-        {
-            if (top > Height || bottom < 0)
-            {
-                return;
-            }
-            if (top <= 0)
-            {
-                top = 0;
-            }
-
-            if (bottom > Height)
-            {
-                bottom = Height;
-            }
-
-            if ((X >= 0) && (X < Width))
-            {
-                auto pixel = static_cast<uint8*>(Memory) + X * BytesPerPixel + top * Pitch;
-                for (int Y = top; Y < bottom; ++Y)
-                {
-                    *reinterpret_cast<uint32*>(pixel) = color;
-                    pixel += Pitch;
-                }
-            }
-        }
-    };
-
-    static LRESULT MainWindowCB(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam)
-    {
-        LRESULT Result = 0;
-
-        switch (Message)
-        {
-        case WM_CLOSE:
-            // if (MessageBoxA(Window, "Are you sure?", "Quit Application", MB_YESNO | MB_ICONQUESTION) == IDYES)
-            {
-                DestroyWindow(Window);
-            }
-            break;
-
-        case WM_DESTROY:
-            PostQuitMessage(0);
-            break;
-
-        case WM_PAINT:
-        {
-            PAINTSTRUCT Paint;
-            HDC         DeviceContext = BeginPaint(Window, &Paint);
-            auto&       backbuffer    = *reinterpret_cast<WinBackBuffer*>(GetWindowLongPtrA(Window, GWLP_USERDATA));
-            backbuffer.DisplayBufferInWindow(DeviceContext, Window);
-            EndPaint(Window, &Paint);
-        }
-        break;
-
-        default:
-            Result = DefWindowProcA(Window, Message, WParam, LParam);
-            break;
-        }
-
-        return Result;
-    }
 
     static bool ProcessPendingMessages()
     {
@@ -183,17 +62,17 @@ namespace Windows
     // constexpr DWORD ExpectedFlipColor = 0xFFFFFF00; // Yellow
     // constexpr DWORD PlayWindowColor   = 0xFFFF00FF; // Purple
 
-    static void DebugDrawSoundBufferMarker(const DebugBackBuffer& backbuffer,
-                                           real32                 pixelPerBytes,
-                                           int32                  top,
-                                           DWORD                  value,
-                                           uint32                 color)
+    static void DebugDrawSoundBufferMarker(const BackBuffer& backbuffer,
+                                           real32            pixelPerBytes,
+                                           int32             top,
+                                           DWORD             value,
+                                           uint32            color)
     {
         auto x = padX + static_cast<int32>(pixelPerBytes * value);
         backbuffer.DebugDrawVertical(x, top, top + lineHeight, color);
     }
 
-    static void DebugDisplaySoundSync(const DebugBackBuffer& backbuffer, const SoundEngine& sndEngine)
+    static void DebugDisplaySoundSync(const BackBuffer& backbuffer, const SoundEngine& sndEngine)
     {
         auto pixelPerBytes = static_cast<real32>(backbuffer.Width - 2 * padX) / sndEngine.WorkBufferSize;
 
@@ -476,41 +355,75 @@ namespace Windows
             DestroyWindow(hwnd);
         }
 
-        void SetBackBuffer(WinBackBuffer& backbuffer)
+        Dimension GetWindowDimension() const
         {
-            SetWindowLongPtrA(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(&backbuffer));
+            RECT ClientRect;
+            GetClientRect(hwnd, &ClientRect);
+
+            return { ClientRect.right - ClientRect.left, ClientRect.bottom - ClientRect.top };
+        }
+
+        void blitBackBuffer() const { blitBackBuffer(hdc); }
+
+        void blitBackBuffer(HDC _hdc) const
+        {
+            auto [w, h] = GetWindowDimension();
+            // TODO: Aspect ratio correction
+            // TODO: Play with stretch modes
+            StretchDIBits(_hdc,
+                          0,
+                          0,
+                          w,
+                          h,
+                          0,
+                          0,
+                          backbuffer.Width,
+                          backbuffer.Height,
+                          backbuffer.Memory,
+                          &backbuffer.Info,
+                          DIB_RGB_COLORS,
+                          SRCCOPY);
+        }
+
+        void draw() const
+        {
+            PAINTSTRUCT Paint;
+            HDC         DeviceContext = BeginPaint(hwnd, &Paint);
+            blitBackBuffer(DeviceContext);
+            EndPaint(hwnd, &Paint);
         }
 
         HWND getHandle() const { return hwnd; }
         HDC  getDeviceContext() const { return hdc; }
 
     private:
-        Window(HWND hwnd)
+        Window(HWND hwnd, BackBuffer& backbuffer)
             : hwnd{ hwnd }
             , hdc{ GetDC(hwnd) }
+            , backbuffer{ backbuffer }
         {
             if (!hwnd)
             {
                 throw std::domain_error{ "Fail to create window." };
             }
+            SetWindowLongPtrA(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
         }
 
-        // Since we specified CS_OWNDC, we can just get one device context and use it forever
+        // since we specified CS_OWNDC, we can just get one device context and use it forever
 
         // order matters
-        const HWND hwnd;
-        const HDC  hdc; // depends on hwnd
+        const HWND        hwnd;
+        const HDC         hdc; // depends on hwnd
+        const BackBuffer& backbuffer;
     };
 
     class WindowClass final
     {
-        // friend class std::unique_ptr<WindowClass>;
         friend class Runner;
-        // friend std::unique_ptr<WindowClass> std::make_unique<WindowClass>(HINSTANCE);
-        static constexpr const char* const windowClassName = "EngineWindowClass";
 
         static ATOM registerClass(HINSTANCE instance)
         {
+            constexpr const char* const windowClassName = "EngineWindowClass";
 
             WNDCLASSA wndClass     = {};
             wndClass.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
@@ -520,8 +433,40 @@ namespace Windows
             return RegisterClassA(&wndClass);
         }
 
-        WindowClass(HINSTANCE instance)
-            : instance{ instance }
+        static LRESULT MainWindowCB(HWND hwnd, UINT Message, WPARAM WParam, LPARAM LParam)
+        {
+            LRESULT Result = 0;
+
+            switch (Message)
+            {
+            case WM_CLOSE:
+                // if (MessageBoxA(Window, "Are you sure?", "Quit Application", MB_YESNO | MB_ICONQUESTION) == IDYES)
+                {
+                    DestroyWindow(hwnd);
+                }
+                break;
+
+            case WM_DESTROY:
+                PostQuitMessage(0);
+                break;
+
+            case WM_PAINT:
+            {
+                auto& window = *reinterpret_cast<Window*>(GetWindowLongPtrA(hwnd, GWLP_USERDATA));
+                window.draw();
+            }
+            break;
+
+            default:
+                Result = DefWindowProcA(hwnd, Message, WParam, LParam);
+                break;
+            }
+
+            return Result;
+        }
+
+        WindowClass()
+            : instance{ static_cast<HINSTANCE>(GetModuleHandleA(NULL)) }
             , atom{ registerClass(instance) }
         {
             if (!atom)
@@ -529,14 +474,14 @@ namespace Windows
                 throw std::domain_error{ "Fail to register window class" };
             }
         }
-        ~WindowClass() { UnregisterClassA(windowClassName /*reinterpret_cast<LPCSTR>(atom)*/, instance); }
+        ~WindowClass() { UnregisterClassA(GetClassname(), instance); }
 
-        HWND createWindow() const
+        HWND createNativeWindow() const
         {
             constexpr const char* const windowName = "Game";
 
             return CreateWindowExA(0,
-                                   windowClassName /*reinterpret_cast<LPCSTR>(atom)*/,
+                                   GetClassname(),
                                    windowName,
                                    WS_OVERLAPPEDWINDOW | WS_VISIBLE,
                                    CW_USEDEFAULT,
@@ -548,6 +493,8 @@ namespace Windows
                                    instance,
                                    0);
         }
+
+        LPCSTR GetClassname() const { return reinterpret_cast<LPCSTR>(atom); }
 
         HINSTANCE instance;
         ATOM      atom;
@@ -570,8 +517,7 @@ namespace Windows
         }
         ~Memory() override
         {
-            uint64 TotalSize = PermanentStorageSize + TransientStorageSize;
-            VirtualFree(baseAddress, (SIZE_T)TotalSize, MEM_RELEASE | MEM_DECOMMIT);
+            VirtualFree(baseAddress, 0, MEM_RELEASE);
         }
 
     private:
@@ -592,10 +538,10 @@ namespace Windows
 
         // order matters
         WindowClass           wndClass;
-        Window                window; // depends on wndClass
+        BackBuffer            backbuffer;
+        Window                window; // depends on wndClass, and backbuffer
         ScopedTimerResolution timerResolution; // no dependencies
         Inputs                inputs;
-        WinBackBuffer         backbuffer; // could be create before window and passed to it
         SoundEngine           sndEngine;
         Memory                memory;
         win32_state           win32State;
@@ -606,21 +552,12 @@ namespace Windows
         uint64 LastCycleCount = __rdtsc(); // no dependencies
         bool   isPaused       = false; // no dependencies
 
-        Runner(HINSTANCE instance)
-            : wndClass{ instance }
-            , window{ wndClass.createWindow() }
+        Runner()
+            : backbuffer{ 1280, 720 }
+            , window{ wndClass.createNativeWindow(), backbuffer }
             , gameDLL{ win32State, "game_msvc_r.dll", "game.dll" }
             , lastCounter{ WallClock::create() }
         {
-            // TODO: Retrieve hInstance
-            // HINSTANCE Instance = static_cast<HINSTANCE>(GetModuleHandleA(NULL));
-
-            // Windows specific stuffs
-
-            backbuffer.Resize(1280, 720);
-
-            // NOTE: Store backbuffer structure pointer in the user data of the window
-            window.SetBackBuffer(backbuffer);
 
             inputs.Init();
             sndEngine.Init(window.getHandle());
@@ -735,8 +672,8 @@ namespace Windows
                 constexpr uint32 red   = 0xFF0000;
                 DebugBackBuffer{ backbuffer }.DebugDrawVertical(0, 0, 100, gameDLL.UpdateAndRender ? green : red);
             }
-            // TODO: reverse to window.displayBackBuffer(backbuffer);
-            backbuffer.DisplayBufferInWindow(window.getDeviceContext(), window.getHandle());
+
+            window.blitBackBuffer();
         }
 
         bool is_running() const { return isRunning; }
@@ -744,9 +681,9 @@ namespace Windows
         ~Runner() = default;
 
     public:
-        static void run(HINSTANCE instance)
+        static void run()
         {
-            Runner runner{ instance };
+            Runner runner;
             while (runner.is_running())
             {
                 runner.update();
@@ -754,30 +691,12 @@ namespace Windows
         }
     };
 } // namespace Windows
-/*
-template <typename AppRunner>
-class App : public AppRunner
-{
-public:
-    template <typename... AppRunnerConstructorParameterTypes>
-    static App& getApp(AppRunnerConstructorParameterTypes&&... args)
-    {
-        static App instance{ std::forward<AppRunnerConstructorParameterTypes>(args)... };
-        return instance;
-    }
 
-private:
-    template <typename... AppRunnerConstructorParameterTypes>
-    App(AppRunnerConstructorParameterTypes&&... args)
-        : AppRunner(std::forward<AppRunnerConstructorParameterTypes>(args)...)
-    {}
-};*/
-
-int WinMain(HINSTANCE instance, HINSTANCE /*PrevInstance*/, LPSTR /*CommandLine*/, int /*ShowCode*/)
+int WinMain(HINSTANCE /*instance*/, HINSTANCE /*PrevInstance*/, LPSTR /*CommandLine*/, int /*ShowCode*/)
 {
     try
     {
-        Windows::Runner::run(instance);
+        Windows::Runner::run();
     } catch (const std::domain_error& e)
     {
         OutputDebugStringA(e.what());
