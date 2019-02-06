@@ -88,15 +88,23 @@ namespace Game
 {
     struct Memory
     {
+        Memory(const Memory&) = delete; // non copyable
+        virtual ~Memory() {}
         bool32 IsInitialized = false;
 
-        uint64 PermanentStorageSize = 0;
+        const uint64 PermanentStorageSize;
         // REQUIRED to be cleared to zero at startup
         void* PermanentStorage = nullptr;
 
-        uint64 TransientStorageSize = 0;
+        const uint64 TransientStorageSize;
         // REQUIRED to be cleared to zero at startup
         void* TransientStorage = nullptr;
+
+    protected:
+        Memory(uint64 PermanentStorageSize, uint64 TransientStorageSize)
+            : PermanentStorageSize{ PermanentStorageSize }
+            , TransientStorageSize{ TransientStorageSize }
+        {}
     };
 
     struct SoundOutputBuffer

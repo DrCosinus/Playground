@@ -2,6 +2,7 @@
 
 #include "cpu.hpp"
 #include "hdtimer.hpp"
+#include "scopedTimerResolution.hpp"
 #include "win_inputs.hpp"
 #include "win_sound.hpp"
 
@@ -241,32 +242,6 @@ namespace Windows
     }
 #endif // DEBUG_SOUND
 
-    // Set the Windows scheduler granularity to 1ms so that out Sleep() can be more granular.
-    struct ScopedTimerResolution
-    {
-        ScopedTimerResolution()
-            : timeCaps{ GetDevCaps() }
-        {
-            Check(timeBeginPeriod(timeCaps.wPeriodMin) == TIMERR_NOERROR);
-        }
-        ~ScopedTimerResolution() { Check(timeEndPeriod(timeCaps.wPeriodMin) == TIMERR_NOERROR); }
-        // Sleep slightly less than the desired amount of milliseconds (rounded to granularity)
-        void Sleep(uint32 Milliseconds) const
-        {
-            ::Sleep(Milliseconds - (Milliseconds % timeCaps.wPeriodMin) - timeCaps.wPeriodMin);
-        }
-
-    private:
-        static TIMECAPS GetDevCaps()
-        {
-            TIMECAPS timeCaps;
-            timeGetDevCaps(&timeCaps, sizeof(timeCaps));
-            return timeCaps;
-        }
-
-        const TIMECAPS timeCaps;
-    };
-
     class game_sound_output_buffer;
     using game_update_and_render = void(thread_context&, Game::Memory&, const Game::Inputs&, const PIBackBuffer&);
     using game_get_sound_samples = void(thread_context&, Game::Memory&, Game::SoundOutputBuffer&);
@@ -465,203 +440,6 @@ namespace Windows
         bool     is_valid_;
     };
 
-    int Main(HINSTANCE Instance)
-    {
-        WNDCLASSA WindowClass   = {};
-        WindowClass.style       = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-        WindowClass.lpfnWndProc = MainWindowCB;
-        WindowClass.hInstance   = Instance;
-        //    WindowClass.hIcon;
-        WindowClass.lpszClassName = "EngineWindowClass";
-
-        ScopedTimerResolution timerResolution;
-
-        // TODO: How do we reliably query on this on Windows? (no more constexpr)
-        constexpr uint32 MonitorRefreshHz           = 60;
-        constexpr uint32 GameUpdateHz               = MonitorRefreshHz / 2;
-        constexpr uint32 TargetMicrosecondsPerFrame = 1'000'000 / GameUpdateHz;
-
-        if (RegisterClassA(&WindowClass))
-        {
-            HWND Window = CreateWindowExA(0,
-                                          WindowClass.lpszClassName,
-                                          "Engine",
-                                          WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-                                          CW_USEDEFAULT,
-                                          CW_USEDEFAULT,
-                                          CW_USEDEFAULT,
-                                          CW_USEDEFAULT,
-                                          0,
-                                          0,
-                                          Instance,
-                                          0);
-            if (Window)
-            {
-                // Windows specific stuffs
-                HiDefTimer    hdTimer;
-                Inputs        inputs;
-                WinBackBuffer backbuffer;
-                SoundEngine   sndEngine;
-
-                backbuffer.Resize(1280, 720);
-
-                // NOTE: Store backbuffer structure pointer in the user date of the window
-                SetWindowLongPtrA(Window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(&backbuffer));
-
-                // Since we specified CS_OWNDC, we can just get one device context and use it forever because we are not
-                // sharing it with anyone.
-                HDC DeviceContext = GetDC(Window);
-
-                inputs.Init();
-                sndEngine.Init(Window);
-                sndEngine.ClearBuffer();
-                sndEngine.Play();
-
-                bool Pause = false;
-
-                Game::Memory GameMemory;
-                GameMemory.PermanentStorageSize = Megabytes(64);
-                GameMemory.TransientStorageSize = Gigabytes(1);
-
-                LPVOID BaseAddress = reinterpret_cast<LPVOID>(Terabytes(2));
-                uint64 TotalSize   = GameMemory.PermanentStorageSize + GameMemory.TransientStorageSize;
-                GameMemory.PermanentStorage =
-                    VirtualAlloc(BaseAddress, (size_t)TotalSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-                GameMemory.TransientStorage =
-                    (static_cast<uint8*>(GameMemory.PermanentStorage) + GameMemory.PermanentStorageSize);
-                // FIXME: need to be free on exit
-
-                if (/*Samples &&*/ GameMemory.PermanentStorage && GameMemory.TransientStorage)
-                {
-                    auto LastCounter = hdTimer.GetWallClock();
-
-                    win32_state Win32State;
-                    GameCode    Game{ Win32State, "game_msvc_r.dll", "game.dll" };
-                    bool        GlobalRunning  = true;
-                    uint64      LastCycleCount = __rdtsc();
-                    while (GlobalRunning)
-                    {
-                        Game.LookForUpdate();
-                        inputs.Update();
-                        GlobalRunning &= !inputs.IsQuitRequested();
-                        GlobalRunning &= ProcessPendingMessages();
-
-                        if (inputs.GetCurrent().Keyboard.Back.EndedDown)
-                        {
-                            GlobalRunning = false;
-                        }
-                        if (inputs.GetCurrent().GamePads[0].Start.EndedDown &&
-                            inputs.GetCurrent().GamePads[0].Start.HalfTransitionCount == 1)
-                        {
-                            // Pause = !Pause;
-                        }
-
-                        if (!Pause)
-                        {
-                            auto SoundBuffer = sndEngine.PrepareUpdate();
-#if DEBUG_SOUND
-                            markers[currentMarkerIndex].PlayCursor   = sndEngine.lastPlayCursor;
-                            markers[currentMarkerIndex].WriteCursor  = sndEngine.lastWriteCursor;
-                            markers[currentMarkerIndex].ByteToLock   = sndEngine.lastByteToLock;
-                            markers[currentMarkerIndex].BytesToWrite = sndEngine.lastBytesToWrite;
-#endif // DEBUG_SOUND
-                            auto& Buffer = backbuffer.PrepareUpdate();
-
-                            thread_context Thread = {};
-                            (void)Thread;
-                            (void)Buffer;
-                            if (Game.UpdateAndRender)
-                            {
-                                Game.UpdateAndRender(Thread, GameMemory, inputs.GetCurrent(), Buffer);
-                            }
-                            if (Game.GetSoundSamples)
-                            {
-                                // Game.GetSoundSamples(Thread, GameMemory, SoundBuffer);
-                            }
-
-#if DEBUG_SOUND
-                            auto sndCursors                             = sndEngine.GetCursors();
-                            markers[currentMarkerIndex].FlipPlayCursor  = sndCursors.PlayCursor;
-                            markers[currentMarkerIndex].FlipWriteCursor = sndCursors.WriteCursor;
-#endif // DEBUG_SOUND
-                            if (SoundBuffer.IsValid)
-                            {
-                                sndEngine.FillSoundBuffer(SoundBuffer);
-                            }
-
-                            auto MicrosecondsElapsedForFrame = LastCounter.GetElapsedMicroseconds();
-                            if (MicrosecondsElapsedForFrame < TargetMicrosecondsPerFrame)
-                            {
-                                auto SleepMicroseconds = TargetMicrosecondsPerFrame - MicrosecondsElapsedForFrame;
-                                if (SleepMicroseconds > 0)
-                                {
-                                    // timerResolution.Sleep(static_cast<DWORD>(SleepMicroseconds / 1'000));
-                                }
-                                // do
-                                // {
-                                //     MicrosecondsElapsedForFrame = LastCounter.GetElapsedMicroseconds();
-                                // } while (MicrosecondsElapsedForFrame < TargetMicrosecondsPerFrame);
-                            }
-                            else
-                            {
-                                // TODO: MISSED FRAME RATE!
-                                // TODO: Logging
-                            }
-
-                            auto EndCounter = hdTimer.GetWallClock();
-                            auto MSPerFrame = LastCounter.GetElapsedMicroseconds() * 0.001f;
-                            LastCounter     = EndCounter;
-
-                            uint64 EndCycleCount = __rdtsc();
-                            uint64 CyclesElapsed = EndCycleCount - LastCycleCount;
-                            LastCycleCount       = EndCycleCount;
-
-                            auto FPS  = 1000.0f / (real32)MSPerFrame;
-                            auto MCPF = (real32)CyclesElapsed / 1'000'000.0f;
-
-                            char FPSBuffer[256];
-                            sprintf_s(FPSBuffer,
-                                      sizeof(FPSBuffer),
-                                      "%.02fms/f,  %.02ffps,  %.02fMCycles/Frame\n",
-                                      MSPerFrame,
-                                      FPS,
-                                      MCPF);
-                            // OutputDebugStringA(FPSBuffer);
-#if DEBUG_SOUND
-                            DebugDisplaySoundSync(DebugBackBuffer{ backbuffer }, sndEngine);
-                            currentMarkerIndex++;
-                            if (currentMarkerIndex >= markerCount)
-                            {
-                                currentMarkerIndex = 0;
-                            }
-#endif // DEBUG_SOUND
-       // DRAW GREEN VERTICAL LINE IF GAME DLL IS VALID
-                            DebugBackBuffer{ backbuffer }.DebugDrawVertical(0,
-                                                                            0,
-                                                                            100,
-                                                                            Game.UpdateAndRender ? 0x00FF00 : 0xFF0000);
-                        }
-                        backbuffer.DisplayBufferInWindow(DeviceContext, Window);
-                    }
-                }
-                else
-                {
-                    // TODO: Logging
-                }
-            }
-            else
-            {
-                // TODO: Logging
-            }
-        }
-        else
-        {
-            // TODO: Logging
-        }
-
-        return 0;
-    }
-
 } // namespace Windows
 
 void check_real64_precision()
@@ -674,15 +452,132 @@ void check_real64_precision()
     }
 }
 
-int WinMain(HINSTANCE Instance, HINSTANCE /*PrevInstance*/, LPSTR /*CommandLine*/, int /*ShowCode*/)
-{
-    check_real64_precision();
-    // cpu_info();
-    return Windows::Main(Instance);
-}
+// #############################################################################################################
+// #############################################################################################################
+// #############################################################################################################
+// #############################################################################################################
+// #############################################################################################################
+
+#include <memory>
+#include <stdexcept>
 
 namespace Windows
 {
+    class Window final
+    {
+        friend class Runner;
+
+    public:
+        Window(const Window&) = delete; // non copiable
+        Window(Window&&)      = delete;
+        ~Window()
+        {
+            ReleaseDC(hwnd, hdc);
+            DestroyWindow(hwnd);
+        }
+
+        void SetBackBuffer(WinBackBuffer& backbuffer)
+        {
+            SetWindowLongPtrA(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(&backbuffer));
+        }
+
+        HWND getHandle() const { return hwnd; }
+        HDC  getDeviceContext() const { return hdc; }
+
+    private:
+        Window(HWND hwnd)
+            : hwnd{ hwnd }
+            , hdc{ GetDC(hwnd) }
+        {
+            if (!hwnd)
+            {
+                throw std::domain_error{ "Fail to create window." };
+            }
+        }
+
+        // Since we specified CS_OWNDC, we can just get one device context and use it forever
+
+        // order matters
+        const HWND hwnd;
+        const HDC  hdc; // depends on hwnd
+    };
+
+    class WindowClass final
+    {
+        // friend class std::unique_ptr<WindowClass>;
+        friend class Runner;
+        // friend std::unique_ptr<WindowClass> std::make_unique<WindowClass>(HINSTANCE);
+        static constexpr const char* const windowClassName = "EngineWindowClass";
+
+        static ATOM registerClass(HINSTANCE instance)
+        {
+
+            WNDCLASSA wndClass     = {};
+            wndClass.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+            wndClass.lpfnWndProc   = MainWindowCB;
+            wndClass.hInstance     = instance;
+            wndClass.lpszClassName = windowClassName;
+            return RegisterClassA(&wndClass);
+        }
+
+        WindowClass(HINSTANCE instance)
+            : instance{ instance }
+            , atom{ registerClass(instance) }
+        {
+            if (!atom)
+            {
+                throw std::domain_error{ "Fail to register window class" };
+            }
+        }
+        ~WindowClass() { UnregisterClassA(windowClassName /*reinterpret_cast<LPCSTR>(atom)*/, instance); }
+
+        HWND createWindow() const
+        {
+            constexpr const char* const windowName = "Game";
+
+            return CreateWindowExA(0,
+                                   windowClassName /*reinterpret_cast<LPCSTR>(atom)*/,
+                                   windowName,
+                                   WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+                                   CW_USEDEFAULT,
+                                   CW_USEDEFAULT,
+                                   CW_USEDEFAULT,
+                                   CW_USEDEFAULT,
+                                   0,
+                                   0,
+                                   instance,
+                                   0);
+        }
+
+        HINSTANCE instance;
+        ATOM      atom;
+    };
+
+    class Memory final : public Game::Memory
+    {
+    public:
+        Memory()
+            : Game::Memory{ Megabytes(64), Gigabytes(1) }
+            , baseAddress{ reinterpret_cast<LPVOID>(Terabytes(2)) }
+        {
+            uint64 TotalSize = PermanentStorageSize + TransientStorageSize;
+            PermanentStorage = VirtualAlloc(baseAddress, (SIZE_T)TotalSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+            if (!PermanentStorage)
+            {
+                throw std::domain_error{ "Fail to allocate virtual memory!" };
+            }
+            TransientStorage = (static_cast<uint8*>(PermanentStorage) + PermanentStorageSize);
+        }
+        ~Memory() override
+        {
+            uint64 TotalSize = PermanentStorageSize + TransientStorageSize;
+            VirtualFree(baseAddress, (SIZE_T)TotalSize, MEM_RELEASE | MEM_DECOMMIT);
+        }
+
+    private:
+        void* const baseAddress;
+    };
+
     class Runner
     {
         // TODO: How do we reliably query on this on Windows? (no more constexpr)
@@ -690,132 +585,205 @@ namespace Windows
         inline static constexpr uint32 GameUpdateHz               = MonitorRefreshHz / 2;
         inline static constexpr uint32 TargetMicrosecondsPerFrame = 1'000'000 / GameUpdateHz;
 
-        bool   GlobalRunning{ true }; // TODO: rename "running"
-        uint64 LastCycleCount{ __rdtsc() };
-
-        struct ScopedTimerResolution
+        struct config
         {
+            WindowClass wndClass;
         };
 
-        static LRESULT MainWindowCB(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam)
-        {
-            LRESULT Result = 0;
-            (void)Window;
-            (void)Message;
-            (void)WParam;
-            (void)LParam;
-            return Result;
-        }
+        // order matters
+        WindowClass           wndClass;
+        Window                window; // depends on wndClass
+        ScopedTimerResolution timerResolution; // no dependencies
+        Inputs                inputs;
+        WinBackBuffer         backbuffer; // could be create before window and passed to it
+        SoundEngine           sndEngine;
+        Memory                memory;
+        win32_state           win32State;
+        GameCode              gameDLL; // depends on win32State
+        WallClock             lastCounter;
 
-        void setup()
+        bool   isRunning      = true; // no dependencies
+        uint64 LastCycleCount = __rdtsc(); // no dependencies
+        bool   isPaused       = false; // no dependencies
+
+        Runner(HINSTANCE instance)
+            : wndClass{ instance }
+            , window{ wndClass.createWindow() }
+            , gameDLL{ win32State, "game_msvc_r.dll", "game.dll" }
+            , lastCounter{ WallClock::create() }
         {
             // TODO: Retrieve hInstance
-            HINSTANCE Instance = static_cast<HINSTANCE>(GetModuleHandleA(NULL));
+            // HINSTANCE Instance = static_cast<HINSTANCE>(GetModuleHandleA(NULL));
 
-            WNDCLASSA WindowClass   = {};
-            WindowClass.style       = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-            WindowClass.lpfnWndProc = MainWindowCB;
-            WindowClass.hInstance   = Instance;
-            //    WindowClass.hIcon;
-            WindowClass.lpszClassName = "EngineWindowClass";
+            // Windows specific stuffs
 
-            ScopedTimerResolution timerResolution;
-            (void)timerResolution;
+            backbuffer.Resize(1280, 720);
 
-            if (RegisterClassA(&WindowClass))
-            {
-                HWND Window = CreateWindowExA(0,
-                                              WindowClass.lpszClassName,
-                                              "Engine",
-                                              WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-                                              CW_USEDEFAULT,
-                                              CW_USEDEFAULT,
-                                              CW_USEDEFAULT,
-                                              CW_USEDEFAULT,
-                                              0,
-                                              0,
-                                              Instance,
-                                              0);
-                if (Window)
-                {
-                    // Windows specific stuffs
-                    HiDefTimer    hdTimer;
-                    Inputs        inputs;
-                    WinBackBuffer backbuffer;
-                    SoundEngine   sndEngine;
+            // NOTE: Store backbuffer structure pointer in the user data of the window
+            window.SetBackBuffer(backbuffer);
 
-                    backbuffer.Resize(1280, 720);
+            inputs.Init();
+            sndEngine.Init(window.getHandle());
+            sndEngine.ClearBuffer();
+            sndEngine.Play();
 
-                    // NOTE: Store backbuffer structure pointer in the user date of the window
-                    SetWindowLongPtrA(Window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(&backbuffer));
+            // FIXME: need to be free on exit
 
-                    // Since we specified CS_OWNDC, we can just get one device context and use it forever because we are
-                    // not sharing it with anyone.
-                    HDC DeviceContext = GetDC(Window);
-                    (void)DeviceContext;
-
-                    inputs.Init();
-                    sndEngine.Init(Window);
-                    sndEngine.ClearBuffer();
-                    sndEngine.Play();
-
-                    bool Pause = false;
-                    (void)Pause;
-
-                    Game::Memory GameMemory;
-                    GameMemory.PermanentStorageSize = Megabytes(64);
-                    GameMemory.TransientStorageSize = Gigabytes(1);
-
-                    LPVOID BaseAddress = reinterpret_cast<LPVOID>(Terabytes(2));
-                    uint64 TotalSize   = GameMemory.PermanentStorageSize + GameMemory.TransientStorageSize;
-                    GameMemory.PermanentStorage =
-                        VirtualAlloc(BaseAddress, (size_t)TotalSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-                    GameMemory.TransientStorage =
-                        (static_cast<uint8*>(GameMemory.PermanentStorage) + GameMemory.PermanentStorageSize);
-                    // FIXME: need to be free on exit
-
-                    if (/*Samples &&*/ GameMemory.PermanentStorage && GameMemory.TransientStorage)
-                    {
-                        auto LastCounter = hdTimer.GetWallClock();
-
-                        win32_state Win32State;
-                        GameCode    Game{ Win32State, "game_msvc_r.dll", "game.dll" };
-                        // bool        GlobalRunning  = true;
-                        // uint64      LastCycleCount = __rdtsc();
-                    }
-                }
-            }
+            // if (/*Samples &&*/)
+            // {
+            // }
         }
-        void update() {}
-        bool is_running() const { return false; }
-        void teardown() {}
+
+        void update()
+        {
+            gameDLL.LookForUpdate();
+            inputs.Update();
+            isRunning &= !inputs.IsQuitRequested();
+            isRunning &= ProcessPendingMessages();
+
+            if (inputs.GetCurrent().Keyboard.Back.EndedDown)
+            {
+                isRunning = false;
+            }
+            if (inputs.GetCurrent().GamePads[0].Start.EndedDown &&
+                inputs.GetCurrent().GamePads[0].Start.HalfTransitionCount == 1)
+            {
+                // Pause = !Pause;
+            }
+
+            if (!isPaused)
+            {
+                auto SoundBuffer = sndEngine.PrepareUpdate();
+#if DEBUG_SOUND
+                markers[currentMarkerIndex].PlayCursor   = sndEngine.lastPlayCursor;
+                markers[currentMarkerIndex].WriteCursor  = sndEngine.lastWriteCursor;
+                markers[currentMarkerIndex].ByteToLock   = sndEngine.lastByteToLock;
+                markers[currentMarkerIndex].BytesToWrite = sndEngine.lastBytesToWrite;
+#endif // DEBUG_SOUND
+                auto& Buffer = backbuffer.PrepareUpdate();
+
+                thread_context Thread = {};
+                (void)Thread;
+                (void)Buffer;
+                if (gameDLL.UpdateAndRender)
+                {
+                    gameDLL.UpdateAndRender(Thread, memory, inputs.GetCurrent(), Buffer);
+                }
+                if (gameDLL.GetSoundSamples)
+                {
+                    // Game.GetSoundSamples(Thread, GameMemory, SoundBuffer);
+                }
+
+#if DEBUG_SOUND
+                auto sndCursors                             = sndEngine.GetCursors();
+                markers[currentMarkerIndex].FlipPlayCursor  = sndCursors.PlayCursor;
+                markers[currentMarkerIndex].FlipWriteCursor = sndCursors.WriteCursor;
+#endif // DEBUG_SOUND
+                if (SoundBuffer.IsValid)
+                {
+                    sndEngine.FillSoundBuffer(SoundBuffer);
+                }
+
+                auto MicrosecondsElapsedForFrame = lastCounter.GetElapsedMicroseconds();
+                if (MicrosecondsElapsedForFrame < TargetMicrosecondsPerFrame)
+                {
+                    auto SleepMicroseconds = TargetMicrosecondsPerFrame - MicrosecondsElapsedForFrame;
+                    if (SleepMicroseconds > 0)
+                    {
+                        // timerResolution.Sleep(static_cast<DWORD>(SleepMicroseconds / 1'000));
+                    }
+                    // do
+                    // {
+                    //     MicrosecondsElapsedForFrame = LastCounter.GetElapsedMicroseconds();
+                    // } while (MicrosecondsElapsedForFrame < TargetMicrosecondsPerFrame);
+                }
+                else
+                {
+                    // TODO: MISSED FRAME RATE!
+                    // TODO: Logging
+                }
+
+                auto EndCounter{ WallClock::create() };
+                auto MSPerFrame = lastCounter.GetElapsedMicroseconds() * 0.001f;
+                lastCounter     = EndCounter;
+
+                uint64 EndCycleCount = __rdtsc();
+                uint64 CyclesElapsed = EndCycleCount - LastCycleCount;
+                LastCycleCount       = EndCycleCount;
+
+                auto FPS  = 1000.0f / (real32)MSPerFrame;
+                auto MCPF = (real32)CyclesElapsed / 1'000'000.0f;
+
+                char FPSBuffer[256];
+                sprintf_s(FPSBuffer,
+                          sizeof(FPSBuffer),
+                          "%.02fms/f,  %.02ffps,  %.02fMCycles/Frame\n",
+                          MSPerFrame,
+                          FPS,
+                          MCPF);
+                // OutputDebugStringA(FPSBuffer);
+#if DEBUG_SOUND
+                DebugDisplaySoundSync(DebugBackBuffer{ backbuffer }, sndEngine);
+                currentMarkerIndex++;
+                if (currentMarkerIndex >= markerCount)
+                {
+                    currentMarkerIndex = 0;
+                }
+#endif // DEBUG_SOUND
+       // DRAW GREEN VERTICAL LINE IF GAME DLL IS VALID
+                constexpr uint32 green = 0x00FF00;
+                constexpr uint32 red   = 0xFF0000;
+                DebugBackBuffer{ backbuffer }.DebugDrawVertical(0, 0, 100, gameDLL.UpdateAndRender ? green : red);
+            }
+            // TODO: reverse to window.displayBackBuffer(backbuffer);
+            backbuffer.DisplayBufferInWindow(window.getDeviceContext(), window.getHandle());
+        }
+
+        bool is_running() const { return isRunning; }
+
+        ~Runner() = default;
 
     public:
-        void run()
+        static void run(HINSTANCE instance)
         {
-            setup();
-            while (is_running())
+            Runner runner{ instance };
+            while (runner.is_running())
             {
-                update();
+                runner.update();
             }
-            teardown();
         }
     };
 } // namespace Windows
-
+/*
 template <typename AppRunner>
 class App : public AppRunner
 {
 public:
-    static App& getApp()
+    template <typename... AppRunnerConstructorParameterTypes>
+    static App& getApp(AppRunnerConstructorParameterTypes&&... args)
     {
-        static App instance;
+        static App instance{ std::forward<AppRunnerConstructorParameterTypes>(args)... };
         return instance;
     }
-};
 
-void foo()
+private:
+    template <typename... AppRunnerConstructorParameterTypes>
+    App(AppRunnerConstructorParameterTypes&&... args)
+        : AppRunner(std::forward<AppRunnerConstructorParameterTypes>(args)...)
+    {}
+};*/
+
+int WinMain(HINSTANCE instance, HINSTANCE /*PrevInstance*/, LPSTR /*CommandLine*/, int /*ShowCode*/)
 {
-    auto&& app = App<Windows::Runner>::getApp();
-    app.run();
+    try
+    {
+        Windows::Runner::run(instance);
+    } catch (const std::domain_error& e)
+    {
+        OutputDebugStringA(e.what());
+        OutputDebugStringA("\n");
+        // std::cerr << e.what() << '\n';
+    }
+    OutputDebugStringA("Finished\n");
+    return 0;
 }

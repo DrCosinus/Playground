@@ -4,27 +4,29 @@
 
 namespace Windows
 {
-    HiDefTimer::HiDefTimer()
+    WallClock::HiDefTimer::HiDefTimer()
     {
         LARGE_INTEGER result;
         QueryPerformanceFrequency(&result);
         Frequency = result.QuadPart;
     }
-    WallClock HiDefTimer::GetWallClock() const
+
+    WallClock WallClock::create()
     {
         LARGE_INTEGER result;
         QueryPerformanceCounter(&result);
-        return { result.QuadPart, *this };
+        return { result.QuadPart };
     }
 
     int64 WallClock::GetElapsedMilliseconds() const
     {
-        auto end = HDTimer.GetWallClock();
-        return HDTimer.MillisecondsElapsed(*this, end);
+        auto end = WallClock::create();
+        return 1000LL * (end.data - data) / HDTimer.Frequency;
     }
+
     int64 WallClock::GetElapsedMicroseconds() const
     {
-        auto end = HDTimer.GetWallClock();
-        return HDTimer.MicrosecondsElapsed(*this, end);
+        auto end = WallClock::create();
+        return 1'000'000LL * (end.data - data) / HDTimer.Frequency;
     }
-}
+} // namespace Windows
