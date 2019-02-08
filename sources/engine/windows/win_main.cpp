@@ -289,7 +289,8 @@ int WinMain(HINSTANCE /*instance*/, HINSTANCE /*PrevInstance*/, LPSTR /*CommandL
     try
     {
         Windows::Runner::run();
-    } catch (const std::domain_error& e)
+    }
+    catch (const std::domain_error& e)
     {
         OutputDebugStringA(e.what());
         OutputDebugStringA("\n");
