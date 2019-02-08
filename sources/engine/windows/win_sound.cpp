@@ -1,8 +1,13 @@
 #include "win_sound.hpp"
 
+#include "window.hpp"
+
+#include "game.hpp"
+
 #include <dsound.h>
 
 #include <cstdio>
+#include <stdexcept>
 
 static_assert(sizeof(DWORD) == sizeof(uint32));
 
@@ -11,7 +16,7 @@ namespace Windows
     struct SoundEngine::SoundBuffer
     {
         SoundBuffer(LPDIRECTSOUNDBUFFER dSoundBuffer)
-            : DSoundBuffer { dSoundBuffer }
+            : DSoundBuffer{ dSoundBuffer }
         {}
 
         struct LockResult
@@ -55,90 +60,93 @@ namespace Windows
         LPDIRECTSOUNDBUFFER DSoundBuffer;
     };
 
-    SoundEngine::SoundEngine() = default;
+    SoundEngine::SoundEngine(const Window& window)
+    {
+        Init(window);
+        ClearBuffer();
+        Play();
+
+        if (!Samples)
+        {
+            throw std::domain_error{ "Fail to create sound engine!" };
+        }
+    }
 
     SoundEngine ::~SoundEngine() = default;
 
-    void SoundEngine::Init(HWND Window)
+    void SoundEngine::Init(const Window& window)
     {
-        if (auto DSoundLibrary = LoadLibraryA("dsound.dll"))
+        auto DSoundLibrary = LoadLibraryA("dsound.dll");
+        if (!DSoundLibrary)
         {
-            using DirectSoundCreateCB = HRESULT (*)(LPCGUID, LPDIRECTSOUND*, LPUNKNOWN);
-
-            auto DirectSoundCreate = (DirectSoundCreateCB)GetProcAddress(DSoundLibrary, "DirectSoundCreate8");
-
-            // Check that this works on XP - DirectSound8 or 7??
-            LPDIRECTSOUND DirectSound;
-            if (DirectSoundCreate && SUCCEEDED(DirectSoundCreate(0, &DirectSound, 0)))
-            {
-                WAVEFORMATEX WaveFormat;
-                WaveFormat.wFormatTag      = WAVE_FORMAT_PCM;
-                WaveFormat.nChannels       = ChannelCount;
-                WaveFormat.nSamplesPerSec  = SamplesPerSecond;
-                WaveFormat.wBitsPerSample  = BitsPerSample;
-                WaveFormat.nBlockAlign     = BlockAlign;
-                WaveFormat.nAvgBytesPerSec = SamplesPerSecond * BlockAlign;
-                WaveFormat.cbSize          = 0;
-
-                if (SUCCEEDED(DirectSound->SetCooperativeLevel(Window, DSSCL_PRIORITY)))
-                {
-                    DSBUFFERDESC BufferDescription = {};
-                    BufferDescription.dwSize       = sizeof(BufferDescription);
-                    BufferDescription.dwFlags      = DSBCAPS_PRIMARYBUFFER;
-
-                    // "Create" a primary buffer
-                    // DSBCAPS_GLOBALFOCUS?
-                    LPDIRECTSOUNDBUFFER PrimaryBuffer;
-                    if (SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDescription, &PrimaryBuffer, nullptr)))
-                    {
-                        auto Error = PrimaryBuffer->SetFormat(&WaveFormat);
-                        if (SUCCEEDED(Error))
-                        {
-                            // We have finally set the format!
-                            OutputDebugStringA("Primary buffer format was set.\n");
-                        }
-                        else
-                        {
-                            // TODO:Diagnostic
-                        }
-                    }
-                    else
-                    {
-                        // TODO:Diagnostic
-                    }
-                }
-                else
-                {
-                    // TODO:Diagnostic
-                }
-
-                // TODO: DSBCAPS_GETCURRENTPOSITION2
-                DSBUFFERDESC BufferDescription  = {};
-                BufferDescription.dwSize        = sizeof(BufferDescription);
-                BufferDescription.dwFlags       = 0;
-                BufferDescription.dwBufferBytes = WorkBufferSize;
-                BufferDescription.lpwfxFormat   = &WaveFormat;
-
-                LPDIRECTSOUNDBUFFER dsSoundBuffer;
-
-                auto Error = DirectSound->CreateSoundBuffer(&BufferDescription, &dsSoundBuffer, nullptr);
-                if (SUCCEEDED(Error))
-                {
-                    WorkBuffer = std::make_unique<SoundBuffer>(dsSoundBuffer);
-                    OutputDebugStringA("Work buffer created successfully.\n");
-                }
-
-                Samples = static_cast<int16*>(
-                    VirtualAlloc(nullptr, WorkBufferSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE));
-            }
-            else
-            {
-                // TODO: Diagnostic
-            }
+            throw std::domain_error{ "Fail to load direct sound dll!" };
         }
-        else
+        using DirectSoundCreateCB = HRESULT (*)(LPCGUID, LPDIRECTSOUND*, LPUNKNOWN);
+
+        auto DirectSoundCreate = (DirectSoundCreateCB)GetProcAddress(DSoundLibrary, "DirectSoundCreate8");
+        if (!DirectSoundCreate)
         {
-            // TODO: Diagnostic
+            throw std::domain_error{ "Fail to retrieve DirectSoundCreate8 function in direct sound DLL!" };
+        }
+
+        // Check that this works on XP - DirectSound8 or 7??
+        LPDIRECTSOUND DirectSound;
+        if (FAILED(DirectSoundCreate(0, &DirectSound, 0)))
+        {
+            throw std::domain_error{ "Fail to create Direct Sound!" };
+        }
+
+        WAVEFORMATEX WaveFormat;
+        WaveFormat.wFormatTag      = WAVE_FORMAT_PCM;
+        WaveFormat.nChannels       = ChannelCount;
+        WaveFormat.nSamplesPerSec  = SamplesPerSecond;
+        WaveFormat.wBitsPerSample  = BitsPerSample;
+        WaveFormat.nBlockAlign     = BlockAlign;
+        WaveFormat.nAvgBytesPerSec = SamplesPerSecond * BlockAlign;
+        WaveFormat.cbSize          = 0;
+
+        if (FAILED(DirectSound->SetCooperativeLevel(window.getHandle(), DSSCL_PRIORITY)))
+        {
+            throw std::domain_error{ "Fail to set sound engine cooperative level!" };
+        }
+
+        DSBUFFERDESC BufferDescription = {};
+        BufferDescription.dwSize       = sizeof(BufferDescription);
+        BufferDescription.dwFlags      = DSBCAPS_PRIMARYBUFFER;
+
+        // "Create" a primary buffer
+        // DSBCAPS_GLOBALFOCUS?
+        LPDIRECTSOUNDBUFFER PrimaryBuffer;
+        if (FAILED(DirectSound->CreateSoundBuffer(&BufferDescription, &PrimaryBuffer, nullptr)))
+        {
+            throw std::domain_error{ "Fail to create sound engine primary buffer!" };
+        }
+
+        if (FAILED(PrimaryBuffer->SetFormat(&WaveFormat)))
+        {
+            throw std::domain_error{ "Fail to set sound engine primary buffer format!" };
+        }
+
+        // TODO: DSBCAPS_GETCURRENTPOSITION2
+        DSBUFFERDESC BufferDescription2  = {};
+        BufferDescription2.dwSize        = sizeof(BufferDescription2);
+        BufferDescription2.dwFlags       = 0;
+        BufferDescription2.dwBufferBytes = WorkBufferSize;
+        BufferDescription2.lpwfxFormat   = &WaveFormat;
+
+        LPDIRECTSOUNDBUFFER dsSoundBuffer;
+
+        if (FAILED(DirectSound->CreateSoundBuffer(&BufferDescription2, &dsSoundBuffer, nullptr)))
+        {
+            throw std::domain_error{ "Fail to create sound engine work buffer!" };
+        }
+
+        WorkBuffer = std::make_unique<SoundBuffer>(dsSoundBuffer);
+
+        Samples = static_cast<int16*>(VirtualAlloc(nullptr, WorkBufferSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE));
+        if (!Samples)
+        {
+            throw std::domain_error{ "Fail to allocate sound sample buffer!" };
         }
     }
 
@@ -202,4 +210,5 @@ namespace Windows
             WorkBuffer->Unlock(lock);
         }
     }
+
 } // namespace Windows

@@ -150,19 +150,10 @@ namespace Windows
         Runner()
             : backbuffer{ 1280, 720 }
             , window{ wndClass.createNativeWindow(), backbuffer }
+            , sndEngine{ window }
             , gameDLL{ win32State, "game_msvc_r.dll", "game.dll" }
             , lastCounter{ WallClock::create() }
-        {
-            sndEngine.Init(window.getHandle());
-            sndEngine.ClearBuffer();
-            sndEngine.Play();
-
-            // FIXME: need to be free on exit
-
-            // if (/*Samples &&*/)
-            // {
-            // }
-        }
+        {}
 
         void update()
         {

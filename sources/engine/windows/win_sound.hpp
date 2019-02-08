@@ -1,14 +1,19 @@
 #pragma once
 
-#include "game.hpp"
 #include "types.hpp"
-
-#include <Windows.h>
 
 #include <memory>
 
+namespace Game
+{
+    struct SoundOutputBuffer;
+}
+
 namespace Windows
 {
+
+    class Window;
+
     struct Cursors
     {
         uint32 PlayCursor;
@@ -33,14 +38,8 @@ namespace Windows
         unsigned long lastBytesToWrite = 0;
 #endif // DEBUG_SOUND
 
-        SoundEngine();
+        SoundEngine(const Window&);
         ~SoundEngine();
-
-        void Init(HWND Window);
-
-        void ClearBuffer() const;
-
-        void Play() const;
 
         Game::SoundOutputBuffer PrepareUpdate();
 
@@ -49,11 +48,16 @@ namespace Windows
         Cursors GetCursors() const;
 
     private:
+        void Init(const Window&);
+        void ClearBuffer() const;
+        void Play() const;
+
         struct SoundBuffer;
         uint32                       RunningSampleIndex = 0;
         std::unique_ptr<SoundBuffer> WorkBuffer;
         int16*                       Samples = nullptr;
-        DWORD                        ByteToLock;
-        DWORD                        BytesToWrite;
+        uint32                       ByteToLock;
+        uint32                       BytesToWrite;
     };
+
 } // namespace Windows
