@@ -48,7 +48,7 @@ It is not my vision of how a state machine should be managed, but in some way it
 
 #### recursive_helper
 
-Abandonned
+Abandoned
 
 #### magic
 
