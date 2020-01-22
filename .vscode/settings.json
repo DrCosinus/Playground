@@ -80,13 +80,14 @@
         "future": "cpp",
         "atomic": "cpp",
         "condition_variable": "cpp",
-        "mutex": "cpp"
+        "mutex": "cpp",
+        "bitset": "cpp"
     },
     "markdownlint.config": {
         "MD013": false,
         "MD003": false,
         "MD009": false,
-        "MD033" : false
+        "MD033": false
     },
     "[markdown]": {
         "editor.wordWrap": "on",
