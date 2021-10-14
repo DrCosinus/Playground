@@ -275,8 +275,71 @@ namespace Windows
     };
 } // namespace Windows
 
+#include <sstream>
+
+class OutputDebugStream
+{
+public:
+    template <typename T>
+    OutputDebugStream& operator<<(T&& t)
+    {
+        std::ostringstream s{};
+        s << t;
+        OutputDebugStringA(s.str().c_str());
+        return *this;
+    }
+};
+OutputDebugStream debug;
+#include <type_traits>
+class Dummy
+{
+public:
+    template <typename T>
+    static void print()
+    {
+        debug << (std::is_same_v<T, Dummy> ? "Dummy" : "");
+        debug << (std::is_same_v<T, Dummy&> ? "Dummy&" : "");
+        debug << (std::is_same_v<T, Dummy&&> ? "Dummy&&" : "");
+        debug << (std::is_same_v<T, const Dummy> ? "const Dummy" : "");
+        debug << (std::is_same_v<T, const Dummy&> ? "const Dummy&" : "");
+        debug << (std::is_same_v<T, const Dummy&&> ? "const Dummy&&" : "");
+        debug << (std::is_same_v<T, int> ? "int" : "");
+        debug << (std::is_same_v<T, int&> ? "int&" : "");
+        debug << (std::is_same_v<T, int&&> ? "int&&" : "");
+        debug << (std::is_same_v<T, const int> ? "const int" : "");
+        debug << (std::is_same_v<T, const int&> ? "const int&" : "");
+        debug << (std::is_same_v<T, const int&&> ? "const int&&" : "");
+    }
+
+    template <typename T>
+    void f(T&& t) const
+    {
+        //++t;
+        debug << "T is ";
+        print<T>();
+        debug << " / type of t is ";
+        print<decltype(t)>();
+        debug << "\n";
+    }
+    Dummy& operator++()
+    {
+        i++;
+        return *this;
+    }
+    int i = 0;
+};
+
 int WinMain(HINSTANCE /*instance*/, HINSTANCE /*PrevInstance*/, LPSTR /*CommandLine*/, int /*ShowCode*/)
 {
+    Dummy        foo;
+    const Dummy& bar{ foo };
+    foo.f(42);
+    foo.f(foo);
+    foo.f(std::move(foo));
+    foo.f(bar);
+    foo.f(std::move(bar));
+    debug << "----------\n\n";
+    debug << typeid(Dummy&).name() << "\n";
     try
     {
         Windows::Runner::run();
