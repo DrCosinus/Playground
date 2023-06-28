@@ -10,6 +10,7 @@
 #include "platformDriverInterface.hpp"
 
 #include <chrono>
+#include <memory>
 #include <string_view>
 #include <tuple>
 
