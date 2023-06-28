@@ -1,9 +1,9 @@
 #include "cuppa/cuppa.hpp"
 
-#define DEMO  0x44454D4F
-#define PROTO 0x50524F54
+constexpr auto DEMO = 0x44454D4F;
+constexpr auto PROTO = 0x50524F54;
 
-#define CURRENT PROTO
+constexpr auto CURRENT = DEMO;
 
 #if CURRENT == DEMO
 #include "demo.hpp"
