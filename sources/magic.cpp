@@ -1,5 +1,33 @@
 #include <iostream>
 
+struct BadStruct
+{
+  bool Visibility; // true = hidden, a bit strange but it is like this, no time to rename
+  bool ShowImpact;
+  bool ApplyDamage;
+  bool SpawnSideEffect;
+  
+  void ProcessImpact(bool aVisibility, bool aShowImpact, bool ApplyDamage, bool SpawnSideEffect)
+  {
+    // do somthing
+  }
+};
+
+void BadCall(BadStruct& aBadObject)
+{
+    bool visibility = true; // for user, true means visible
+    bool showImpact = true;
+    bool applyDamage = false;
+    int hitpoints = 2;
+
+    aBadObject.ProcessImpact(visibility, applyDamage, showImpact, hitpoints);
+    // - visibility is ambiguous, I saw rarely but sometimes that the value true can meant hidden
+    // - showImpact and applyDamage are inverted
+    // - hitpoints is an integer and was mistakenly used for spawnSideEffects...
+}
+
+// Note: in real life situation Bar and Foo are in different files
+
 struct Bar
 {
   enum class Visibility : char { Visible, Hidden };
@@ -14,9 +42,9 @@ struct Bar
 
 struct Foo
 {
-  enum class Visibility : char { Hidden, Visible }; // please that Hidden and Visible and in the reverse order compared to Bar::Visible
-  Visibility myVisibility; // no comment needed
-  Bar::Visibility myBarVisibility; // no comment needed
+  enum class Visibility : char { Hidden, Visible }; // please note that Hidden and Visible and in the reverse order compared to Bar::Visible
+  Visibility myVisibility; // type is Foo::Visibility which is different from Bar::Visibility
+  Bar::Visibility myBarVisibility;
   Bar::ShowImpact myShowImpact;
   Bar::ApplyDamage myApplyDamage;
 };
@@ -61,7 +89,7 @@ int main()
   bar.ProcessImpact(foo.myBarVisibility, foo.myShowImpact, foo.myApplyDamage, Bar::SpawnSideEffect::Spawn);
 
   // if the user intentionnally want to pass a Foo::Visibility for a Bar::Visibility
-  // he/she has to explicit the "conversion"
+  // they have to explicit do the "conversion"
   bar.ProcessImpact(ConvertTo<Bar::Visibility>(foo.myVisibility), foo.myShowImpact, foo.myApplyDamage, Bar::SpawnSideEffect::Spawn);
 
   std::cout << ToString(Bar::Visibility::Hidden) << std::endl;
