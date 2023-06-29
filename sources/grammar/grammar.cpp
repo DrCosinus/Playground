@@ -469,7 +469,10 @@ namespace grammar
 
         static constexpr std::size_t min_size()
         {
-            return HEAD::min_size() + (... + TAIL::min_size());
+            if constexpr (sizeof...(TAIL) != 0)
+                return HEAD::min_size() + (... + TAIL::min_size());
+            else
+                return HEAD::min_size();
         }
     };
 #endif
@@ -513,15 +516,17 @@ namespace grammar
     template<typename PATTERN, typename LOGGER>
     auto match(search_view _sview, LOGGER& _logger)
     {
-        std::size_t match_count = 0;
-        _logger << "grammar::match in \"" << _sview << "\":" << push_line;
+        _logger << "grammar::match \"" << PATTERN{} << "\" in \"" << _sview << "\":" << push_line;
 
+        std::size_t match_count = 0;
         // maybe yield_callback could return YIELD_CONTINUE or YIELD_BREAK
         auto yield_callback = [&match_count, &_logger](const auto& _trailing_view)
         {
             if (_trailing_view.empty())
+            {
                 ++match_count;
-            _logger << "--> \"" << _trailing_view.match() << "\"" << push_line;
+                _logger << "--> MATCH FOUND \"" << _trailing_view.match() << "\"" << push_line;
+            }
         };
 
         PATTERN::parse(_sview, yield_callback, _logger);
@@ -585,17 +590,29 @@ using grammar::match;
 
 template<std::size_t N>
 using gr_perf =
-    sequence<
-        at_least< N, optional< char_among<'a'> > >
-        //, at_least< N, char_among<'a'>>
-    >;
+    // sequence<
+        // at_least< N, optional< char_among<'a'> > >
+        at_least< N, char_among<'a'>>;
+    // >;
+
+grammar::line_logger<grammar::verboseness::verbose> verbose{ [](auto indent_count, auto _view)
+{
+    for (std::size_t i = 0; i<indent_count; ++i)
+        std::cout << "    ";
+    std::cout << _view << std::endl;
+} };
 
 int main(void)
 {
-    // CHECK_TRUE(search<gr_perf<29>>("aaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
-    // CHECK_TRUE(search<gr_perf<9>>("aaaaaaaaa"));
-    // CHECK_TRUE(search<gr_perf<5>>("aaaaa"));
-    //CHECK_TRUE(search<gr_perf<2>>("aa"));
+    // using plop = at_least< 2, optional< char_among<'a'>>>;
+    // CHECK_TRUE(match<plop>("aa", verbose)); // will soft lock because of infinite matches and infinite failures, is it an implementaion issue?
+
+    // CHECK_TRUE(match<gr_perf<29>>("aaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+    // CHECK_TRUE(match<gr_perf<9>>("aaaaaaaaa"));
+    // CHECK_TRUE(match<gr_perf<5>>("aaaaa"));
+    CHECK_TRUE(match<gr_perf<2>>("aa", verbose));
+    CHECK_FALSE(match<gr_perf<2>>(""));
+    CHECK_TRUE(match<gr_perf<2>>("aaa", verbose));
 
     // TO DO: compile computation of the minimal string size to match the pattern
 
@@ -622,12 +639,6 @@ int main(void)
         >;
 
     CHECK_EQ(gr_perf_x::min_size(),2);
-    grammar::line_logger<grammar::verboseness::verbose> verbose{ [](auto indent_count, auto _view)
-    {
-        for (std::size_t i = 0; i<indent_count; ++i)
-            std::cout << "    ";
-        std::cout << _view << std::endl;
-    } };
     CHECK_TRUE(search<gr_perf_x>("aa"));
 
     using gr_blood_group =
@@ -697,6 +708,7 @@ int main(void)
     std::cout << "gr_filename: \"" << gr_filename{} << "\"" << std::endl;
     std::cout << "gr_perf_x: \"" << gr_perf_x{} << "\"" << std::endl;
     std::cout << "gr_perf<5>: \"" << gr_perf<5>{} << "\"" << std::endl;
-
+    std::cout << "gr_perf<5>::min_size(): " << gr_perf<5>::min_size() << std::endl;
+    
     tdd::PrintTestResults([](const char* line){ std::cout << line << std::endl; } );
 }

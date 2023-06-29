@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "*.json": "nextbasic",
         "type_traits": "cpp",
         "iostream": "cpp",
         "xtr1common": "cpp",
@@ -81,7 +82,15 @@
         "atomic": "cpp",
         "condition_variable": "cpp",
         "mutex": "cpp",
-        "bitset": "cpp"
+        "bitset": "cpp",
+        "bit": "cpp",
+        "charconv": "cpp",
+        "clocale": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "format": "cpp",
+        "forward_list": "cpp",
+        "stop_token": "cpp"
     },
     "markdownlint.config": {
         "MD013": false,
