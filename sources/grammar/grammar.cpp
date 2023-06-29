@@ -149,7 +149,7 @@ namespace grammar
         {
             _os //<< _sv.view_.substr(0, _sv.match_start_index_) << "…"
                 << _sv.view_.substr(_sv.match_start_index_, _sv.match_length_)
-                << "•" << _sv.view_.substr(_sv.match_start_index_+_sv.match_length_);
+                << "[_]" << _sv.view_.substr(_sv.match_start_index_+_sv.match_length_);
             return _os;
         }
     private:
@@ -628,7 +628,7 @@ int main(void)
             std::cout << "    ";
         std::cout << _view << std::endl;
     } };
-    CHECK_TRUE(search<gr_perf_x>("aa", verbose));
+    CHECK_TRUE(search<gr_perf_x>("aa"));
 
     using gr_blood_group =
         sequence<
@@ -666,6 +666,7 @@ int main(void)
     using gr_filename =
         sequence<
             at_least<1, gr_path_allowed_character>,
+            // gr_extension_allowed_character,
             optional<
                 sequence<
                     char_among<'.'>,
@@ -675,18 +676,22 @@ int main(void)
         >;
 
     CHECK_EQ(gr_filename::min_size(),1);
-    CHECK_TRUE(search<gr_filename>("allo.wed.ext")); // OK: dots in filename allowed, extension should be "d"
-    CHECK_FALSE(search<gr_filename>("allowed&.-_=.")); // NOT OK: trailing dot not allowed (no extension)
-    CHECK_TRUE(search<gr_filename>("allowed.cpp")); // OK
-    CHECK_TRUE(search<gr_filename>("allowed..cpp")); // OK
-    CHECK_FALSE(search<gr_filename>("notallowed.ext>")); // NOT OK, leading and trailing forbidden characters
-    CHECK_TRUE(search<gr_filename>("allowed")); // OK no extension is allowed
-    CHECK_FALSE(search<gr_filename>("notallowed.")); // NOT OK: final dot without extension is not allowed
-    CHECK_FALSE(search<gr_filename>(".ext")); // NOT OK: extension only not allowed for filenames (OK for folder names)
+
+    // search will TRUE most of the time (FALSE for empty string).
     CHECK_FALSE(search<gr_filename>("")); // NOT OK: empty
-    CHECK_FALSE(search<gr_filename>("<notallowed")); // NOT OK, leading and trailing forbidden characters
-    CHECK_FALSE(search<gr_filename>("notallowed>")); // NOT OK, leading and trailing forbidden characters
+    CHECK_TRUE(search<gr_filename>("<a.b.c>")); // OK: so many valid file name in this string
+    CHECK_TRUE(search<gr_filename>("trailing.dot.")); // OK: "allowed&.-_=" among others is OK
+    CHECK_TRUE(search<gr_filename>("allowed")); // OK no extension is allowed
+    CHECK_TRUE(search<gr_filename>(".ext")); // OK: "ext" among others is OK
     CHECK_TRUE(search<gr_filename>("seperated.cpp names")); // OK: matches "seperated"
+
+    CHECK_TRUE(match<gr_filename>("allo.wed.ext")); // OK: dots in filename allowed,
+    CHECK_TRUE(match<gr_filename>("allowed&.-_=.")); // NOT OK: trailing dot not allowed (no extension)... but the current expression matches if the extension is empty
+    CHECK_TRUE(match<gr_filename>("allowed.cpp")); // OK
+    CHECK_TRUE(match<gr_filename>("allowed..cpp")); // OK
+    CHECK_TRUE(match<gr_filename>(".ext")); // OK: extension only allowed but not for the good reason .ext filename without extension
+    CHECK_FALSE(match<gr_filename>("<notallowed")); // NOT OK, leading and trailing forbidden characters
+    CHECK_FALSE(match<gr_filename>("notallowed>")); // NOT OK, leading and trailing forbidden characters
 
     std::cout << "gr_blood_group: \"" << gr_blood_group{} << "\"" << std::endl;
     std::cout << "gr_filename: \"" << gr_filename{} << "\"" << std::endl;
