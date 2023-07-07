@@ -48,7 +48,7 @@ compile-time visitor
 
 ```cpp
 enum class Visibility { Visible, Hidden };
-std::string std::to_string(cosnt Visibility& _v) { return { _v==Visibility::Visible?"Visible":"Hidden" }; }
+std::string std::to_string(const Visibility& _v) { return { _v==Visibility::Visible?"Visible":"Hidden" }; }
 ```
 
 ### manage enum serialization by name
@@ -69,5 +69,9 @@ struct vector3 : wit::aggregate<
     using aggregate::aggregate;
 };
 ```
+
+### detect terminal type (windows cmd, windows powershell, linux command line, ...)
+
+handle colors and others things
 
 [Back to README](README.md)

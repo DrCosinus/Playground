@@ -9,6 +9,10 @@
 #include <string_view>
 #include <algorithm>
 
+// for console text coloration
+#define NOMINMAX
+#include <windows.h>
+
 // some references
 // https://swtch.com/~rsc/regexp/               (Implementing Regular Expressions)
 // https://swtch.com/~rsc/regexp/regexp1.html   (Regular Expression Matching Can Be Simple And Fast)
@@ -443,7 +447,7 @@ namespace grammar
             _logger << "sequence = \"" << sequence{} << "\", string = \"" << _sview << "\"" << push_line;
             auto scoped_indent = _logger.make_scoped_indent();
             auto success = false;
-            HEAD::parse(_sview, [&success, &yield_return, &_logger](auto _trailing_view) // intentional copy (test purpose for now)
+            HEAD::parse(_sview, [&success, &yield_return, &_logger](auto _trailing_view) // view intentional copy
             {
                 if constexpr(sizeof...(TAIL) == 0)
                 {
@@ -576,6 +580,15 @@ namespace grammar
     }
 }
 
+inline std::ios_base& color(std::ios_base& _os)
+{
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+
+    return _os;
+}
+
 using grammar::any_of;
 using grammar::char_among;
 using grammar::whitespace;
@@ -590,10 +603,10 @@ using grammar::match;
 
 template<std::size_t N>
 using gr_perf =
-    // sequence<
+    sequence<
         // at_least< N, optional< char_among<'a'> > >
-        at_least< N, char_among<'a'>>;
-    // >;
+        at_least< N, char_among<'a'>>
+    >;
 
 grammar::line_logger<grammar::verboseness::verbose> verbose{ [](auto indent_count, auto _view)
 {
